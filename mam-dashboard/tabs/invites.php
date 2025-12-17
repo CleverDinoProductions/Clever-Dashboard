@@ -15,7 +15,7 @@ $since_timestamp = time() * 1000 - (intval($timeframe) * 86400 * 1000);
 // HOLIDAY BREAK DETECTION
 // ============================================
 $holiday_start = strtotime('2025-12-14 09:00:00 UTC');
-$holiday_end = strtotime('2026-01-05 23:59:59 UTC');
+$holiday_end = strtotime('2026-01-07 08:00:00 UTC');
 $now = time();
 $in_holiday_break = ($now >= $holiday_start && $now <= $holiday_end);
 
@@ -49,17 +49,18 @@ foreach ($windows_after_break as $window) {
 // PARSE LATEST MOUSEBOT QUEUE ANNOUNCEMENTS
 // ============================================
 
+$limit = 50;  // Will be adjusted later based on window status
 
-// Get latest MouseBot announcements (last 50 messages to ensure we catch all parts)
+$query_start = microtime(true);
 $stmt = $db->prepare("
     SELECT time, datetime(time/1000, 'unixepoch') as timestamp, msg
     FROM messages 
     WHERE channel = ? 
     AND json_extract(msg, '$.from.nick') = 'MouseBot'
     ORDER BY time DESC
-    LIMIT 50
+    LIMIT ?
 ");
-$stmt->execute([$queue_channel]);
+$stmt->execute([$queue_channel, $limit]);
 $all_mousebot = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
@@ -394,6 +395,10 @@ if ($in_holiday_break) {
     $in_window = false;
 }
 
+// Adjust limit retroactively if we're in an active window
+if ($in_window) {
+    $limit = 30;  // Already fetched 50, but good for next refresh
+}
 
 $next_window = get_next_window();
 ?>
@@ -541,9 +546,15 @@ if ($current_queue_state['sup'] && !empty($current_queue_state['sup']['members']
     }
 }
 
-
 usort($all_current_members, fn($a, $b) => $b['wait_minutes'] <=> $a['wait_minutes']);
 
+if (count($all_current_members) > 200) {
+    // Emergency cap: only show first 200
+    $all_current_members = array_slice($all_current_members, 0, 200);
+    $queue_capped = true;
+} else {
+    $queue_capped = false;
+}
 
 $queue_timestamp = 0;
 if ($current_queue_state['inv']) {
@@ -552,7 +563,7 @@ if ($current_queue_state['inv']) {
     $queue_timestamp = strtotime($current_queue_state['sup']['timestamp']);
 }
 $hours_old = $queue_timestamp > 0 ? (time() - $queue_timestamp) / 3600 : 999;
-$is_stale = $hours_old > 6;
+$is_stale = $hours_old > 2;
 ?>
 
 
@@ -636,6 +647,13 @@ $is_stale = $hours_old > 6;
     </div>
 </div>
 
+<?php if ($is_after_break_window && count($all_current_members) > 50): ?>
+<div class="panel" style="border: 2px solid #f04747; background: #2c2f33;">
+    <p style="color: #faa61a; text-align: center; margin: 0;">
+        ⚠️ <strong>High queue load detected</strong> – refresh rate automatically adjusted
+    </p>
+</div>
+<?php endif; ?>
 
 <?php else: ?>
 <div class="panel">
@@ -716,6 +734,11 @@ foreach ($recent_modes as $row) {
 
 $recent_entries = array_slice($recent_entries, 0, 20);
 $recent_exits = array_slice($recent_exits, 0, 20);
+
+$query_duration = microtime(true) - $query_start;
+if ($query_duration > 1.0) {
+    error_log("SLOW INVITES TAB: {$query_duration}s - timeframe: {$timeframe}");
+}
 ?>
 
 
@@ -760,3 +783,16 @@ $recent_exits = array_slice($recent_exits, 0, 20);
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+<?php if (!$in_holiday_break && $in_window): ?>
+    // Adaptive refresh: slower when queue is huge
+    const queueSize = <?= count($all_current_members) ?>;
+    const refreshInterval = queueSize > 100 ? 120000 : 
+                           queueSize > 50  ? 90000  : 60000;
+    setTimeout(() => location.reload(), refreshInterval);
+<?php else: ?>
+    // Slow refresh during break
+    setTimeout(() => location.reload(), 300000); // 5 min
+<?php endif; ?>
+</script>
