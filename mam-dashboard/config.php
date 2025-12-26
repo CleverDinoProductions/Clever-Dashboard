@@ -1,6 +1,13 @@
 <?php
 // Database Configuration
-$dbpath = 'E:\\thelounge\\logs\\DinoDude.sqlite3';
+// Auto-detect environment and set correct path
+if (PHP_OS_FAMILY === 'Windows') {
+    // Running on XAMPP Windows
+    $dbpath = 'E:\\thelounge\\logs\\DinoDude.sqlite3';
+} else {
+    // Running on WSL/Linux
+    $dbpath = '/mnt/e/thelounge/logs/DinoDude.sqlite3';
+}
 
 try {
     // Open database in READ-ONLY mode to prevent locking
