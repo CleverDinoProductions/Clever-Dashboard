@@ -19,6 +19,40 @@ include 'includes/header.php';
             case 'table':
                 include 'tabs/premier-league/table.php';
                 break;
+            case 'blocks-overview':
+                include 'tabs/premier-league/blocks-overview.php';
+                break;
+            case 'blocks-1':
+                include 'tabs/premier-league/blocks-1.php';
+                break;
+            case 'blocks-2':
+                if (file_exists('tabs/premier-league/blocks-2.php')) {
+                    include 'tabs/premier-league/blocks-2.php';
+                } else {
+                    echo '<div class="panel"><h2>🌟 Block 2: European Zone</h2><p style="color: #888;">Content coming soon. Use Block 1 as a template to create this page.</p></div>';
+                }
+                break;
+            case 'blocks-3':
+                if (file_exists('tabs/premier-league/blocks-3.php')) {
+                    include 'tabs/premier-league/blocks-3.php';
+                } else {
+                    echo '<div class="panel"><h2>✅ Block 3: Safe Mid-Table</h2><p style="color: #888;">Content coming soon. Use Block 1 as a template to create this page.</p></div>';
+                }
+                break;
+            case 'blocks-4':
+                if (file_exists('tabs/premier-league/blocks-4.php')) {
+                    include 'tabs/premier-league/blocks-4.php';
+                } else {
+                    echo '<div class="panel"><h2>⚠️ Block 4: Danger Zone</h2><p style="color: #888;">Content coming soon. Use Block 1 as a template to create this page.</p></div>';
+                }
+                break;
+            case 'blocks-5':
+                if (file_exists('tabs/premier-league/blocks-5.php')) {
+                    include 'tabs/premier-league/blocks-5.php';
+                } else {
+                    echo '<div class="panel"><h2>🔻 Block 5: Relegation Battle</h2><p style="color: #888;">Content coming soon. Use Block 1 as a template to create this page.</p></div>';
+                }
+                break;
             case 'relegation':
                 include 'tabs/premier-league/relegation.php';
                 break;
