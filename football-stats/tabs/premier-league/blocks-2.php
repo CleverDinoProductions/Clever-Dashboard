@@ -1,5 +1,9 @@
 <?php
 // Block 2: Positions 5-8 - European Zone
+// This would connect to your database to fetch current standings
+
+// Placeholder for database query - adjust based on your actual schema
+// $block2Teams = $pdo->query("SELECT * FROM premier_league_table WHERE position BETWEEN 5 AND 8 ORDER BY position")->fetchAll();
 ?>
 <div class="block-detail-wrapper">
     <div class="panel">
@@ -8,8 +12,8 @@
             <span class="position-badge block-2-badge">Positions 5-8</span>
         </div>
         <p class="block-description">
-            Teams competing for Europa League and Conference League qualification. This competitive mid-table zone 
-            requires tactical flexibility and consistent performances to secure European football.
+            Teams competing for Europa League and UEFA Conference League qualification. 
+            These sides require tactical flexibility, strong squad depth, and consistency to secure European football.
         </p>
     </div>
 
@@ -37,10 +41,10 @@
                     <?php
                     // Placeholder - Replace with actual database query
                     $placeholderTeams = [
-                        ['pos' => 5, 'team' => 'Newcastle United', 'pld' => 18, 'w' => 9, 'd' => 4, 'l' => 5, 'gf' => 30, 'ga' => 21, 'gd' => 9, 'pts' => 31],
-                        ['pos' => 6, 'team' => 'Brighton', 'pld' => 18, 'w' => 8, 'd' => 6, 'l' => 4, 'gf' => 29, 'ga' => 23, 'gd' => 6, 'pts' => 30],
+                        ['pos' => 5, 'team' => 'Newcastle United', 'pld' => 18, 'w' => 9, 'd' => 5, 'l' => 4, 'gf' => 31, 'ga' => 21, 'gd' => 10, 'pts' => 32],
+                        ['pos' => 6, 'team' => 'Tottenham', 'pld' => 18, 'w' => 9, 'd' => 4, 'l' => 5, 'gf' => 34, 'ga' => 25, 'gd' => 9, 'pts' => 31],
                         ['pos' => 7, 'team' => 'Aston Villa', 'pld' => 18, 'w' => 8, 'd' => 5, 'l' => 5, 'gf' => 28, 'ga' => 25, 'gd' => 3, 'pts' => 29],
-                        ['pos' => 8, 'team' => 'Tottenham', 'pld' => 18, 'w' => 8, 'd' => 3, 'l' => 7, 'gf' => 32, 'ga' => 26, 'gd' => 6, 'pts' => 27],
+                        ['pos' => 8, 'team' => 'Brighton', 'pld' => 18, 'w' => 7, 'd' => 7, 'l' => 4, 'gf' => 27, 'ga' => 24, 'gd' => 3, 'pts' => 28],
                     ];
                     
                     foreach ($placeholderTeams as $team) {
@@ -72,40 +76,40 @@
             <div class="char-card block-2-card">
                 <h4>🎯 Mentality</h4>
                 <ul>
-                    <li>Push for European qualification</li>
-                    <li>Balance attack and defense</li>
+                    <li>European qualification target</li>
+                    <li>Balanced attack and defense</li>
                     <li>Tactical flexibility required</li>
-                    <li>Consistent squad rotation needed</li>
+                    <li>Strong cup run potential</li>
                 </ul>
             </div>
             
             <div class="char-card block-2-card">
-                <h4>📊 Key Metrics</h4>
+                <h4>📈 Key Metrics</h4>
                 <ul>
                     <li>Points Per Game: 1.5-1.8</li>
                     <li>Win Rate: 45-55%</li>
-                    <li>Goals Per Game: 1.5-2.0</li>
-                    <li>Clean Sheets: 30-40%</li>
+                    <li>Goals Per Game: 1.5-1.8</li>
+                    <li>Clean Sheets: 30-35%</li>
                 </ul>
             </div>
             
             <div class="char-card block-2-card">
-                <h4>⚔️ Tactical Approach</h4>
+                <h4>🛡️ Tactical Approach</h4>
                 <ul>
-                    <li>Adaptable game plans</li>
-                    <li>Strong away performances crucial</li>
+                    <li>Solid defensive structure</li>
                     <li>Counter-attacking threat</li>
                     <li>Set-piece importance</li>
+                    <li>Rotational squad management</li>
                 </ul>
             </div>
             
             <div class="char-card block-2-card">
                 <h4>💰 Investment Level</h4>
                 <ul>
-                    <li>Moderate to high transfer spend</li>
-                    <li>Strategic recruitment</li>
-                    <li>Developing talent focus</li>
-                    <li>Europa/Conference League revenue</li>
+                    <li>Mid-to-high transfer spend</li>
+                    <li>Competitive wage structure</li>
+                    <li>Strategic recruitment focus</li>
+                    <li>Youth development emphasis</li>
                 </ul>
             </div>
         </div>
@@ -119,51 +123,47 @@
                 <h4>⬆️ Teams Moving Into Block 2</h4>
                 <p>Teams climbing from Block 3 typically show:</p>
                 <ul>
-                    <li>3-4 game winning streaks</li>
-                    <li>Improved goal difference (positive swing)</li>
-                    <li>Better home form (2.0+ PPG at home)</li>
-                    <li>Tactical consistency and stability</li>
+                    <li>Winning streaks of 3-4 games</li>
+                    <li>Improved away form (1.5+ PPG)</li>
+                    <li>Key player injury returns</li>
+                    <li>Tactical system clicking into place</li>
                 </ul>
             </div>
             
             <div class="movement-card down-movement">
-                <h4>⬇️ Teams Dropping to Block 3</h4>
-                <p>Loss of European contention signals:</p>
+                <h4>⬇️ Teams Dropping from Block 1</h4>
+                <p>Falling from title race due to:</p>
                 <ul>
-                    <li>Inconsistent results against top teams</li>
-                    <li>Poor away form dragging down PPG</li>
-                    <li>Squad depth issues emerging</li>
-                    <li>Loss of key players to injury</li>
+                    <li>Loss of form in big matches</li>
+                    <li>Squad depth issues exposed</li>
+                    <li>European competition fatigue</li>
+                    <li>Inconsistent results against lower blocks</li>
                 </ul>
             </div>
         </div>
     </div>
 
-    <!-- European Qualification -->
+    <!-- European Qualification Context -->
     <div class="panel">
-        <h3>🏆 European Qualification Paths</h3>
-        <div class="euro-paths">
+        <h3>🌟 European Qualification Scenarios</h3>
+        <div class="euro-context">
             <div class="euro-card">
-                <h4>🌟 Europa League</h4>
-                <p><strong>Typical Requirement:</strong> 5th place (60-65 points)</p>
-                <ul>
-                    <li>Automatic group stage entry</li>
-                    <li>Prestigious European competition</li>
-                    <li>Thursday night fixtures</li>
-                    <li>Revenue boost for club</li>
-                </ul>
+                <h4>🏆 5th Place - Europa League</h4>
+                <p>Automatic qualification for UEFA Europa League group stage. Typically requires 60-65 points.</p>
             </div>
-            
             <div class="euro-card">
-                <h4>🎪 Conference League</h4>
-                <p><strong>Typical Requirement:</strong> 6th-7th place (55-60 points)</p>
-                <ul>
-                    <li>UEFA's third-tier competition</li>
-                    <li>European football experience</li>
-                    <li>Squad development opportunity</li>
-                    <li>Path to Europa League</li>
-                </ul>
+                <h4>⚽ 6th Place - Conference League</h4>
+                <p>Automatic qualification for UEFA Conference League. Usually secured with 55-60 points.</p>
             </div>
+            <div class="euro-card">
+                <h4>🏆 FA Cup Route</h4>
+                <p>Cup winners in Block 2 can secure European football regardless of league position.</p>
+            </div>
+        </div>
+        <div class="h2h-note block-2-note">
+            <p>💡 <strong>Key Insight:</strong> Block 2 teams need sustained consistency rather than brilliance. 
+            A steady 1.6-1.7 PPG through the season typically delivers European qualification. 
+            Current leaders are on pace for 60-62 points - right in the target range.</p>
         </div>
     </div>
 
@@ -172,7 +172,7 @@
         <h3>📚 Historical Block 2 Analysis</h3>
         <div class="history-stats">
             <div class="stat-card block-2-stat">
-                <div class="stat-value">62 pts</div>
+                <div class="stat-value">61 pts</div>
                 <div class="stat-label">Average 5th Place Points (Last 5 Years)</div>
             </div>
             <div class="stat-card block-2-stat">
@@ -180,7 +180,7 @@
                 <div class="stat-label">Average 8th Place Points (Last 5 Years)</div>
             </div>
             <div class="stat-card block-2-stat">
-                <div class="stat-value">6-8</div>
+                <div class="stat-value">8-10</div>
                 <div class="stat-label">Typical Point Gap Between 5th & 8th</div>
             </div>
         </div>
@@ -190,7 +190,7 @@
     <div class="panel">
         <div class="block-navigation">
             <a href="?tab=premier-league&subtab=blocks-1" class="nav-btn block-1-nav">← Block 1</a>
-            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">Overview</a>
+            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">🎯 Overview</a>
             <a href="?tab=premier-league&subtab=blocks-3" class="nav-btn block-3-nav">Block 3 →</a>
         </div>
     </div>
@@ -216,7 +216,7 @@
 }
 
 .block-2-pos {
-    color: #4CAF50;
+    color: #4CAF50 !important;
 }
 
 .block-2-pts {
@@ -236,28 +236,36 @@
     color: #4CAF50;
 }
 
-.euro-paths {
+.euro-context {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
     margin-top: 15px;
 }
 
 .euro-card {
     background: rgba(76, 175, 80, 0.1);
-    padding: 20px;
+    padding: 15px;
     border-radius: 8px;
-    border-left: 4px solid #4CAF50;
+    border-left: 3px solid #4CAF50;
 }
 
 .euro-card h4 {
-    margin-top: 0;
     color: #4CAF50;
+    margin-top: 0;
+    margin-bottom: 8px;
 }
 
-.euro-card ul {
-    margin: 10px 0;
-    padding-left: 20px;
+.euro-card p {
+    color: #bbb;
+    font-size: 0.95em;
+    margin: 0;
+}
+
+.block-2-note {
+    background: rgba(76, 175, 80, 0.1);
+    border-left: 3px solid #4CAF50;
+    margin-top: 15px;
 }
 
 .block-2-stat {
