@@ -1,5 +1,9 @@
 <?php
-// Block 3: Positions 9-12 - Safe Mid-Table (Leeds United's target zone)
+// Block 3: Positions 9-12 - Safe Mid-Table
+// This would connect to your database to fetch current standings
+
+// Placeholder for database query - adjust based on your actual schema
+// $block3Teams = $pdo->query("SELECT * FROM premier_league_table WHERE position BETWEEN 9 AND 12 ORDER BY position")->fetchAll();
 ?>
 <div class="block-detail-wrapper">
     <div class="panel">
@@ -8,8 +12,8 @@
             <span class="position-badge block-3-badge">Positions 9-12</span>
         </div>
         <p class="block-description">
-            The Premier League security zone - teams here have achieved mid-table safety with no relegation concerns. 
-            This is the sweet spot for newly promoted sides like Leeds United, providing stability to build for future success.
+            The Premier League security zone - teams with no relegation concerns and established stability. 
+            This is the ideal position for newly promoted sides breaking the promotion curse, like Leeds United's target zone.
         </p>
     </div>
 
@@ -37,16 +41,16 @@
                     <?php
                     // Placeholder - Replace with actual database query
                     $placeholderTeams = [
-                        ['pos' => 9, 'team' => 'Manchester United', 'pld' => 18, 'w' => 7, 'd' => 5, 'l' => 6, 'gf' => 24, 'ga' => 23, 'gd' => 1, 'pts' => 26],
-                        ['pos' => 10, 'team' => 'Nottingham Forest', 'pld' => 18, 'w' => 7, 'd' => 4, 'l' => 7, 'gf' => 23, 'ga' => 25, 'gd' => -2, 'pts' => 25],
-                        ['pos' => 11, 'team' => 'Bournemouth', 'pld' => 18, 'w' => 6, 'd' => 6, 'l' => 6, 'gf' => 25, 'ga' => 26, 'gd' => -1, 'pts' => 24],
-                        ['pos' => 12, 'team' => 'Leeds United', 'pld' => 18, 'w' => 6, 'd' => 5, 'l' => 7, 'gf' => 22, 'ga' => 25, 'gd' => -3, 'pts' => 23],
+                        ['pos' => 9, 'team' => 'Manchester United', 'pld' => 18, 'w' => 7, 'd' => 5, 'l' => 6, 'gf' => 26, 'ga' => 24, 'gd' => 2, 'pts' => 26],
+                        ['pos' => 10, 'team' => 'West Ham', 'pld' => 18, 'w' => 7, 'd' => 4, 'l' => 7, 'gf' => 24, 'ga' => 27, 'gd' => -3, 'pts' => 25],
+                        ['pos' => 11, 'team' => 'Crystal Palace', 'pld' => 18, 'w' => 6, 'd' => 6, 'l' => 6, 'gf' => 23, 'ga' => 24, 'gd' => -1, 'pts' => 24],
+                        ['pos' => 12, 'team' => 'Leeds United', 'pld' => 18, 'w' => 6, 'd' => 5, 'l' => 7, 'gf' => 25, 'ga' => 28, 'gd' => -3, 'pts' => 23],
                     ];
                     
                     foreach ($placeholderTeams as $team) {
                         $ppg = round($team['pts'] / $team['pld'], 2);
-                        $isLeeds = ($team['team'] === 'Leeds United');
-                        echo "<tr" . ($isLeeds ? " class='leeds-highlight'" : "") . ">";
+                        $isLeeds = ($team['team'] == 'Leeds United');
+                        echo "<tr" . ($isLeeds ? " class='leeds-row'" : "") . ">";
                         echo "<td class='pos-cell block-3-pos'>{$team['pos']}</td>";
                         echo "<td class='team-cell'><strong>{$team['team']}" . ($isLeeds ? " 💛" : "") . "</strong></td>";
                         echo "<td>{$team['pld']}</td>";
@@ -73,69 +77,40 @@
             <div class="char-card block-3-card">
                 <h4>🎯 Mentality</h4>
                 <ul>
-                    <li>No relegation pressure</li>
-                    <li>Build for future seasons</li>
-                    <li>Focus on tactical development</li>
-                    <li>Youth integration opportunities</li>
+                    <li>Premier League security achieved</li>
+                    <li>Build for future success</li>
+                    <li>Tactical stability prioritized</li>
+                    <li>No immediate pressure</li>
                 </ul>
             </div>
             
             <div class="char-card block-3-card">
-                <h4>📊 Key Metrics</h4>
+                <h4>📈 Key Metrics</h4>
                 <ul>
                     <li>Points Per Game: 1.2-1.5</li>
                     <li>Win Rate: 35-45%</li>
-                    <li>Goals Per Game: 1.2-1.5</li>
-                    <li>Clean Sheets: 25-35%</li>
+                    <li>Goals Per Game: 1.3-1.6</li>
+                    <li>Clean Sheets: 25-30%</li>
                 </ul>
             </div>
             
             <div class="char-card block-3-card">
                 <h4>🛡️ Tactical Approach</h4>
                 <ul>
-                    <li>Defensive stability priority</li>
+                    <li>Pragmatic game management</li>
                     <li>Home fortress mentality</li>
-                    <li>Organized defensive structure</li>
-                    <li>Counter-attacking efficiency</li>
+                    <li>Away resilience focus</li>
+                    <li>Points over performances</li>
                 </ul>
             </div>
             
             <div class="char-card block-3-card">
                 <h4>💰 Investment Level</h4>
                 <ul>
-                    <li>Strategic moderate spending</li>
-                    <li>Long-term squad building</li>
-                    <li>Focus on value signings</li>
-                    <li>Sustainable financial model</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <!-- Leeds United Context -->
-    <div class="panel">
-        <h3>💛 Leeds United in Block 3: Curse-Breaking Success</h3>
-        <div class="leeds-context">
-            <div class="context-card">
-                <h4>🏆 Historical Achievement</h4>
-                <p>Leeds United's position in Block 3 represents unprecedented success for a newly promoted Championship winner. 
-                Breaking the 18-year promotion curse, Leeds have established Premier League permanence through:</p>
-                <ul>
-                    <li>Daniel Farke's obsessive tactical preparation</li>
-                    <li>Championship-winning mentality translated to top flight</li>
-                    <li>Elland Road fortress strategy (strong home form)</li>
-                    <li>Defensive organization prioritized over attacking flair</li>
-                </ul>
-            </div>
-            
-            <div class="context-card">
-                <h4>📈 The Safety Buffer</h4>
-                <p><strong>Why Block 3 is Perfect:</strong></p>
-                <ul>
-                    <li>7-10 point cushion above relegation zone</li>
-                    <li>No psychological pressure of survival fight</li>
-                    <li>Can rotate squad without relegation fears</li>
-                    <li>Build foundations for future Block 2 push</li>
+                    <li>Strategic spending approach</li>
+                    <li>Value-driven recruitment</li>
+                    <li>Squad development focus</li>
+                    <li>Long-term project building</li>
                 </ul>
             </div>
         </div>
@@ -147,24 +122,64 @@
         <div class="movement-analysis">
             <div class="movement-card up-movement">
                 <h4>⬆️ Teams Moving Into Block 3</h4>
-                <p>Teams escaping Block 4 danger zone typically show:</p>
+                <p>Teams climbing from Block 4 show:</p>
                 <ul>
-                    <li>Improved defensive record</li>
-                    <li>Home wins becoming consistent</li>
-                    <li>Reaching 30+ point safety threshold</li>
-                    <li>Managerial stability established</li>
+                    <li>Escape from relegation danger</li>
+                    <li>Improved defensive organization</li>
+                    <li>Key wins against fellow strugglers</li>
+                    <li>Managerial stability restored</li>
                 </ul>
             </div>
             
-            <div class="movement-card down-movement">
-                <h4>⬇️ Teams Dropping to Block 4</h4>
-                <p>Loss of mid-table security signals:</p>
+            <div class="movement-card lateral-movement">
+                <h4>↔️ Within-Block Movement</h4>
+                <p>Block 3 is the most stable:</p>
                 <ul>
-                    <li>Extended winless runs (6+ games)</li>
-                    <li>Defensive fragility emerging</li>
-                    <li>Home form collapse</li>
-                    <li>Squad morale deteriorating</li>
+                    <li>Teams rarely leave once established</li>
+                    <li>Position swaps within block common</li>
+                    <li>Mathematical safety by November</li>
+                    <li>Focus shifts to cup competitions</li>
                 </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leeds United Context -->
+    <div class="panel">
+        <h3>💛 Leeds United: Block 3 Success Story</h3>
+        <div class="leeds-context">
+            <p class="leeds-intro">
+                Leeds United's position in Block 3 represents a historic achievement - breaking the promotion curse 
+                that has plagued newly promoted Championship winners for 18 years.
+            </p>
+            <div class="leeds-stats">
+                <div class="leeds-stat-card">
+                    <h4>✅ Curse-Breaking Achievement</h4>
+                    <ul>
+                        <li>First Championship winners to win opening game since 2007</li>
+                        <li>Avoided typical promoted team collapse</li>
+                        <li>Established in safe mid-table by autumn</li>
+                        <li>Daniel Farke's tactical preparation delivered</li>
+                    </ul>
+                </div>
+                <div class="leeds-stat-card">
+                    <h4>🏰 Elland Road Fortress</h4>
+                    <ul>
+                        <li>Strong home form fundamental to success</li>
+                        <li>Clean sheet record at home exceptional</li>
+                        <li>Home advantage prioritized over away heroics</li>
+                        <li>2+ PPG at Elland Road target achieved</li>
+                    </ul>
+                </div>
+                <div class="leeds-stat-card">
+                    <h4>📈 Buffer from Relegation</h4>
+                    <ul>
+                        <li>7-10 point gap to Block 5 maintained</li>
+                        <li>Mathematical safety achieved early</li>
+                        <li>Can focus on building, not surviving</li>
+                        <li>Validates systematic preparation approach</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -174,23 +189,22 @@
         <h3>📚 Historical Block 3 Analysis</h3>
         <div class="history-stats">
             <div class="stat-card block-3-stat">
-                <div class="stat-value">50 pts</div>
-                <div class="stat-label">Average 9th Place Points (Last 5 Years)</div>
+                <div class="stat-value">45-50 pts</div>
+                <div class="stat-label">Typical Block 3 Final Points Range</div>
             </div>
             <div class="stat-card block-3-stat">
-                <div class="stat-value">45 pts</div>
-                <div class="stat-label">Average 12th Place Points (Last 5 Years)</div>
+                <div class="stat-value">1.2-1.4</div>
+                <div class="stat-label">Average PPG for Block 3 Teams</div>
             </div>
             <div class="stat-card block-3-stat">
-                <div class="stat-value">8-12</div>
-                <div class="stat-label">Typical Point Gap Above Relegation</div>
+                <div class="stat-value">95%+</div>
+                <div class="stat-label">Survival Rate Once Established in Block 3</div>
             </div>
         </div>
-        
-        <div class="promoted-teams-note">
-            <h4>📊 Promoted Teams in Block 3</h4>
-            <p>Historically rare achievement - most promoted teams finish in Blocks 4-5. Leeds United's Block 3 
-            position validates the systematic preparation and curse-breaking framework predictions.</p>
+        <div class="h2h-note block-3-note">
+            <p>💡 <strong>Key Insight:</strong> Block 3 is the "sweet spot" for Premier League football - 
+            safe from relegation, no European pressure, and time to build sustainable success. 
+            Teams here typically need just 45-50 points over the season, achieved through steady 1.2-1.4 PPG.</p>
         </div>
     </div>
 
@@ -198,7 +212,7 @@
     <div class="panel">
         <div class="block-navigation">
             <a href="?tab=premier-league&subtab=blocks-2" class="nav-btn block-2-nav">← Block 2</a>
-            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">Overview</a>
+            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">🎯 Overview</a>
             <a href="?tab=premier-league&subtab=blocks-4" class="nav-btn block-4-nav">Block 4 →</a>
         </div>
     </div>
@@ -224,15 +238,15 @@
 }
 
 .block-3-pos {
-    color: #2196F3;
+    color: #2196F3 !important;
 }
 
 .block-3-pts {
     background: rgba(33, 150, 243, 0.1);
 }
 
-.leeds-highlight {
-    background: rgba(255, 205, 0, 0.1);
+.leeds-row {
+    background: rgba(255, 205, 0, 0.05);
     border-left: 3px solid #FFCD00;
 }
 
@@ -249,28 +263,67 @@
     color: #2196F3;
 }
 
-.leeds-context {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 20px;
-    margin-top: 15px;
+.lateral-movement {
+    background: rgba(33, 150, 243, 0.1);
+    border-left: 4px solid #2196F3;
 }
 
-.context-card {
-    background: rgba(255, 205, 0, 0.1);
+.leeds-context {
+    background: rgba(255, 205, 0, 0.05);
     padding: 20px;
     border-radius: 8px;
     border-left: 4px solid #FFCD00;
+    margin-top: 15px;
 }
 
-.context-card h4 {
-    margin-top: 0;
+.leeds-intro {
+    color: #ddd;
+    font-size: 1.05em;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.leeds-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.leeds-stat-card {
+    background: rgba(33, 150, 243, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #2196F3;
+}
+
+.leeds-stat-card h4 {
     color: #FFCD00;
+    margin-top: 0;
+    margin-bottom: 10px;
 }
 
-.context-card ul {
-    margin: 10px 0;
-    padding-left: 20px;
+.leeds-stat-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.leeds-stat-card ul li {
+    padding: 5px 0;
+    color: #bbb;
+    font-size: 0.95em;
+}
+
+.leeds-stat-card ul li:before {
+    content: "✓ ";
+    color: #2196F3;
+    font-weight: bold;
+}
+
+.block-3-note {
+    background: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid #2196F3;
+    margin-top: 15px;
 }
 
 .block-3-stat {
@@ -279,19 +332,6 @@
 }
 
 .block-3-stat .stat-value {
-    color: #2196F3;
-}
-
-.promoted-teams-note {
-    background: rgba(33, 150, 243, 0.1);
-    padding: 20px;
-    border-radius: 8px;
-    margin-top: 20px;
-    border-left: 3px solid #2196F3;
-}
-
-.promoted-teams-note h4 {
-    margin-top: 0;
     color: #2196F3;
 }
 
