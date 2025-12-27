@@ -45,6 +45,10 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                    class="pill-tab <?php echo ($currentSubTab == 'table') ? 'active' : ''; ?>">
                     📊 Table
                 </a>
+                <a href="?tab=premier-league&subtab=blocks-overview" 
+                   class="pill-tab <?php echo (strpos($currentSubTab, 'blocks') === 0) ? 'active' : ''; ?>">
+                    🔢 Blocks of 4
+                </a>
                 <a href="?tab=premier-league&subtab=relegation" 
                    class="pill-tab <?php echo ($currentSubTab == 'relegation') ? 'active' : ''; ?>">
                     ⚠️ Relegation Battle
@@ -84,6 +88,36 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                 </a>
             <?php endif; ?>
         </nav>
+        
+        <?php if ($currentMainTab == 'premier-league' && strpos($currentSubTab, 'blocks') === 0): ?>
+        <!-- Blocks Sub-Navigation (only shows when in blocks section) -->
+        <nav class="pill-nav tertiary-pills">
+            <a href="?tab=premier-league&subtab=blocks-overview" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-overview') ? 'active' : ''; ?>">
+                🎯 Overview
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-1" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-1') ? 'active' : ''; ?>">
+                🏆 Block 1
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-2" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-2') ? 'active' : ''; ?>">
+                🌟 Block 2
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-3" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-3') ? 'active' : ''; ?>">
+                ✅ Block 3
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-4" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-4') ? 'active' : ''; ?>">
+                ⚠️ Block 4
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-5" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-5') ? 'active' : ''; ?>">
+                🔻 Block 5
+            </a>
+        </nav>
+        <?php endif; ?>
         
         <!-- Main Content Area -->
         <main class="main-content">
