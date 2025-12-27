@@ -1,23 +1,16 @@
 <?php
-// Blocks of 4 Overview - Dynamic Real-Time Data
-require_once __DIR__ . '/../../includes/blocks-functions.php';
-
-// Get real-time data
-$blockComparison = getBlockComparison($db);
-$movementPredictions = getMovementPredictions($db);
-$timeline = getBlockTimeline($db);
+// Blocks of 4 Overview - Standalone Version
+// This version works without database connection as a framework explanation
 ?>
 <div class="blocks-wrapper">
     <!-- Season Progress Header -->
     <div class="panel">
         <div class="season-progress-header">
             <div class="progress-info">
-                <h2>📊 Blocks of 4 Framework - Live Analysis</h2>
+                <h2>📊 Blocks of 4 Framework</h2>
                 <p class="season-status">
-                    <strong>Matchday <?php echo $timeline['current_matchday']; ?></strong> • 
-                    <span style="color: <?php echo $timeline['stabilization_level']['color']; ?>">
-                        <?php echo $timeline['stabilization_level']['text']; ?>
-                    </span>
+                    <strong>2024/25 Premier League Season</strong> • 
+                    <span style="color: #4CAF50;">Framework Active</span>
                 </p>
             </div>
         </div>
@@ -25,103 +18,6 @@ $timeline = getBlockTimeline($db);
             The Premier League table divided into 5 equal blocks of 4 teams, providing clear insights into 
             competitive zones, psychological boundaries, and tactical positioning throughout the season.
         </p>
-    </div>
-
-    <!-- Live Block Comparison -->
-    <div class="panel">
-        <h3>🔥 Live Block Performance</h3>
-        <div class="blocks-comparison-grid">
-            <?php foreach ($blockComparison as $blockNum => $data): 
-                $blockInfo = [
-                    1 => ['name' => 'Title Contenders', 'icon' => '🏆', 'color' => '#FFD700'],
-                    2 => ['name' => 'European Zone', 'icon' => '🌟', 'color' => '#4CAF50'],
-                    3 => ['name' => 'Safe Mid-Table', 'icon' => '✅', 'color' => '#2196F3'],
-                    4 => ['name' => 'Danger Zone', 'icon' => '⚠️', 'color' => '#FF9800'],
-                    5 => ['name' => 'Relegation Battle', 'icon' => '🔻', 'color' => '#F44336']
-                ];
-                $info = $blockInfo[$blockNum];
-            ?>
-            <div class="block-comparison-card" style="border-left-color: <?php echo $info['color']; ?>">
-                <div class="block-comp-header">
-                    <span class="block-icon"><?php echo $info['icon']; ?></span>
-                    <h4>Block <?php echo $blockNum; ?></h4>
-                </div>
-                <p class="block-comp-name"><?php echo $info['name']; ?></p>
-                <div class="block-comp-stats">
-                    <div class="stat-row">
-                        <span class="stat-label">Avg PPG:</span>
-                        <span class="stat-value"><?php echo $data['avg_ppg']; ?></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Avg Points:</span>
-                        <span class="stat-value"><?php echo $data['avg_points']; ?></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Point Spread:</span>
-                        <span class="stat-value"><?php echo $data['point_spread']; ?></span>
-                    </div>
-                </div>
-                <div class="goals-status" style="background: rgba(<?php 
-                    echo $data['goals_met'] >= 75 ? '76, 175, 80' : ($data['goals_met'] >= 50 ? '255, 152, 0' : '244, 67, 54');
-                ?>, 0.15);">
-                    <strong><?php echo $data['goals_met']; ?>%</strong> Goals Met
-                    <p class="status-text"><?php echo $data['status']; ?></p>
-                </div>
-                <a href="?tab=premier-league&subtab=blocks-<?php echo $blockNum; ?>" class="view-block-btn">
-                    View Details →
-                </a>
-            </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
-    <!-- Movement Predictions -->
-    <?php if (!empty($movementPredictions)): ?>
-    <div class="panel">
-        <h3>🔄 Predicted Block Movement</h3>
-        <p class="note">Based on current points-per-game, these teams are projected to move blocks:</p>
-        <div class="movement-predictions-grid">
-            <?php foreach ($movementPredictions as $pred): ?>
-            <div class="movement-card <?php echo $pred['direction']; ?>-movement">
-                <div class="movement-header">
-                    <strong><?php echo $pred['team']; ?></strong>
-                    <span class="movement-arrow">
-                        <?php echo $pred['direction'] == 'up' ? '⬆️' : '⬇️'; ?>
-                    </span>
-                </div>
-                <div class="movement-details">
-                    <p>
-                        Block <?php echo $pred['current_block']; ?> 
-                        <span class="arrow">→</span> 
-                        Block <?php echo $pred['projected_block']; ?>
-                    </p>
-                    <p class="movement-stats">
-                        <?php echo $pred['ppg']; ?> PPG • Projected: <?php echo $pred['projected_points']; ?> pts
-                    </p>
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Season Timeline -->
-    <div class="panel">
-        <h3>🗓️ Block Stabilization Timeline</h3>
-        <p class="note">Blocks typically stabilize as the season progresses. Historical patterns show:</p>
-        <div class="timeline-container">
-            <?php foreach ($timeline['milestones'] as $milestone): ?>
-            <div class="timeline-item <?php echo $milestone['status'] ? 'completed' : 'pending'; ?>">
-                <div class="timeline-marker">
-                    <?php echo $milestone['status'] ? '✅' : '⏳'; ?>
-                </div>
-                <div class="timeline-content">
-                    <strong>Matchday <?php echo $milestone['matchday']; ?></strong>
-                    <p><?php echo $milestone['description']; ?></p>
-                </div>
-            </div>
-            <?php endforeach; ?>
-        </div>
     </div>
 
     <!-- Framework Explanation -->
@@ -138,8 +34,10 @@ $timeline = getBlockTimeline($db);
                     <li>Champions League qualification</li>
                     <li>Title race participants</li>
                     <li>Attacking mentality</li>
-                    <li>Target: 2.0+ PPG</li>
+                    <li>Target: 2.0+ PPG (Points Per Game)</li>
+                    <li>Expected: 70-90+ points</li>
                 </ul>
+                <a href="?tab=premier-league&subtab=blocks-1" class="view-block-btn">View Block 1 →</a>
             </div>
 
             <div class="block-card block-2">
@@ -153,7 +51,9 @@ $timeline = getBlockTimeline($db);
                     <li>Tactical flexibility</li>
                     <li>Competitive mid-table</li>
                     <li>Target: 1.6+ PPG</li>
+                    <li>Expected: 55-65 points</li>
                 </ul>
+                <a href="?tab=premier-league&subtab=blocks-2" class="view-block-btn">View Block 2 →</a>
             </div>
 
             <div class="block-card block-3">
@@ -167,7 +67,9 @@ $timeline = getBlockTimeline($db);
                     <li>No relegation concerns</li>
                     <li>Tactical stability</li>
                     <li>Target: 1.3+ PPG</li>
+                    <li>Expected: 45-55 points</li>
                 </ul>
+                <a href="?tab=premier-league&subtab=blocks-3" class="view-block-btn">View Block 3 →</a>
             </div>
 
             <div class="block-card block-4">
@@ -181,7 +83,9 @@ $timeline = getBlockTimeline($db);
                     <li>Tactical changes needed</li>
                     <li>Relegation awareness</li>
                     <li>Target: 1.0+ PPG</li>
+                    <li>Expected: 35-45 points</li>
                 </ul>
+                <a href="?tab=premier-league&subtab=blocks-4" class="view-block-btn">View Block 4 →</a>
             </div>
 
             <div class="block-card block-5">
@@ -195,7 +99,48 @@ $timeline = getBlockTimeline($db);
                     <li>Crisis mode mentality</li>
                     <li>Desperate measures</li>
                     <li>Target: 0.9+ PPG minimum</li>
+                    <li>Expected: 30-38 points</li>
                 </ul>
+                <a href="?tab=premier-league&subtab=blocks-5" class="view-block-btn">View Block 5 →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Application -->
+    <div class="panel">
+        <h3>🎭 Universal Application Across English Football</h3>
+        <div class="universal-grid">
+            <div class="league-card">
+                <h4>🏆 Premier League</h4>
+                <p><strong>20 teams = 5 blocks of 4</strong></p>
+                <ul>
+                    <li>Block 1: Champions League</li>
+                    <li>Block 2: Europa/Conference</li>
+                    <li>Block 3: Safe Mid-Table</li>
+                    <li>Block 4: Danger Zone</li>
+                    <li>Block 5: Relegation (bottom 3)</li>
+                </ul>
+            </div>
+            <div class="league-card">
+                <h4>🥈 Championship</h4>
+                <p><strong>24 teams = 6 blocks of 4</strong></p>
+                <ul>
+                    <li>Block 1: Automatic Promotion (top 2)</li>
+                    <li>Block 2: Playoff Zone</li>
+                    <li>Blocks 3-4: Mid-Table</li>
+                    <li>Block 5: Danger Zone</li>
+                    <li>Block 6: Relegation (bottom 3)</li>
+                </ul>
+            </div>
+            <div class="league-card">
+                <h4>🥉 League One</h4>
+                <p><strong>24 teams = 6 blocks of 4</strong></p>
+                <p>Same structure as Championship</p>
+            </div>
+            <div class="league-card">
+                <h4>🎖️ League Two</h4>
+                <p><strong>24 teams = 6 blocks of 4</strong></p>
+                <p>Same structure as Championship</p>
             </div>
         </div>
     </div>
@@ -206,10 +151,11 @@ $timeline = getBlockTimeline($db);
         <div class="math-explanation">
             <p><strong>Why bottom blocks struggle to catch up:</strong></p>
             <ul>
-                <li>Top teams accumulate 2-3 points per week consistently</li>
-                <li>Bottom teams average 0-1 points per week</li>
-                <li>The gap widens exponentially as the season progresses</li>
-                <li>After Matchday 10, teams need 1.0-1.2 PPG to survive - historically difficult for struggling sides</li>
+                <li>📈 Top teams accumulate 2-3 points per week consistently</li>
+                <li>📉 Bottom teams average 0-1 points per week</li>
+                <li>🔄 The gap widens exponentially as the season progresses</li>
+                <li>⏱️ After Matchday 10, teams need 1.0-1.2 PPG to survive - historically difficult for struggling sides</li>
+                <li>📐 By November, blocks typically stabilize into their final zones</li>
             </ul>
             
             <div class="survival-stats">
@@ -219,7 +165,62 @@ $timeline = getBlockTimeline($db);
                     <li>⚠️ <strong>8-10 points:</strong> 53% survival rate</li>
                     <li>🔻 <strong>0-7 points:</strong> Only 12% survival rate</li>
                 </ul>
+                <p class="note">Source: Historical Premier League data 2000-2024</p>
             </div>
+
+            <div class="timeline-note">
+                <h4>🗓️ Block Stabilization Timeline:</h4>
+                <ul>
+                    <li><strong>Matchday 0-5:</strong> Fluid - Early surprises and adjustments</li>
+                    <li><strong>Matchday 6-10:</strong> Settling - Patterns emerging</li>
+                    <li><strong>Matchday 11-20:</strong> Stabilizing - Blocks taking shape</li>
+                    <li><strong>Matchday 21+:</strong> Locked - Major changes rare</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leeds Context -->
+    <div class="panel" style="border-left: 4px solid #FFCD00;">
+        <h3>💛 Leeds United: Targeting Block 3</h3>
+        <p>
+            Leeds United's historic return to the Premier League in 2020 after 16 years showcased the importance 
+            of Block 3 positioning. Teams in Block 3 (positions 9-12) enjoy:
+        </p>
+        <ul>
+            <li><strong>Complete Safety:</strong> No relegation concerns whatsoever</li>
+            <li><strong>Tactical Freedom:</strong> Can play expansive football without fear</li>
+            <li><strong>Sustainable Position:</strong> Achievable with 1.3 PPG (45-50 points)</li>
+            <li><strong>Psychological Security:</strong> Players and fans can enjoy the Premier League experience</li>
+        </ul>
+        <p class="note">
+            <strong>The Block 3 Goal:</strong> This is where Leeds should aim - safe, stable, and able to build 
+            for the future without the constant stress of relegation battles.
+        </p>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="panel">
+        <h3>🧭View Individual Block Analysis</h3>
+        <div class="quick-nav-grid">
+            <a href="?tab=premier-league&subtab=blocks-dynamic" class="quick-nav-btn dynamic">
+                🔥 Live Data & Predictions
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-1" class="quick-nav-btn block-1-btn">
+                🏆 Block 1: Title Contenders
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-2" class="quick-nav-btn block-2-btn">
+                🌟 Block 2: European Zone
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-3" class="quick-nav-btn block-3-btn">
+                ✅ Block 3: Safe Mid-Table
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-4" class="quick-nav-btn block-4-btn">
+                ⚠️ Block 4: Danger Zone
+            </a>
+            <a href="?tab=premier-league&subtab=blocks-5" class="quick-nav-btn block-5-btn">
+                🔻 Block 5: Relegation Battle
+            </a>
         </div>
     </div>
 </div>
@@ -231,9 +232,6 @@ $timeline = getBlockTimeline($db);
 }
 
 .season-progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
     margin-bottom: 15px;
 }
 
@@ -247,179 +245,7 @@ $timeline = getBlockTimeline($db);
     font-size: 1.05em;
     line-height: 1.6;
     color: #ddd;
-}
-
-.blocks-comparison-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.block-comparison-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 20px;
-    border-left: 4px solid;
-    transition: transform 0.2s;
-}
-
-.block-comparison-card:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.block-comp-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-}
-
-.block-icon {
-    font-size: 1.5em;
-}
-
-.block-comp-name {
-    font-size: 0.9em;
-    color: #888;
-    margin: 5px 0 15px 0;
-}
-
-.block-comp-stats {
     margin: 15px 0;
-}
-
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.stat-label {
-    color: #999;
-    font-size: 0.9em;
-}
-
-.stat-value {
-    color: #fff;
-    font-weight: bold;
-}
-
-.goals-status {
-    padding: 10px;
-    border-radius: 5px;
-    text-align: center;
-    margin: 15px 0;
-}
-
-.goals-status strong {
-    font-size: 1.3em;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.status-text {
-    font-size: 0.85em;
-    margin: 0;
-    color: #bbb;
-}
-
-.view-block-btn {
-    display: block;
-    text-align: center;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: all 0.2s;
-    font-size: 0.9em;
-}
-
-.view-block-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.movement-predictions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.movement-card {
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid;
-}
-
-.up-movement {
-    background: rgba(76, 175, 80, 0.1);
-    border-left-color: #4CAF50;
-}
-
-.down-movement {
-    background: rgba(244, 67, 54, 0.1);
-    border-left-color: #F44336;
-}
-
-.movement-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.movement-arrow {
-    font-size: 1.5em;
-}
-
-.movement-details p {
-    margin: 5px 0;
-    color: #bbb;
-}
-
-.movement-stats {
-    font-size: 0.9em;
-    color: #888;
-}
-
-.timeline-container {
-    margin-top: 20px;
-}
-
-.timeline-item {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-}
-
-.timeline-item.completed {
-    border-left: 3px solid #43b581;
-}
-
-.timeline-item.pending {
-    border-left: 3px solid #72767d;
-    opacity: 0.6;
-}
-
-.timeline-marker {
-    font-size: 1.5em;
-}
-
-.timeline-content strong {
-    color: #5865F2;
-}
-
-.timeline-content p {
-    margin: 5px 0 0 0;
-    color: #bbb;
-    font-size: 0.95em;
 }
 
 .blocks-grid {
@@ -434,6 +260,12 @@ $timeline = getBlockTimeline($db);
     border-radius: 8px;
     padding: 20px;
     border-left: 4px solid;
+    transition: transform 0.2s;
+}
+
+.block-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .block-card.block-1 { border-left-color: #FFD700; }
@@ -468,7 +300,7 @@ $timeline = getBlockTimeline($db);
 .block-card ul {
     list-style: none;
     padding: 0;
-    margin: 10px 0 0 0;
+    margin: 10px 0;
 }
 
 .block-card ul li {
@@ -482,6 +314,58 @@ $timeline = getBlockTimeline($db);
     color: #666;
 }
 
+.view-block-btn {
+    display: block;
+    text-align: center;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: all 0.2s;
+    font-size: 0.9em;
+    margin-top: 15px;
+}
+
+.view-block-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.universal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.league-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #5865F2;
+}
+
+.league-card h4 {
+    margin: 0 0 10px 0;
+    color: #5865F2;
+}
+
+.league-card p {
+    margin: 5px 0;
+}
+
+.league-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+}
+
+.league-card ul li {
+    padding: 3px 0;
+    font-size: 0.9em;
+    color: #bbb;
+}
+
 .math-explanation {
     background: rgba(255, 255, 255, 0.03);
     padding: 20px;
@@ -492,6 +376,11 @@ $timeline = getBlockTimeline($db);
 .math-explanation ul {
     margin: 10px 0;
     padding-left: 20px;
+}
+
+.math-explanation ul li {
+    padding: 5px 0;
+    color: #ddd;
 }
 
 .survival-stats {
@@ -516,14 +405,91 @@ $timeline = getBlockTimeline($db);
     font-size: 1.05em;
 }
 
+.timeline-note {
+    background: rgba(88, 101, 242, 0.1);
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 15px;
+    border-left: 3px solid #5865F2;
+}
+
+.timeline-note h4 {
+    margin-top: 0;
+}
+
+.timeline-note ul {
+    list-style: none;
+    padding: 0;
+}
+
+.timeline-note ul li {
+    padding: 5px 0;
+    color: #ddd;
+}
+
 .note {
     color: #888;
     font-style: italic;
-    margin-bottom: 15px;
+    margin-top: 10px;
+    font-size: 0.9em;
 }
 
-.arrow {
-    color: #5865F2;
+.quick-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.quick-nav-btn {
+    display: block;
+    text-align: center;
+    padding: 15px;
+    border-radius: 8px;
+    text-decoration: none;
     font-weight: bold;
+    transition: all 0.2s;
+    border-left: 4px solid;
+}
+
+.quick-nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dynamic {
+    background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
+    color: #fff;
+    border-left-color: #FF6B6B;
+}
+
+.block-1-btn {
+    background: rgba(255, 215, 0, 0.1);
+    color: #FFD700;
+    border-left-color: #FFD700;
+}
+
+.block-2-btn {
+    background: rgba(76, 175, 80, 0.1);
+    color: #4CAF50;
+    border-left-color: #4CAF50;
+}
+
+.block-3-btn {
+    background: rgba(33, 150, 243, 0.1);
+    color: #2196F3;
+    border-left-color: #2196F3;
+}
+
+.block-4-btn {
+    background: rgba(255, 152, 0, 0.1);
+    color: #FF9800;
+    border-left-color: #FF9800;
+}
+
+.block-5-btn {
+    background: rgba(244, 67, 54, 0.1);
+    color: #F44336;
+    border-left-color: #F44336;
 }
 </style>
