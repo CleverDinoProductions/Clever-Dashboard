@@ -1,160 +1,86 @@
 <?php
-/**
- * Block 2: European Zone (Positions 5-8)
- * Europa League / Conference League qualification
- */
-
 $blockNumber = 2;
-$blockInfo = [
-    'title' => 'European Zone',
-    'emoji' => '🌟',
-    'color' => '#4CAF50',
-    'positions' => '5-8',
-    'description' => 'Europa League & Conference League Qualification'
-];
+$blockInfo = ['title' => 'European Zone', 'emoji' => '🌟', 'color' => '#4CAF50', 'positions' => '5-8', 'description' => 'Europa & Conference League'];
+try {
+    $db = new PDO('sqlite:' . __DIR__ . '/../../football-stats.sqlite3');
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM premier_league_table");
+    $currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
+    $teamsQuery = $db->query("SELECT * FROM premier_league_table WHERE position BETWEEN 5 AND 8 ORDER BY position");
+    $teams = $teamsQuery->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $db = null; $teams = []; $currentMatchday = 1;
+}
 ?>
-
 <div class="block-detail-page">
     <div class="panel" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
         <div class="block-header-section">
-            <h2 style="color: <?php echo $blockInfo['color']; ?>;">
-                <?php echo $blockInfo['emoji']; ?> Block <?php echo $blockNumber; ?>: <?php echo $blockInfo['title']; ?>
-            </h2>
-            <span class="position-badge" style="background: rgba(76, 175, 80, 0.2); color: <?php echo $blockInfo['color']; ?>; border: 1px solid <?php echo $blockInfo['color']; ?>;">
-                Positions <?php echo $blockInfo['positions']; ?>
-            </span>
+            <h2 style="color: <?php echo $blockInfo['color']; ?>;"><?php echo $blockInfo['emoji']; ?> Block <?php echo $blockNumber; ?>: <?php echo $blockInfo['title']; ?></h2>
+            <span class="position-badge" style="background: rgba(76, 175, 80, 0.2); color: <?php echo $blockInfo['color']; ?>; border: 1px solid <?php echo $blockInfo['color']; ?>;">Positions <?php echo $blockInfo['positions']; ?></span>
         </div>
-        <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
-            <?php echo $blockInfo['description']; ?> - Teams competing for European football while maintaining
-            competitive Premier League status.
-        </p>
+        <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;"><?php echo $blockInfo['description']; ?> - Teams competing for European football.</p>
+        <p style="margin-top: 10px; color: #888; font-size: 0.9em;">📅 Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38</p>
     </div>
-
+    <?php if (!empty($teams)): ?>
     <div class="panel">
-        <h3>🎯 Block 2 Characteristics</h3>
-        <div class="characteristics-grid">
-            <div class="char-card" style="border-left-color: <?php echo $blockInfo['color']; ?>;">
-                <h4>📊 Target Performance</h4>
-                <ul>
-                    <li><strong>Points Per Game:</strong> 1.6-1.9 PPG</li>
-                    <li><strong>Projected Points:</strong> 60-72 points</li>
-                    <li><strong>Win Rate:</strong> 45-55% typical</li>
-                    <li><strong>Goal Difference:</strong> +15 to +30</li>
-                </ul>
-            </div>
-            
-            <div class="char-card" style="border-left-color: <?php echo $blockInfo['color']; ?>;">
-                <h4>🧠 Team Mentality</h4>
-                <ul>
-                    <li>Balanced attacking approach</li>
-                    <li>European ambitions</li>
-                    <li>Strong home record essential</li>
-                    <li>Tactical flexibility required</li>
-                </ul>
-            </div>
-            
-            <div class="char-card" style="border-left-color: <?php echo $blockInfo['color']; ?>;">
-                <h4>⚽ Tactical Approach</h4>
-                <ul>
-                    <li>Mix of possession and counter</li>
-                    <li>Solid defensive foundation</li>
-                    <li>Opportunistic attacking</li>
-                    <li>Squad rotation for cup runs</li>
-                </ul>
-            </div>
-            
-            <div class="char-card" style="border-left-color: <?php echo $blockInfo['color']; ?>;">
-                <h4>💰 Financial Reality</h4>
-                <ul>
-                    <li>Europa revenue valuable</li>
-                    <li>Mid-tier wage structure</li>
-                    <li>Smart recruitment key</li>
-                    <li>Player development focus</li>
-                </ul>
-            </div>
+        <h3>📊 Live Block 2 Standings</h3>
+        <div class="table-wrapper">
+            <table class="block-table">
+                <thead><tr style="background: rgba(76, 175, 80, 0.15); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;"><th>Pos</th><th>Team</th><th>Pld</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>PPG</th></tr></thead>
+                <tbody>
+                    <?php foreach ($teams as $team):
+                        $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
+                    ?>
+                    <tr>
+                        <td class="pos-cell" style="color: <?php echo $blockInfo['color']; ?>; font-weight: bold;"><?php echo $team['position']; ?></td>
+                        <td class="team-cell"><strong><?php echo htmlspecialchars($team['team_name']); ?></strong></td>
+                        <td><?php echo $team['played']; ?></td>
+                        <td style="color: #4CAF50;"><?php echo $team['won']; ?></td>
+                        <td style="color: #888;"><?php echo $team['drawn']; ?></td>
+                        <td style="color: #F44336;"><?php echo $team['lost']; ?></td>
+                        <td><?php echo $team['gf']; ?></td>
+                        <td><?php echo $team['ga']; ?></td>
+                        <td class="<?php echo $team['gd'] > 0 ? 'positive' : ($team['gd'] < 0 ? 'negative' : ''); ?>"><?php echo ($team['gd'] > 0 ? '+' : '') . $team['gd']; ?></td>
+                        <td class="pts-cell" style="background: rgba(76, 175, 80, 0.2); font-weight: bold;"><?php echo $team['points']; ?></td>
+                        <td style="color: <?php echo $blockInfo['color']; ?>; font-weight: bold;"><?php echo $ppg; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
-
     <div class="panel">
-        <h3>👥 Typical Block 2 Teams</h3>
-        <div class="teams-showcase">
-            <div class="team-showcase-card">
-                <h4>⚪ Tottenham Hotspur</h4>
-                <p>Frequently compete for European spots with attacking football.</p>
+        <h3>🎯 Season Projections</h3>
+        <div class="projections-grid">
+            <?php foreach ($teams as $team):
+                $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
+                $projectedPoints = round($ppg * 38, 0);
+                $halfwayTarget = round($ppg * 19, 0);
+                $remainingGames = 38 - $team['played'];
+            ?>
+            <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
+                <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
+                <div class="projection-stats">
+                    <div class="proj-row"><span class="proj-label">Current PPG:</span><span class="proj-value" style="color: <?php echo $blockInfo['color']; ?>;"><?php echo $ppg; ?></span></div>
+                    <div class="proj-row"><span class="proj-label">Current Points:</span><span class="proj-value"><strong><?php echo $team['points']; ?></strong></span></div>
+                    <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;"><span class="proj-label">🎯 Halfway (MD19):</span><span class="proj-value"><?php echo $halfwayTarget; ?> pts</span></div>
+                    <div class="proj-row"><span class="proj-label">🏁 Season End (MD38):</span><span class="proj-value" style="font-size: 1.2em; color: <?php echo $blockInfo['color']; ?>;"><strong><?php echo $projectedPoints; ?> pts</strong></span></div>
+                    <div class="proj-row"><span class="proj-label">Europa target:</span><span class="proj-value">~60 pts</span></div>
+                    <div class="proj-row"><span class="proj-label">Games remaining:</span><span class="proj-value"><?php echo $remainingGames; ?></span></div>
+                </div>
             </div>
-            <div class="team-showcase-card">
-                <h4>⚫ Newcastle United</h4>
-                <p>Recent investment pushing for European return.</p>
-            </div>
-            <div class="team-showcase-card">
-                <h4>🟣 Aston Villa</h4>
-                <p>Historic club rebuilding European credentials.</p>
-            </div>
-            <div class="team-showcase-card">
-                <h4>🔵 Brighton</h4>
-                <p>Modern recruitment model achieving consistent results.</p>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
-
-    <div class="panel" style="background: rgba(76, 175, 80, 0.05);">
-        <h3>🎯 Why Block 2 Matters</h3>
-        <div class="importance-grid">
-            <div class="importance-item">
-                <span class="importance-icon">🌍</span>
-                <h4>European Football</h4>
-                <p>Access to Europa and Conference League competition</p>
-            </div>
-            <div class="importance-item">
-                <span class="importance-icon">💰</span>
-                <h4>Revenue Boost</h4>
-                <p>£15-30m additional income from European football</p>
-            </div>
-            <div class="importance-item">
-                <span class="importance-icon">📈</span>
-                <h4>Player Appeal</h4>
-                <p>Attract better talent with European football offer</p>
-            </div>
-            <div class="importance-item">
-                <span class="importance-icon">🏆</span>
-                <h4>Trophy Chances</h4>
-                <p>Realistic opportunity for European silverware</p>
-            </div>
-        </div>
-    </div>
-
+    <?php endif; ?>
     <div class="panel">
-        <div class="block-navigation">
-            <a href="?tab=premier-league&subtab=blocks-1" class="nav-btn">← Block 1</a>
-            <a href="?tab=premier-league&subtab=blocks-dynamic" class="nav-btn" style="background: rgba(76, 175, 80, 0.1); color: <?php echo $blockInfo['color']; ?>; border-color: <?php echo $blockInfo['color']; ?>;">
-                🔥 Live Data
-            </a>
-            <a href="?tab=premier-league&subtab=blocks-3" class="nav-btn">Block 3 →</a>
+        <h3>🎯 Block 2 Targets</h3>
+        <div class="benchmarks-grid">
+            <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;"><h4>🌟 Europa League (5th)</h4><ul><li><strong>Target PPG:</strong> 1.7-1.9</li><li><strong>Halfway (MD19):</strong> 32-36 pts</li><li><strong>Season End (MD38):</strong> 62-68 pts</li></ul></div>
+            <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;"><h4>⚽ Conference League (6th-7th)</h4><ul><li><strong>Target PPG:</strong> 1.5-1.7</li><li><strong>Halfway (MD19):</strong> 28-32 pts</li><li><strong>Season End (MD38):</strong> 55-62 pts</li></ul></div>
+            <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;"><h4>🔸 8th Place</h4><ul><li><strong>Target PPG:</strong> 1.4-1.6</li><li><strong>Halfway (MD19):</strong> 26-30 pts</li><li><strong>Season End (MD38):</strong> 52-58 pts</li></ul></div>
         </div>
     </div>
+    <div class="panel"><div class="block-navigation"><a href="?tab=premier-league&subtab=blocks-1" class="nav-btn">← Block 1</a><a href="?tab=premier-league&subtab=blocks-dynamic" class="nav-btn" style="background: rgba(76, 175, 80, 0.1); color: <?php echo $blockInfo['color']; ?>;">🔥 Live</a><a href="?tab=premier-league&subtab=blocks-3" class="nav-btn">Block 3 →</a></div></div>
 </div>
-
-<style>
-.block-detail-page { max-width: 1400px; margin: 0 auto; }
-.block-header-section { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-.block-header-section h2 { margin: 0; font-size: 2em; }
-.position-badge { padding: 8px 15px; border-radius: 6px; font-size: 0.9em; font-weight: bold; }
-.characteristics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
-.char-card { background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 8px; border-left: 4px solid; }
-.char-card h4 { margin: 0 0 15px 0; color: #fff; font-size: 1.1em; }
-.char-card ul { list-style: none; padding: 0; margin: 0; }
-.char-card ul li { padding: 8px 0; color: #bbb; font-size: 0.95em; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-.char-card ul li:last-child { border-bottom: none; }
-.teams-showcase { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
-.team-showcase-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; border: 1px solid rgba(76, 175, 80, 0.3); }
-.team-showcase-card h4 { margin: 0 0 10px 0; color: #4CAF50; }
-.team-showcase-card p { margin: 0; color: #bbb; font-size: 0.9em; }
-.importance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 20px; }
-.importance-item { text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; }
-.importance-icon { font-size: 3em; display: block; margin-bottom: 10px; }
-.importance-item h4 { margin: 10px 0; color: #4CAF50; }
-.importance-item p { margin: 0; color: #bbb; font-size: 0.9em; }
-.block-navigation { display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
-.nav-btn { flex: 1; min-width: 150px; padding: 12px 20px; background: rgba(255, 255, 255, 0.05); color: #fff; text-decoration: none; text-align: center; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s; font-weight: 500; }
-.nav-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
-</style>
+<style>.block-detail-page{max-width:1400px;margin:0 auto}.block-header-section{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}.block-header-section h2{margin:0;font-size:2em}.position-badge{padding:8px 15px;border-radius:6px;font-size:0.9em;font-weight:bold}.table-wrapper{overflow-x:auto;margin-top:15px}.block-table{width:100%;border-collapse:collapse}.block-table th,.block-table td{padding:12px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.1)}.block-table th{font-weight:600;font-size:0.9em}.team-cell{text-align:left!important}.pos-cell,.pts-cell{font-size:1.1em}.positive{color:#4CAF50}.negative{color:#F44336}.projections-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-top:20px}.projection-card{background:rgba(255,255,255,0.03);padding:20px;border-radius:8px;border-left:3px solid}.projection-card h4{margin:0 0 15px 0;color:#fff}.projection-stats{display:flex;flex-direction:column;gap:8px}.proj-row{display:flex;justify-content:space-between;padding:5px 0}.proj-label{color:#888;font-size:0.9em}.proj-value{color:#fff;font-weight:500}.benchmarks-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:20px}.benchmark-card{background:rgba(255,255,255,0.03);padding:20px;border-radius:8px;border-left:4px solid}.benchmark-card h4{margin:0 0 15px 0;color:#fff}.benchmark-card ul{list-style:none;padding:0;margin:0}.benchmark-card ul li{padding:8px 0;color:#bbb;font-size:0.95em;border-bottom:1px solid rgba(255,255,255,0.05)}.benchmark-card ul li:last-child{border-bottom:none}.block-navigation{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.nav-btn{flex:1;min-width:150px;padding:12px 20px;background:rgba(255,255,255,0.05);color:#fff;text-decoration:none;text-align:center;border-radius:6px;border:1px solid rgba(255,255,255,0.1);transition:all 0.2s;font-weight:500}.nav-btn:hover{background:rgba(255,255,255,0.1);transform:translateY(-2px)}</style>
