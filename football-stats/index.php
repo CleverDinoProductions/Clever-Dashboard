@@ -22,6 +22,9 @@ include 'includes/header.php';
             case 'blocks-overview':
                 include 'tabs/premier-league/blocks-overview.php';
                 break;
+            case 'blocks-dynamic':
+                include 'tabs/premier-league/blocks-dynamic.php';
+                break;
             case 'blocks-1':
                 include 'tabs/premier-league/blocks-1.php';
                 break;
