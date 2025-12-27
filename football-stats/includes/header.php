@@ -96,6 +96,10 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                class="pill-tab-small <?php echo ($currentSubTab == 'blocks-overview') ? 'active' : ''; ?>">
                 🎯 Overview
             </a>
+            <a href="?tab=premier-league&subtab=blocks-dynamic" 
+               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-dynamic') ? 'active' : ''; ?>">
+                🔥 Live Data
+            </a>
             <a href="?tab=premier-league&subtab=blocks-1" 
                class="pill-tab-small <?php echo ($currentSubTab == 'blocks-1') ? 'active' : ''; ?>">
                 🏆 Block 1
