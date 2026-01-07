@@ -29,9 +29,9 @@ $is_last_before_break = ($now >= $last_before_break_start && $now < $last_before
 
 // First 3 windows after break
 $windows_after_break = [
-    ['start' => strtotime('2026-01-08 08:00:00 UTC'), 'end' => strtotime('2026-01-09 09:00:00 UTC'), 'label' => '1st'],
-    ['start' => strtotime('2026-01-11 08:00:00 UTC'), 'end' => strtotime('2026-01-12 09:00:00 UTC'), 'label' => '2nd'],
-    ['start' => strtotime('2026-01-15 08:00:00 UTC'), 'end' => strtotime('2026-01-16 09:00:00 UTC'), 'label' => '3rd']
+    ['start' => strtotime('2026-01-07 08:00:00 UTC'), 'end' => strtotime('2026-01-08 09:00:00 UTC'), 'label' => '1st'],
+    ['start' => strtotime('2026-01-10 08:00:00 UTC'), 'end' => strtotime('2026-01-11 09:00:00 UTC'), 'label' => '2nd'],
+    ['start' => strtotime('2026-01-14 08:00:00 UTC'), 'end' => strtotime('2026-01-15 09:00:00 UTC'), 'label' => '3rd']
 ];
 
 $is_after_break_window = false;
@@ -153,8 +153,8 @@ function get_next_window($skip_holiday = false) {
     }
     
     // Find next Wed/Sat window
-    $days_until_wed = (3 - $current_day + 7) % 7;
-    $days_until_sat = (6 - $current_day + 7) % 7;
+    $days_until_wed = (4 - $current_day + 7) % 7;
+    $days_until_sat = (7 - $current_day + 7) % 7;
     
     if ($days_until_wed == 0) $days_until_wed = 7;
     if ($days_until_sat == 0) $days_until_sat = 7;
