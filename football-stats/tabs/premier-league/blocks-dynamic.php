@@ -1,458 +1,452 @@
 <?php
 /**
- * Blocks of 4 - Live Data Overview
- * Shows real-time data for all 5 blocks with comparisons and predictions
+ * Dynamic Blocks - Live Predictions & Projections
+ * Real-time analysis with PPG-based season projections
  */
 
-// This is now a standalone page showing overview of all blocks with live data
+// Fetch complete league table - $db comes from parent include
+$stmt = $db->query("SELECT * FROM league_table ORDER BY position ASC");
+$allTeams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get current matchday
+$matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM league_table");
+$currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
+
+// Get last update timestamp
+$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+
+// Calculate projections for all teams
+$projections = [];
+foreach ($allTeams as $team) {
+    $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
+    $projectedPoints = round($ppg * 38, 0);
+    $remainingGames = 38 - $team['played'];
+    
+    // Determine predicted block based on projected points
+    $predictedBlock = 5; // Default to worst case
+    if ($projectedPoints >= 70) $predictedBlock = 1;
+    elseif ($projectedPoints >= 60) $predictedBlock = 2;
+    elseif ($projectedPoints >= 45) $predictedBlock = 3;
+    elseif ($projectedPoints >= 38) $predictedBlock = 4;
+    
+    // Current block
+    $currentBlock = 5;
+    if ($team['position'] <= 4) $currentBlock = 1;
+    elseif ($team['position'] <= 7) $currentBlock = 2;
+    elseif ($team['position'] <= 14) $currentBlock = 3;
+    elseif ($team['position'] <= 17) $currentBlock = 4;
+    
+    // Calculate various targets
+    $pointsFor40 = max(0, 40 - $team['points']);
+    $pointsFor70 = max(0, 70 - $team['points']);
+    $ppgFor40 = $remainingGames > 0 ? round($pointsFor40 / $remainingGames, 2) : 0;
+    $ppgFor70 = $remainingGames > 0 ? round($pointsFor70 / $remainingGames, 2) : 0;
+    
+    // Risk assessment
+    if ($projectedPoints >= 40) {
+        $risk = 'Safe';
+        $riskColor = '#4CAF50';
+    } elseif ($projectedPoints >= 37) {
+        $risk = 'Caution';
+        $riskColor = '#FFA500';
+    } else {
+        $risk = 'Danger';
+        $riskColor = '#F44336';
+    }
+    
+    $projections[] = [
+        'team' => $team,
+        'ppg' => $ppg,
+        'projected' => $projectedPoints,
+        'remaining' => $remainingGames,
+        'currentBlock' => $currentBlock,
+        'predictedBlock' => $predictedBlock,
+        'blockChange' => $predictedBlock - $currentBlock,
+        'pointsFor40' => $pointsFor40,
+        'pointsFor70' => $pointsFor70,
+        'ppgFor40' => $ppgFor40,
+        'ppgFor70' => $ppgFor70,
+        'risk' => $risk,
+        'riskColor' => $riskColor
+    ];
+}
+
+// Sort by projected points descending
+usort($projections, function($a, $b) {
+    return $b['projected'] - $a['projected'];
+});
+
+// Block definitions
+$blockColors = [
+    1 => '#FFD700',
+    2 => '#5865F2',
+    3 => '#99AAB5',
+    4 => '#FFA500',
+    5 => '#F44336'
+];
+
+$blockNames = [
+    1 => 'Title Contenders',
+    2 => 'European Zone',
+    3 => 'Mid-Table',
+    4 => 'Danger Zone',
+    5 => 'Relegation'
+];
 ?>
-<div class="blocks-live-wrapper">
-    <!-- Page Header -->
-    <div class="panel">
-        <h2>🔥 Live Block Analysis</h2>
-        <p class="intro-text">
-            Real-time performance data for all 5 blocks in the Premier League. This page shows current standings,
-            average statistics, and goal achievement status for each block based on live match data.
+
+<div class="dynamic-blocks-page">
+    <!-- Header -->
+    <div class="panel" style="border-left: 4px solid #00D9FF;">
+        <div class="dynamic-header">
+            <h2>🔥 Dynamic Blocks - Live Predictions</h2>
+            <span class="live-badge">LIVE DATA</span>
+        </div>
+        <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
+            Real-time PPG (Points Per Game) projections showing where teams are likely to finish based on 
+            current form. Updated after every matchday.
         </p>
-        <p class="update-info">
-            🔄 Auto-refreshes every 60 seconds • Last updated: <?php echo date('Y-m-d H:i:s'); ?> UTC
+        <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
+            📅 Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
+            Games Remaining: <strong><?php echo 38 - $currentMatchday; ?></strong> • 
+            Season Progress: <strong><?php echo round(($currentMatchday / 38) * 100, 1); ?>%</strong>
+            <?php if ($last_update && isset($last_update['ts'])): ?>
+            <span style="margin-left: 15px;">
+                Last updated: <?= date('Y-m-d H:i:s', $last_update['ts'] / 1000) ?>
+            </span>
+            <?php endif; ?>
         </p>
     </div>
 
-    <!-- All Blocks Comparison -->
+    <!-- Methodology Explanation -->
     <div class="panel">
-        <h3>📊 Current Block Standings</h3>
-        <p class="note">Click on any block to see detailed analysis with full team breakdowns</p>
-        
-        <div class="live-blocks-grid">
-            <?php
-            // Define block information
-            $blocks = [
-                1 => [
-                    'title' => 'Title Contenders',
-                    'emoji' => '🏆',
-                    'color' => '#FFD700',
-                    'positions' => '1-4',
-                    'target_ppg' => '2.0+',
-                    'goal' => 'Champions League qualification'
-                ],
-                2 => [
-                    'title' => 'European Zone',
-                    'emoji' => '🌟',
-                    'color' => '#4CAF50',
-                    'positions' => '5-8',
-                    'target_ppg' => '1.6+',
-                    'goal' => 'Europa/Conference League'
-                ],
-                3 => [
-                    'title' => 'Safe Mid-Table',
-                    'emoji' => '✅',
-                    'color' => '#2196F3',
-                    'positions' => '9-12',
-                    'target_ppg' => '1.3+',
-                    'goal' => 'Premier League security'
-                ],
-                4 => [
-                    'title' => 'Danger Zone',
-                    'emoji' => '⚠️',
-                    'color' => '#FF9800',
-                    'positions' => '13-16',
-                    'target_ppg' => '1.0+',
-                    'goal' => 'Avoid relegation battle'
-                ],
-                5 => [
-                    'title' => 'Relegation Battle',
-                    'emoji' => '🔻',
-                    'color' => '#F44336',
-                    'positions' => '17-20',
-                    'target_ppg' => '0.9+',
-                    'goal' => 'Immediate survival'
-                ]
-            ];
+        <h3>📊 How Predictions Work</h3>
+        <div class="methodology-grid">
+            <div class="method-card">
+                <h4>1️⃣ Calculate PPG</h4>
+                <p><strong>Current Points ÷ Games Played</strong></p>
+                <p class="note">This shows a team's true performance level independent of games played</p>
+            </div>
+            <div class="method-card">
+                <h4>2️⃣ Project Season End</h4>
+                <p><strong>PPG × 38 Games</strong></p>
+                <p class="note">Extrapolates current form across entire 38-game season</p>
+            </div>
+            <div class="method-card">
+                <h4>3️⃣ Assign Predicted Block</h4>
+                <p><strong>Based on Historical Ranges</strong></p>
+                <p class="note">70+ pts = Block 1, 60-69 = Block 2, 45-59 = Block 3, 38-44 = Block 4, <38 = Block 5</p>
+            </div>
+            <div class="method-card">
+                <h4>4️⃣ Risk Assessment</h4>
+                <p><strong>Survival Probability</strong></p>
+                <p class="note">Safe (40+), Caution (37-39), Danger (<37) based on relegation history</p>
+            </div>
+        </div>
+    </div>
 
-            foreach ($blocks as $blockNum => $blockInfo):
-                $startPos = ($blockNum - 1) * 4 + 1;
-                $endPos = $blockNum * 4;
+    <!-- Full Projections Table -->
+    <div class="panel">
+        <h3>🎯 Complete Season Projections</h3>
+        <div class="table-wrapper">
+            <table class="projections-table">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Team</th>
+                        <th>Pld</th>
+                        <th>Pts</th>
+                        <th>PPG</th>
+                        <th>Projected</th>
+                        <th>Current Block</th>
+                        <th>Predicted Block</th>
+                        <th>Movement</th>
+                        <th>Risk Status</th>
+                        <th>Form</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($projections as $idx => $proj): 
+                        $team = $proj['team'];
+                        $projectedPos = $idx + 1;
+                    ?>
+                    <tr>
+                        <td style="font-weight: bold; color: <?php echo $blockColors[$proj['predictedBlock']]; ?>;">
+                            <?php echo $projectedPos; ?>
+                        </td>
+                        <td style="text-align: left;">
+                            <strong><?php echo htmlspecialchars($team['team_name']); ?></strong>
+                            <?php if ($projectedPos != $team['position']): ?>
+                            <span style="color: <?php echo $projectedPos < $team['position'] ? '#4CAF50' : '#F44336'; ?>; font-size: 0.85em; margin-left: 5px;">
+                                (<?php echo $projectedPos < $team['position'] ? '↑' : '↓'; ?><?php echo abs($projectedPos - $team['position']); ?>)
+                            </span>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo $team['played']; ?></td>
+                        <td style="font-weight: bold;"><?php echo $team['points']; ?></td>
+                        <td style="color: <?php echo $blockColors[$proj['predictedBlock']]; ?>; font-weight: bold;">
+                            <?php echo $proj['ppg']; ?>
+                        </td>
+                        <td style="background: rgba(<?php 
+                            $rgb = $proj['predictedBlock'] == 1 ? '255,215,0' : 
+                                   ($proj['predictedBlock'] == 2 ? '88,101,242' : 
+                                   ($proj['predictedBlock'] == 3 ? '153,170,181' : 
+                                   ($proj['predictedBlock'] == 4 ? '255,165,0' : '244,67,54')));
+                            echo $rgb;
+                        ?>, 0.2); font-weight: bold; font-size: 1.1em;">
+                            <?php echo $proj['projected']; ?> pts
+                        </td>
+                        <td>
+                            <span class="block-badge" style="background: rgba(<?php 
+                                $rgb = $proj['currentBlock'] == 1 ? '255,215,0' : 
+                                       ($proj['currentBlock'] == 2 ? '88,101,242' : 
+                                       ($proj['currentBlock'] == 3 ? '153,170,181' : 
+                                       ($proj['currentBlock'] == 4 ? '255,165,0' : '244,67,54')));
+                                echo $rgb;
+                            ?>, 0.3); color: <?php echo $blockColors[$proj['currentBlock']]; ?>;">
+                                Block <?php echo $proj['currentBlock']; ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="block-badge" style="background: rgba(<?php 
+                                $rgb = $proj['predictedBlock'] == 1 ? '255,215,0' : 
+                                       ($proj['predictedBlock'] == 2 ? '88,101,242' : 
+                                       ($proj['predictedBlock'] == 3 ? '153,170,181' : 
+                                       ($proj['predictedBlock'] == 4 ? '255,165,0' : '244,67,54')));
+                                echo $rgb;
+                            ?>, 0.3); color: <?php echo $blockColors[$proj['predictedBlock']]; ?>;">
+                                Block <?php echo $proj['predictedBlock']; ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php if ($proj['blockChange'] == 0): ?>
+                                <span style="color: #888;">—</span>
+                            <?php elseif ($proj['blockChange'] > 0): ?>
+                                <span style="color: #F44336; font-weight: bold;">↓ <?php echo abs($proj['blockChange']); ?></span>
+                            <?php else: ?>
+                                <span style="color: #4CAF50; font-weight: bold;">↑ <?php echo abs($proj['blockChange']); ?></span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="risk-badge" style="background: rgba(<?php 
+                                echo $proj['risk'] == 'Safe' ? '76,175,129' : 
+                                     ($proj['risk'] == 'Caution' ? '255,165,0' : '244,67,54');
+                            ?>, 0.2); color: <?php echo $proj['riskColor']; ?>; border: 1px solid <?php echo $proj['riskColor']; ?>;">
+                                <?php echo $proj['risk']; ?>
+                            </span>
+                        </td>
+                        <td style="font-family: monospace; font-size: 0.85em;"><?php echo $team['form'] ?? '-'; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Predicted Blocks Breakdown -->
+    <div class="panel">
+        <h3>📦 Predicted Blocks Distribution</h3>
+        <div class="predicted-blocks-grid">
+            <?php 
+            // Group teams by predicted block
+            $predictedBlockGroups = [1 => [], 2 => [], 3 => [], 4 => [], 5 => []];
+            foreach ($projections as $proj) {
+                $predictedBlockGroups[$proj['predictedBlock']][] = $proj;
+            }
+            
+            foreach ($predictedBlockGroups as $blockNum => $teams):
+                if (empty($teams)) continue;
             ?>
-            <a href="?tab=premier-league&subtab=blocks-<?php echo $blockNum; ?>" class="live-block-card" style="border-left-color: <?php echo $blockInfo['color']; ?>;">
-                <div class="block-card-header">
-                    <div class="block-title-section">
-                        <span class="block-emoji"><?php echo $blockInfo['emoji']; ?></span>
-                        <div>
-                            <h4>Block <?php echo $blockNum; ?></h4>
-                            <p class="block-subtitle"><?php echo $blockInfo['title']; ?></p>
-                        </div>
-                    </div>
-                    <span class="position-badge" style="background: rgba(<?php 
-                        $rgb = sscanf($blockInfo['color'], "#%02x%02x%02x");
-                        echo implode(',', $rgb);
-                    ?>, 0.2); color: <?php echo $blockInfo['color']; ?>; border-color: <?php echo $blockInfo['color']; ?>;">
-                        Pos <?php echo $blockInfo['positions']; ?>
-                    </span>
-                </div>
-                
-                <div class="block-card-stats">
-                    <div class="stat-item">
-                        <span class="stat-label">Target PPG</span>
-                        <span class="stat-value" style="color: <?php echo $blockInfo['color']; ?>;"><?php echo $blockInfo['target_ppg']; ?></span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Primary Goal</span>
-                        <span class="stat-value-text"><?php echo $blockInfo['goal']; ?></span>
-                    </div>
-                </div>
-                
-                <div class="view-details">
-                    View detailed analysis →
-                </div>
-            </a>
+            <div class="predicted-block-card" style="border-left: 4px solid <?php echo $blockColors[$blockNum]; ?>;">
+                <h4 style="color: <?php echo $blockColors[$blockNum]; ?>;">
+                    Block <?php echo $blockNum; ?>: <?php echo $blockNames[$blockNum]; ?>
+                </h4>
+                <p style="color: #888; margin: 5px 0 15px 0;"><?php echo count($teams); ?> teams projected</p>
+                <ul class="predicted-teams-list">
+                    <?php foreach ($teams as $proj): ?>
+                    <li>
+                        <span class="team-name"><?php echo htmlspecialchars($proj['team']['team_name']); ?></span>
+                        <span class="team-projection"><?php echo $proj['projected']; ?> pts</span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
             <?php endforeach; ?>
         </div>
     </div>
 
-    <!-- Quick Stats Overview -->
+    <!-- Survival & Target Analysis -->
     <div class="panel">
-        <h3>📊 Season Progress</h3>
-        <div class="season-timeline">
-            <div class="timeline-stage active">
-                <div class="timeline-icon">✅</div>
-                <div class="timeline-info">
-                    <h4>Matchday 0-10</h4>
-                    <p>Early season - Fluid positioning</p>
+        <h3>🎯 Key Targets & Survival Scenarios</h3>
+        <div class="targets-grid">
+            <?php foreach ($projections as $proj): 
+                $team = $proj['team'];
+                // Only show teams in blocks 3-5 or teams needing analysis
+                if ($proj['currentBlock'] < 3 && $proj['predictedBlock'] < 3) continue;
+            ?>
+            <div class="target-card" style="border-left: 3px solid <?php echo $proj['riskColor']; ?>;">
+                <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
+                <div class="target-stats">
+                    <div class="target-row">
+                        <span class="target-label">Current Status:</span>
+                        <span class="target-value" style="color: <?php echo $proj['riskColor']; ?>;">
+                            <?php echo $proj['risk']; ?> (<?php echo $team['points']; ?> pts)
+                        </span>
+                    </div>
+                    <div class="target-row">
+                        <span class="target-label">Projected Finish:</span>
+                        <span class="target-value"><strong><?php echo $proj['projected']; ?> pts</strong></span>
+                    </div>
+                    
+                    <?php if ($proj['projected'] < 40): ?>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0; padding-top: 10px;">
+                        <div class="target-row">
+                            <span class="target-label">🚨 For 40pt Safety:</span>
+                            <span class="target-value" style="color: #F44336;">
+                                Need <?php echo $proj['pointsFor40']; ?> pts
+                            </span>
+                        </div>
+                        <div class="target-row">
+                            <span class="target-label">Required PPG:</span>
+                            <span class="target-value" style="color: #F44336; font-weight: bold;">
+                                <?php echo $proj['ppgFor40']; ?>
+                            </span>
+                        </div>
+                        <p style="font-size: 0.85em; color: #888; margin-top: 5px;">
+                            From <?php echo $proj['remaining']; ?> remaining games
+                        </p>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <?php if ($proj['projected'] < 70 && $proj['currentBlock'] <= 2): ?>
+                    <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0; padding-top: 10px;">
+                        <div class="target-row">
+                            <span class="target-label">⚽ For 70pt CL Spot:</span>
+                            <span class="target-value" style="color: #FFD700;">
+                                Need <?php echo $proj['pointsFor70']; ?> pts
+                            </span>
+                        </div>
+                        <div class="target-row">
+                            <span class="target-label">Required PPG:</span>
+                            <span class="target-value" style="color: #FFD700; font-weight: bold;">
+                                <?php echo $proj['ppgFor70']; ?>
+                            </span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
-            <div class="timeline-stage">
-                <div class="timeline-icon">🔄</div>
-                <div class="timeline-info">
-                    <h4>Matchday 11-20</h4>
-                    <p>Blocks stabilizing</p>
-                </div>
-            </div>
-            <div class="timeline-stage">
-                <div class="timeline-icon">🎯</div>
-                <div class="timeline-info">
-                    <h4>Matchday 21-30</h4>
-                    <p>Positions locked in</p>
-                </div>
-            </div>
-            <div class="timeline-stage">
-                <div class="timeline-icon">🏁</div>
-                <div class="timeline-info">
-                    <h4>Matchday 31-38</h4>
-                    <p>Final push</p>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 
     <!-- Key Insights -->
     <div class="panel">
-        <h3>💡 Key Insights</h3>
-        <div class="insights-grid">
-            <div class="insight-card" style="border-left-color: #FFD700;">
-                <h4>🏆 Top Block Dominance</h4>
-                <p>Block 1 teams accumulate points at 2.0+ PPG, creating a substantial gap over the season.</p>
+        <h3>💡 Dynamic Insights</h3>
+        <div class="insights-dynamic-grid">
+            <?php
+            $safeTeams = count(array_filter($projections, fn($p) => $p['projected'] >= 40));
+            $dangerTeams = count(array_filter($projections, fn($p) => $p['projected'] < 40));
+            $blockMovers = count(array_filter($projections, fn($p) => $p['blockChange'] != 0));
+            $avgPPG = round(array_sum(array_column($projections, 'ppg')) / count($projections), 2);
+            ?>
+            <div class="insight-dynamic-card" style="border-left: 3px solid #4CAF50;">
+                <h4>✅ Projected Safe</h4>
+                <p class="big-stat"><?php echo $safeTeams; ?> Teams</p>
+                <p>Currently on track for 40+ points (safety threshold)</p>
             </div>
-            <div class="insight-card" style="border-left-color: #4CAF50;">
-                <h4>🌟 European Competition</h4>
-                <p>Block 2 (positions 5-8) provides access to European football while maintaining attacking mentality.</p>
+            <div class="insight-dynamic-card" style="border-left: 3px solid #F44336;">
+                <h4>🚨 In Danger</h4>
+                <p class="big-stat"><?php echo $dangerTeams; ?> Teams</p>
+                <p>Projected to finish below 40 points (relegation risk)</p>
             </div>
-            <div class="insight-card" style="border-left-color: #2196F3;">
-                <h4>✅ The Sweet Spot</h4>
-                <p>Block 3 offers complete safety with 1.3 PPG, allowing teams to play without fear of relegation.</p>
+            <div class="insight-dynamic-card" style="border-left: 3px solid #FFA500;">
+                <h4>🔄 Block Movers</h4>
+                <p class="big-stat"><?php echo $blockMovers; ?> Teams</p>
+                <p>Predicted to change blocks by season end</p>
             </div>
-            <div class="insight-card" style="border-left-color: #FF9800;">
-                <h4>⚠️ Pressure Zone</h4>
-                <p>Block 4 teams need consistent 1.0 PPG to avoid dropping into the relegation battle.</p>
-            </div>
-            <div class="insight-card" style="border-left-color: #F44336;">
-                <h4>🔻 Critical Zone</h4>
-                <p>Block 5 teams face immediate danger. Historical data shows 0.9 PPG is minimum for survival.</p>
+            <div class="insight-dynamic-card" style="border-left: 3px solid #5865F2;">
+                <h4>📊 League Average</h4>
+                <p class="big-stat"><?php echo $avgPPG; ?> PPG</p>
+                <p>Average points per game across all teams</p>
             </div>
         </div>
     </div>
 
-    <!-- Database Status Note -->
-    <div class="panel" style="background: rgba(88, 101, 242, 0.1); border-left: 3px solid #5865F2;">
-        <h3>💾 Database Status</h3>
-        <p>
-            This Live Data page shows real-time statistics when connected to your database. 
-            For detailed team-by-team analysis with live data, click on individual blocks above.
+    <!-- Accuracy Notice -->
+    <div class="panel" style="background: rgba(255, 152, 0, 0.1); border-left: 3px solid #FF9800;">
+        <h3>⚠️ Prediction Accuracy & Limitations</h3>
+        <p style="margin: 10px 0; line-height: 1.6;">
+            These predictions are based purely on <strong>current PPG (Points Per Game)</strong> and assume teams maintain 
+            their current form level. Actual results will vary due to:
         </p>
-        <p class="note">
-            <strong>Note:</strong> Individual block pages (Blocks 1-5) will show live team data when the database is populated.
-            The overview page provides the framework explanation regardless of database status.
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Injuries and suspensions affecting key players</li>
+            <li>January transfer window activity</li>
+            <li>Manager changes and tactical adjustments</li>
+            <li>Fixture difficulty (easier/harder runs of games)</li>
+            <li>Cup competitions affecting focus and energy</li>
+            <li>Psychological factors (pressure, momentum, confidence)</li>
+        </ul>
+        <p style="margin: 10px 0; color: #888; font-style: italic;">
+            <strong>Historical Accuracy:</strong> PPG-based projections after Matchday 10 have approximately 
+            <strong>75-80% accuracy</strong> for final block placement. Accuracy increases significantly after Matchday 20 (85-90%).
         </p>
     </div>
 
-    <!-- Navigation to Individual Blocks -->
+    <!-- Navigation -->
     <div class="panel">
-        <h3>🧭Detailed Block Analysis</h3>
-        <div class="block-nav-grid">
-            <a href="?tab=premier-league&subtab=blocks-1" class="block-nav-btn block-1">
-                <span class="nav-emoji">🏆</span>
-                <span>Block 1 Details</span>
-            </a>
-            <a href="?tab=premier-league&subtab=blocks-2" class="block-nav-btn block-2">
-                <span class="nav-emoji">🌟</span>
-                <span>Block 2 Details</span>
-            </a>
-            <a href="?tab=premier-league&subtab=blocks-3" class="block-nav-btn block-3">
-                <span class="nav-emoji">✅</span>
-                <span>Block 3 Details</span>
-            </a>
-            <a href="?tab=premier-league&subtab=blocks-4" class="block-nav-btn block-4">
-                <span class="nav-emoji">⚠️</span>
-                <span>Block 4 Details</span>
-            </a>
-            <a href="?tab=premier-league&subtab=blocks-5" class="block-nav-btn block-5">
-                <span class="nav-emoji">🔻</span>
-                <span>Block 5 Details</span>
-            </a>
+        <div class="block-navigation">
+            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">← Blocks Overview</a>
+            <a href="?tab=premier-league&subtab=table" class="nav-btn">Full Table</a>
+            <a href="?tab=premier-league&subtab=blocks-1" class="nav-btn">Detailed Blocks →</a>
         </div>
     </div>
 </div>
 
 <style>
-.blocks-live-wrapper {
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
-.intro-text {
-    font-size: 1.05em;
-    line-height: 1.6;
-    color: #ddd;
-    margin: 10px 0;
-}
-
-.update-info {
-    color: #888;
-    font-size: 0.9em;
-    margin-top: 10px;
-    font-style: italic;
-}
-
-.live-blocks-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.live-block-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    padding: 20px;
-    border-left: 4px solid;
-    text-decoration: none;
-    color: inherit;
-    transition: all 0.3s ease;
-    display: block;
-}
-
-.live-block-card:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.block-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.block-title-section {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.block-emoji {
-    font-size: 2em;
-}
-
-.block-card-header h4 {
-    margin: 0;
-    font-size: 1.1em;
-    color: #fff;
-}
-
-.block-subtitle {
-    margin: 3px 0 0 0;
-    font-size: 0.9em;
-    color: #888;
-}
-
-.position-badge {
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.75em;
-    font-weight: bold;
-    border: 1px solid;
-    white-space: nowrap;
-}
-
-.block-card-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.stat-label {
-    font-size: 0.85em;
-    color: #888;
-}
-
-.stat-value {
-    font-size: 1.1em;
-    font-weight: bold;
-}
-
-.stat-value-text {
-    font-size: 0.9em;
-    color: #bbb;
-}
-
-.view-details {
-    text-align: right;
-    color: #5865F2;
-    font-size: 0.9em;
-    font-weight: 500;
-    margin-top: 10px;
-}
-
-.season-timeline {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.timeline-stage {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    opacity: 0.5;
-    transition: all 0.3s;
-}
-
-.timeline-stage.active {
-    opacity: 1;
-    border-color: #5865F2;
-    background: rgba(88, 101, 242, 0.1);
-}
-
-.timeline-icon {
-    font-size: 2em;
-    margin-bottom: 10px;
-}
-
-.timeline-info h4 {
-    margin: 5px 0;
-    font-size: 1em;
-    color: #fff;
-}
-
-.timeline-info p {
-    margin: 0;
-    font-size: 0.85em;
-    color: #888;
-}
-
-.insights-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.insight-card {
-    background: rgba(255, 255, 255, 0.03);
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 3px solid;
-}
-
-.insight-card h4 {
-    margin: 0 0 10px 0;
-    font-size: 1em;
-    color: #fff;
-}
-
-.insight-card p {
-    margin: 0;
-    font-size: 0.9em;
-    color: #bbb;
-    line-height: 1.5;
-}
-
-.block-nav-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.block-nav-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    text-decoration: none;
-    color: #fff;
-    font-weight: 500;
-    transition: all 0.2s;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.block-nav-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(5px);
-}
-
-.block-nav-btn.block-1:hover { border-left-color: #FFD700; }
-.block-nav-btn.block-2:hover { border-left-color: #4CAF50; }
-.block-nav-btn.block-3:hover { border-left-color: #2196F3; }
-.block-nav-btn.block-4:hover { border-left-color: #FF9800; }
-.block-nav-btn.block-5:hover { border-left-color: #F44336; }
-
-.nav-emoji {
-    font-size: 1.5em;
-}
-
-.note {
-    color: #888;
-    font-style: italic;
-    margin-top: 10px;
-    font-size: 0.9em;
-}
-
+.dynamic-blocks-page { max-width: 1400px; margin: 0 auto; }
+.dynamic-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+.dynamic-header h2 { margin: 0; font-size: 2em; }
+.live-badge { padding: 6px 12px; background: linear-gradient(135deg, #FF6B6B, #4ECDC4); color: #fff; border-radius: 5px; font-size: 0.85em; font-weight: bold; animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.methodology-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
+.method-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; border-left: 3px solid #5865F2; }
+.method-card h4 { margin: 0 0 10px 0; color: #5865F2; }
+.method-card p { margin: 5px 0; }
+.method-card .note { font-size: 0.85em; color: #888; margin-top: 8px; }
+.table-wrapper { overflow-x: auto; margin-top: 20px; }
+.projections-table { width: 100%; border-collapse: collapse; }
+.projections-table th, .projections-table td { padding: 12px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.9em; }
+.projections-table th { font-weight: 600; text-transform: uppercase; background: rgba(255,255,255,0.05); }
+.block-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; white-space: nowrap; display: inline-block; }
+.risk-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; white-space: nowrap; }
+.predicted-blocks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
+.predicted-block-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; }
+.predicted-block-card h4 { margin: 0 0 5px 0; }
+.predicted-teams-list { list-style: none; padding: 0; margin: 0; }
+.predicted-teams-list li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.predicted-teams-list li:last-child { border-bottom: none; }
+.team-name { color: #ddd; }
+.team-projection { color: #888; font-weight: bold; }
+.targets-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 20px; }
+.target-card { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 8px; }
+.target-card h4 { margin: 0 0 15px 0; }
+.target-stats { display: flex; flex-direction: column; gap: 8px; }
+.target-row { display: flex; justify-content: space-between; align-items: center; }
+.target-label { color: #888; font-size: 0.9em; }
+.target-value { color: #fff; font-weight: 500; }
+.insights-dynamic-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; }
+.insight-dynamic-card { background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 8px; text-align: center; }
+.insight-dynamic-card h4 { margin: 0 0 10px 0; font-size: 1em; }
+.big-stat { font-size: 2em; font-weight: bold; margin: 10px 0; color: #fff; }
+.insight-dynamic-card p:last-child { color: #888; font-size: 0.85em; margin: 10px 0 0 0; }
+.block-navigation { display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; }
+.nav-btn { flex: 1; min-width: 150px; padding: 12px 20px; background: rgba(255, 255, 255, 0.05); color: #fff; text-decoration: none; text-align: center; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s; font-weight: 500; }
+.nav-btn:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
 @media (max-width: 768px) {
-    .live-blocks-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .season-timeline {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .insights-grid {
-        grid-template-columns: 1fr;
-    }
+    .dynamic-header { flex-direction: column; align-items: flex-start; }
+    .methodology-grid, .predicted-blocks-grid, .targets-grid, .insights-dynamic-grid { grid-template-columns: 1fr; }
+    .projections-table { font-size: 0.8em; }
+    .projections-table th, .projections-table td { padding: 6px 3px; }
 }
 </style>

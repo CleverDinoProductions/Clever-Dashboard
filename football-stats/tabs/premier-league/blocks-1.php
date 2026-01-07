@@ -13,24 +13,16 @@ $blockInfo = [
     'description' => 'Champions League Qualification Zone'
 ];
 
-// Get database connection
-try {
-    $db = new PDO('sqlite:' . __DIR__ . '/../../football-stats.sqlite3');
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Get current matchday
-    $matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM premier_league_table");
-    $currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
-    
-    // Get Block 1 teams (positions 1-4)
-    $teamsQuery = $db->query("SELECT * FROM premier_league_table WHERE position BETWEEN 1 AND 4 ORDER BY position");
-    $teams = $teamsQuery->fetchAll(PDO::FETCH_ASSOC);
-    
-} catch (PDOException $e) {
-    $db = null;
-    $teams = [];
-    $currentMatchday = 1;
-}
+// Fetch league table - $db comes from parent include
+$stmt = $db->query("SELECT * FROM league_table WHERE position BETWEEN 1 AND 4 ORDER BY position ASC");
+$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Get current matchday
+$matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM league_table");
+$currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
+
+// Get last update timestamp
+$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
 ?>
 
 <div class="block-detail-page">
@@ -56,6 +48,11 @@ try {
                 🎯 Halfway point!
             <?php else: ?>
                 Second half of season
+            <?php endif; ?>
+            <?php if ($last_update && isset($last_update['ts'])): ?>
+            <span style="margin-left: 15px;">
+                Last updated: <?= date('Y-m-d H:i:s', $last_update['ts'] / 1000) ?>
+            </span>
             <?php endif; ?>
         </p>
     </div>
@@ -120,8 +117,8 @@ try {
                 $halfwayTarget = round($ppg * 19, 0);
                 $halfwayActual = $team['points'];
                 $remainingGames = 38 - $team['played'];
-                $pointsNeededFor75 = max(0, 75 - $team['points']);
-                $ppgNeededFor75 = $remainingGames > 0 ? round($pointsNeededFor75 / $remainingGames, 2) : 0;
+                $pointsNeededFor70 = max(0, 70 - $team['points']);
+                $ppgNeededFor70 = $remainingGames > 0 ? round($pointsNeededFor70 / $remainingGames, 2) : 0;
             ?>
             <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
                 <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
@@ -167,7 +164,7 @@ try {
                     </div>
                     <?php if ($projectedPoints < 70): ?>
                     <div class="proj-alert" style="background: rgba(255, 152, 0, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #FF9800;">
-                        <strong>⚠️ PPG needed for 70pts:</strong> <?php echo round((70 - $team['points']) / $remainingGames, 2); ?>
+                        <strong>⚠️ PPG needed for 70pts:</strong> <?php echo $ppgNeededFor70; ?>
                     </div>
                     <?php endif; ?>
                 </div>
