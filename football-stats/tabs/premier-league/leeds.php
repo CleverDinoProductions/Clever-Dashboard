@@ -56,6 +56,7 @@ if ($is_first_half) {
 // Calculate 75% rule metrics
 $halfway_progress_pct = ($leeds['points'] / 20) * 100;
 $target_75pct = 15; // 75% of 20
+$target_100pct = 20; // 100% of 20
 $points_to_75pct = max(0, $target_75pct - $leeds['points']);
 
 // Projected final points
@@ -441,10 +442,13 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
         <?php endforeach; ?>
     </table>
     
-    <?php if ($halfway_progress_pct >= 75): ?>
+    <?php if ($halfway_progress_pct >= 100): ?>
     <p style="color: #43b581; font-weight: bold; text-align: center; margin-top: 15px; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-        💪 Even 0 points from next <?php echo $games_to_halfway; ?> = still at 75% target!
+        💪 Even 0 points from next <?php echo $games_to_halfway; ?> = still at 100% target!
     </p>
+    <?php elseif ($halfway_progress_pct >= 75): ?>
+    <p style="color: #43b581; font-weight: bold; text-align: center; margin-top: 15px; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+        🏆 Even 0 points from next <?php echo $games_to_halfway; ?> = still at 75% target!
     <?php endif; ?>
 </div>
 <?php endif; ?>

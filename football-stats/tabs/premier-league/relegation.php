@@ -29,7 +29,7 @@ foreach ($bottom_teams as $team) {
     $games_remaining = 38 - $games_played;
     
     // Calculate percentages
-    $progress_pct = ($current_points / $target_100pct) * 100;
+    $progress_100pct = ($current_points / $target_100pct) * 100;
     $progress_75pct = ($current_points / $target_75pct) * 100;
     
     // Current PPG
@@ -71,7 +71,7 @@ foreach ($bottom_teams as $team) {
         }
     } else {
         // Before halfway - project if they'll hit 75%
-        if ($progress_pct >= 100) {
+        if ($progress_100pct >= 100) {
             $risk_level = "SAFE";
             $risk_color = "#43b581";
             $risk_icon = "✓";
@@ -138,7 +138,7 @@ foreach ($bottom_teams as $team) {
     
     $teams_analysis[] = [
         'team' => $team,
-        'progress_pct' => $progress_pct,
+        'progress_100pct' => $progress_100pct,
         'progress_75pct' => $progress_75pct,
         'ppg' => $ppg,
         'projected_halfway' => $projected_halfway,
@@ -174,14 +174,17 @@ foreach ($teams_analysis as $analysis) {
     $risk_counts[$analysis['risk_level']]++;
 }
 
-// Find most at risk (won't hit 75%)
-$most_at_risk = array_filter($teams_analysis, function($a) use ($target_75pct) {
-    return $a['projected_halfway'] < $target_75pct;
+// Categorize teams by projected halfway points
+$teams_100pct = array_filter($teams_analysis, function($a) use ($target_100pct) {
+    return $a['projected_halfway'] >= $target_100pct;
 });
 
-// Find safe teams (will hit 75%)
-$safe_teams = array_filter($teams_analysis, function($a) use ($target_75pct) {
-    return $a['projected_halfway'] >= $target_75pct;
+$teams_75pct_only = array_filter($teams_analysis, function($a) use ($target_75pct, $target_100pct) {
+    return $a['projected_halfway'] >= $target_75pct && $a['projected_halfway'] < $target_100pct;
+});
+
+$teams_at_risk = array_filter($teams_analysis, function($a) use ($target_75pct) {
+    return $a['projected_halfway'] < $target_75pct;
 });
 ?>
 
@@ -234,20 +237,66 @@ $safe_teams = array_filter($teams_analysis, function($a) use ($target_75pct) {
     </div>
 </div>
 
-<!-- Most At Risk Alert -->
-<?php if (count($most_at_risk) > 0): ?>
-<div class="panel" style="background: linear-gradient(135deg, #f04747, #ff6b6b); border: 3px solid #FFFFFF;">
+<!-- Teams Hitting 100% Target -->
+<?php if (count($teams_100pct) > 0): ?>
+<div class="panel" style="background: linear-gradient(135deg, #43b581, #6ef2b3); border: 3px solid #FFFFFF;">
     <div style="text-align: center;">
         <h2 style="color: white; font-size: 28px; margin: 0;">
-            🚨 ALERT: <?php echo count($most_at_risk); ?> Teams Won't Hit 75% Rule
+            ✅ EXCELLENT: <?php echo count($teams_100pct); ?> Teams Will Hit 100% Target (20pts)
         </h2>
         <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 10px;">
-            These teams are projected to have less than 15 points at halfway
+            These teams are projected to have 20+ points at halfway - extremely safe!
         </p>
     </div>
     
     <div style="margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-        <?php foreach ($most_at_risk as $analysis): ?>
+        <?php foreach ($teams_100pct as $analysis): ?>
+        <span style="background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 6px; color: white; font-weight: bold;">
+            <?php echo htmlspecialchars($analysis['team']['team_name']); ?>
+            (<?php echo round($analysis['projected_halfway']); ?> pts projected)
+        </span>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Teams Hitting 75% But Not 100% -->
+<?php if (count($teams_75pct_only) > 0): ?>
+<div class="panel" style="background: linear-gradient(135deg, #5865F2, #7289DA); border: 3px solid #FFFFFF;">
+    <div style="text-align: center;">
+        <h2 style="color: white; font-size: 28px; margin: 0;">
+            ⚡ GOOD: <?php echo count($teams_75pct_only); ?> Teams Will Hit 75% Target (15-19pts)
+        </h2>
+        <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 10px;">
+            These teams are projected to have 15-19 points at halfway - on track but could improve!
+        </p>
+    </div>
+
+    <div style="margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+        <?php foreach ($teams_75pct_only as $analysis): ?>
+        <span style="background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 6px; color: white; font-weight: bold;">
+            <?php echo htmlspecialchars($analysis['team']['team_name']); ?>
+            (<?php echo round($analysis['projected_halfway']); ?> pts projected)
+        </span>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Teams At Risk -->
+<?php if (count($teams_at_risk) > 0): ?>
+<div class="panel" style="background: linear-gradient(135deg, #f04747, #ff6b6b); border: 3px solid #FFFFFF;">
+    <div style="text-align: center;">
+        <h2 style="color: white; font-size: 28px; margin: 0;">
+            🚨 DANGER: <?php echo count($teams_at_risk); ?> Teams Won't Hit 75% Rule
+        </h2>
+        <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 10px;">
+            These teams are projected to have less than 15 points at halfway - serious relegation danger!
+        </p>
+    </div>
+    
+    <div style="margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+        <?php foreach ($teams_at_risk as $analysis): ?>
         <span style="background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 6px; color: white; font-weight: bold;">
             <?php echo htmlspecialchars($analysis['team']['team_name']); ?>
             (<?php echo round($analysis['projected_halfway']); ?> pts projected)
@@ -273,6 +322,7 @@ $safe_teams = array_filter($teams_analysis, function($a) use ($target_75pct) {
             <th>Pts</th>
             <th>PPG</th>
             <th>75% Progress</th>
+            <th>100% Progress</th>
             <th>Projected Halfway</th>
             <th>Projected Final</th>
             <th>Risk Level</th>
@@ -312,6 +362,27 @@ $safe_teams = array_filter($teams_analysis, function($a) use ($target_75pct) {
                     <div style="background: <?php echo $bar_color; ?>; width: <?php echo $bar_width; ?>%; height: 100%;"></div>
                     <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: bold; color: white;">
                         <?php echo round($analysis['progress_75pct']); ?>%
+                    </span>
+                </div>
+            </td>
+
+            <td>
+                <div style="background: #40444b; border-radius: 4px; height: 20px; width: 100px; position: relative; overflow: hidden;">
+                    <?php
+                    $bar_width = min(100, $analysis['progress_100pct']);
+                    if ($analysis['progress_100pct'] >= 100) {
+                        $bar_color = "#43b581";
+                    } elseif ($analysis['progress_100pct'] >= 75) {
+                        $bar_color = "#5865F2";
+                    } elseif ($analysis['progress_100pct'] >= 50) {
+                        $bar_color = "#faa61a";
+                    } else {
+                        $bar_color = "#f04747";
+                    }
+                    ?>
+                    <div style="background: <?php echo $bar_color; ?>; width: <?php echo $bar_width; ?>%; height: 100%;"></div>
+                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: bold; color: white;">
+                        <?php echo round($analysis['progress_100pct']); ?>%
                     </span>
                 </div>
             </td>
@@ -610,29 +681,6 @@ $safe_teams = array_filter($teams_analysis, function($a) use ($target_75pct) {
     <?php endforeach; ?>
 </div>
 
-<!-- Safe Teams (Likely to Hit 75%) -->
-<?php if (count($safe_teams) > 0): ?>
-<div class="panel" style="background: linear-gradient(135deg, #43b581, #57f287);">
-    <div style="text-align: center;">
-        <h2 style="color: white; font-size: 28px; margin: 0;">
-            ✓ <?php echo count($safe_teams); ?> Teams On Track for 75% Rule
-        </h2>
-        <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 10px;">
-            These teams are projected to reach 15+ points at halfway
-        </p>
-    </div>
-    
-    <div style="margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-        <?php foreach ($safe_teams as $analysis): ?>
-        <span style="background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 6px; color: white; font-weight: bold;">
-            <?php echo htmlspecialchars($analysis['team']['team_name']); ?>
-            (<?php echo round($analysis['projected_halfway']); ?> pts projected)
-        </span>
-        <?php endforeach; ?>
-    </div>
-</div>
-<?php endif; ?>
-
 <!-- Key Insights -->
 <div class="panel" style="background: #2e3136; border-left: 4px solid #5865F2;">
     <h3>🔍 Key Insights</h3>
@@ -641,8 +689,8 @@ $safe_teams = array_filter($teams_analysis, function($a) use ($target_75pct) {
         <li><strong style="color: #FFCD00;">Critical Threshold:</strong> Below 10 points at halfway typically leads to relegation (70% chance).</li>
         <li><strong style="color: #FFCD00;">PPG Analysis:</strong> Teams needing 1.5+ PPG to hit 75% are in serious danger - very hard to achieve!</li>
         <li><strong style="color: #FFCD00;">Form Matters:</strong> Current PPG projects future performance - consistency is key to survival.</li>
-        <?php if (count($most_at_risk) > 0): ?>
-        <li style="color: #f04747;"><strong><?php echo count($most_at_risk); ?> teams currently projected to miss 75% target</strong> - they need significant improvement!</li>
+        <?php if (count($teams_at_risk) > 0): ?>
+        <li style="color: #f04747;"><strong><?php echo count($teams_at_risk); ?> teams currently projected to miss 75% target</strong> - they need significant improvement!</li>
         <?php endif; ?>
         <li><strong style="color: #43b581;">The Magic 40:</strong> Only West Ham (2002-03 with 42pts) has been relegated with 40+ points in modern era.</li>
         <li><strong style="color: #faa61a;">Recent Trends:</strong> Survival thresholds have dropped (27pts in 2023-24, 26pts in 2024-25) - weaker bottom teams.</li>
