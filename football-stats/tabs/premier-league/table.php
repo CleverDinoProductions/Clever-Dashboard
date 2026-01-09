@@ -6,36 +6,47 @@ $standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
 
 // Safety calculation
-$halfway_games = 19;
+$halfway_games = 19; // Halfway point in season
 $safety_target_halfway = 20; // Points needed by game 19 to stay safe
+$total_games = 38; // Total games in season
+$safety_target_magic = 40; // Magic number for safety
+$safety_target_average = 36; // Average Points needed by end of season to stay safe
+$safety_target_low = 34; // Low safety target
+$safety_target_recent_low = 27; // Recent low safety target
+
 
 // Team nicknames, abbreviations, and COMMON NAMES
 $team_info = [
     'Arsenal' => [
+        'name' => 'Arsenal',
         'common_name' => 'Arsenal',
         'nickname' => 'The Gunners',
         'short' => 'ARS',
         'color' => '#EF0107',
     ],
     'Aston Villa' => [
+        'name' => 'Aston Villa',
         'common_name' => 'Villa',
         'nickname' => 'The Villans',
         'short' => 'AVL',
         'color' => '#95BFE5',
     ],
     'Bournemouth' => [
+        'name' => 'Bournemouth',
         'common_name' => 'Bournemouth',
         'nickname' => 'The Cherries',
         'short' => 'BOU',
         'color' => '#DA291C',
     ],
     'Brentford' => [
+        'name' => 'Brentford',
         'common_name' => 'Brentford',
         'nickname' => 'The Bees',
         'short' => 'BRE',
         'color' => '#D20000',
     ],
     'Brighton & Hove Albion' => [
+        'name' => 'Brighton',
         'common_name' => 'Brighton',
         'nickname' => 'The Seagulls',
         'short' => 'BHA',
@@ -48,102 +59,119 @@ $team_info = [
         'color' => '#0057B8',
     ],
     'Burnley' => [
+        'name' => 'Burnley',
         'common_name' => 'Burnley',
         'nickname' => 'The Clarets',
         'short' => 'BUR',
         'color' => '#6C1D45',
     ],
     'Chelsea' => [
+        'name' => 'Chelsea',
         'common_name' => 'Chelsea',
         'nickname' => 'The Blues',
         'short' => 'CHE',
         'color' => '#034694',
     ],
     'Crystal Palace' => [
+        'name' => 'Crystal Palace',
         'common_name' => 'Palace',
         'nickname' => 'The Eagles',
         'short' => 'CRY',
         'color' => '#1B458F',
     ],
     'Everton' => [
+        'name' => 'Everton',
         'common_name' => 'Everton',
         'nickname' => 'The Toffees',
         'short' => 'EVE',
         'color' => '#003399',
     ],
     'Fulham' => [
+        'name' => 'Fulham',
         'common_name' => 'Fulham',
         'nickname' => 'The Cottagers',
         'short' => 'FUL',
         'color' => '#000000',
     ],
     'Ipswich Town' => [
+        'name' => 'Ipswich',
         'common_name' => 'Ipswich',
         'nickname' => 'The Tractor Boys',
         'short' => 'IPS',
         'color' => '#0033A0',
     ],
     'Leeds United' => [
+        'name' => 'Leeds',
         'common_name' => 'Leeds',
         'nickname' => 'The Whites / Peacocks',
         'short' => 'LEE',
         'color' => '#FFCD00',
     ],
     'Leicester City' => [
+        'name' => 'Leicester',
         'common_name' => 'Leicester',
         'nickname' => 'The Foxes',
         'short' => 'LEI',
         'color' => '#003090',
     ],
     'Liverpool' => [
+        'name' => 'Liverpool',
         'common_name' => 'Liverpool',
         'nickname' => 'The Reds',
         'short' => 'LIV',
         'color' => '#C8102E',
     ],
     'Manchester City' => [
+        'name' => 'Manchester City',
         'common_name' => 'Man City',
         'nickname' => 'The Citizens / City',
         'short' => 'MCI',
         'color' => '#6CABDD',
     ],
     'Manchester United' => [
+        'name' => 'Manchester United',
         'common_name' => 'Man United',
         'nickname' => 'The Red Devils',
         'short' => 'MUN',
         'color' => '#DA291C',
     ],
     'Newcastle United' => [
+        'name' => 'Newcastle',
         'common_name' => 'Newcastle',
         'nickname' => 'The Magpies / Toon',
         'short' => 'NEW',
         'color' => '#241F20',
     ],
     'Nottingham Forest' => [
+        'name' => 'Nottingham Forest',
         'common_name' => 'Forest',
         'nickname' => 'The Reds / Forest',
         'short' => 'NFO',
         'color' => '#DD0000',
     ],
     'Southampton' => [
+        'name' => 'Southampton',
         'common_name' => 'Southampton',
         'nickname' => 'The Saints',
         'short' => 'SOU',
         'color' => '#D71920',
     ],
     'Tottenham Hotspur' => [
+        'name' => 'Tottenham Hotspur',
         'common_name' => 'Spurs',
         'nickname' => 'Spurs',
         'short' => 'TOT',
         'color' => '#132257',
     ],
     'West Ham United' => [
+        'name' => 'West Ham',
         'common_name' => 'West Ham',
         'nickname' => 'The Hammers / Irons',
         'short' => 'WHU',
         'color' => '#7A263A',
     ],
     'Wolverhampton Wanderers' => [
+        'name' => 'Wolves',
         'common_name' => 'Wolves',
         'nickname' => 'Wolves',
         'short' => 'WOL',
@@ -266,6 +294,10 @@ function getTeamInfo($team_name, $team_info) {
             <th>GD</th>
             <th>Pts</th>
             <th title="Points needed to reach <?= $safety_target_halfway ?> by game <?= $halfway_games ?>">To Safety</th>
+            <th title="Points needed to reach <?= $safety_target_average ?> by game <?= $total_games ?>">To Safety (Average)</th>
+            <th title="Points needed to reach <?= $safety_target_magic ?> by game <?= $total_games ?>">To Safety (Magic)</th>
+            <th title="Points needed to reach <?= $safety_target_low ?> by game <?= $total_games ?>">To Safety (Low)</th>
+            <th title="Points needed to reach <?= $safety_target_recent_low ?> by game <?= $total_games ?>">To Safety (Recent Low)</th>
         </tr>
         <?php foreach ($standings as $team): ?>
         <?php
@@ -287,7 +319,62 @@ function getTeamInfo($team_name, $team_info) {
                 $safety_color = '#f04747'; // red - danger
                 $safety_text = $points_needed . ' pts';
             }
-            
+
+            // Calculate average safety
+            $games_left_total = $total_games - $team['played'];
+            $points_needed_average = $safety_target_average - $team['points'];
+            $points_needed_magic = $safety_target_magic - $team['points'];
+            $points_needed_low = $safety_target_low - $team['points'];
+            $points_needed_recent_low = $safety_target_recent_low - $team['points'];
+
+            // Color coding for average safety column
+            if ($points_needed_average <= 0) {
+                $avg_safety_color = '#43b581';
+                $avg_safety_text = '✓ Safe';
+            } elseif ($points_needed_average <= 3) {
+                $avg_safety_color = '#faa61a';
+                $avg_safety_text = $points_needed_average . ' pts';
+            } else {
+                $avg_safety_color = '#f04747';
+                $avg_safety_text = $points_needed_average . ' pts';
+            }
+
+            // Color coding for magic safety column
+            if ($points_needed_magic <= 0) {
+                $magic_safety_color = '#43b581';
+                $magic_safety_text = '✓ Safe';
+            } elseif ($points_needed_magic <= 3) {
+                $magic_safety_color = '#faa61a';
+                $magic_safety_text = $points_needed_magic . ' pts';
+            } else {
+                $magic_safety_color = '#f04747';
+                $magic_safety_text = $points_needed_magic . ' pts';
+            }
+
+            // Color coding for low safety column
+            if ($points_needed_low <= 0) {
+                $low_safety_color = '#43b581';
+                $low_safety_text = '✓ Safe';
+            } elseif ($points_needed_low <= 3) {
+                $low_safety_color = '#faa61a';
+                $low_safety_text = $points_needed_low . ' pts';
+            } else {
+                $low_safety_color = '#f04747';
+                $low_safety_text = $points_needed_low . ' pts';
+            }
+
+            // Color coding for recent low safety column
+            if ($points_needed_recent_low <= 0) {
+                $recent_low_safety_color = '#43b581';
+                $recent_low_safety_text = '✓ Safe';
+            } elseif ($points_needed_recent_low <= 3) {
+                $recent_low_safety_color = '#faa61a';
+                $recent_low_safety_text = $points_needed_recent_low . ' pts';
+            } else {
+                $recent_low_safety_color = '#f04747';
+                $recent_low_safety_text = $points_needed_recent_low . ' pts';
+            }
+
             // Check if past halfway
             if ($team['played'] >= $halfway_games) {
                 if ($team['points'] >= $safety_target_halfway) {
@@ -320,10 +407,10 @@ function getTeamInfo($team_name, $team_info) {
             <td>
                 <span class="team-name">
                     <span class="team-official">
-                        <?= htmlspecialchars($team['team_name']) ?>
+                        <?= htmlspecialchars($info['name']) ?>
                     </span>
                     <?php if ($show_common): ?>
-                        <span class="team-common">(<?= $info['common_name'] ?>)</span>
+                        <span class="team-common">(<?= $team['team_name'] ?>)</span>
                     <?php endif; ?>
                     <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
                         <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
@@ -355,6 +442,18 @@ function getTeamInfo($team_name, $team_info) {
             <td><strong><?= $team['points'] ?></strong></td>
             <td style="color: <?= $safety_color ?>; font-weight: bold; font-size: 12px;">
                 <?= $safety_text ?>
+            </td>
+            <td style="color: <?= $avg_safety_color ?>; font-weight: bold; font-size: 12px;">
+                <?= $avg_safety_text ?>
+            </td>
+            <td style="color: <?= $magic_safety_color ?>; font-weight: bold; font-size: 12px;">
+                <?= $magic_safety_text ?>
+            </td>
+            <td style="color: <?= $low_safety_color ?>; font-weight: bold; font-size: 12px;">
+                <?= $low_safety_text ?>
+            </td>
+            <td style="color: <?= $recent_low_safety_color ?>; font-weight: bold; font-size: 12px;">
+                <?= $recent_low_safety_text ?>
             </td>
         </tr>
         <?php endforeach; ?>
