@@ -119,7 +119,7 @@ $stmt->execute(['channel' => $selected_channel]);
 $heatmap_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Build heatmap
-$heatmap = array_fill(0, 7, array_fill(0, 24, 0));
+$heatmap = array_fill(0, 0, array_fill(0, 24, 0));
 foreach ($heatmap_data as $row) {
     $heatmap[$row['dayofweek']][$row['hour']] = $row['count'];
 }
@@ -226,47 +226,6 @@ if ($max_heat == 0) $max_heat = 1;
         </div>
         <?php endforeach; ?>
     </div>
-</div>
-
-<!-- Top Users with Mode Badges -->
-<div class="panel">
-    <h2>Top 15 Users (Last 30 Days)</h2>
-    <table>
-        <tr>
-            <th>#</th>
-            <th>User</th>
-            <th>Messages</th>
-            <th>% of Total</th>
-            <th>Last Seen</th>
-        </tr>
-        <?php foreach ($top_users as $i => $user): 
-            $badge = get_mode_badge($user['mode']);
-        ?>
-        <tr>
-            <td><?= $i + 1 ?></td>
-            <td>
-                <?php if ($badge): ?>
-                    <span class="mode-badge" 
-                          style="color: <?= $badge['color'] ?>; font-weight: bold; margin-right: 4px;"
-                          title="<?= $badge['title'] ?>">
-                        <?= $badge['symbol'] ?>
-                    </span>
-                <?php endif; ?>
-                <span><?= htmlspecialchars($user['nick']) ?></span>
-            </td>
-            <td><?= number_format($user['messages']) ?></td>
-            <td>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="progress-bar" style="flex: 1;">
-                        <div class="progress-fill" style="width: <?= $user['percentage'] ?>%"></div>
-                    </div>
-                    <span><?= $user['percentage'] ?>%</span>
-                </div>
-            </td>
-            <td title="<?= $user['last_seen'] ?>"><?= time_ago(strtotime($user['last_seen']) * 1000) ?></td>
-        </tr>
-        <?php endforeach; ?>
-    </table>
 </div>
 
 <!-- Activity Heatmap -->

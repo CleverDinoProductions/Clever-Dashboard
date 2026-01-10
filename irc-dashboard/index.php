@@ -6,7 +6,7 @@ require_once 'config.php';
 $tab = $_GET['tab'] ?? 'general';
 
 // Validate tab
-$valid_tabs = ['general', 'channels', 'invites', 'invitations', 'interviews','queue-history',  'interview-history', 'invitation-history', 'support', 'history', 'logs', 'windows', 'timezones'];
+$valid_tabs = ['general', 'channels', 'invitations', 'interviews',  'interview-history', 'invitation-history', 'windows', 'timezones'];
 if (!in_array($tab, $valid_tabs)) {
     $tab = 'general';
 }

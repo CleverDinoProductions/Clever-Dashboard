@@ -332,42 +332,6 @@ $success_rate = $total_interviews > 0 ? round(($total_success / $total_interview
             </div>
         </div>
     </div>
-    
-    <?php if (!empty($data['interviews'])): ?>
-    <div class="panel">
-        <h2>👥 All Interviews (<?= count($data['interviews']) ?>)</h2>
-        <table>
-            <tr>
-                <th>Username</th>
-                <th>Room</th>
-                <th>Time</th>
-                <th>Result</th>
-                <th>Staff</th>
-            </tr>
-            <?php foreach ($data['interviews'] as $interview): ?>
-            <tr>
-                <td><span class="badge badge-user"><?= htmlspecialchars($interview['username']) ?></span></td>
-                <td><span class="badge badge-voice">Room <?= htmlspecialchars($interview['room']) ?></span></td>
-                <td style="font-size: 11px;"><?= $interview['time'] ?></td>
-                <td>
-                    <?php if ($interview['successful']): ?>
-                        <span style="color: #43b581; font-weight: bold;">✓ Success</span>
-                    <?php else: ?>
-                        <span style="color: #f04747;">✗ Failed</span>
-                    <?php endif; ?>
-                </td>
-                <td>
-                    <?php if ($interview['successful']): ?>
-                        <span class="badge badge-voice"><?= htmlspecialchars($interview['staff']) ?></span>
-                    <?php else: ?>
-                        <span style="color: #888;">—</span>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
-    <?php endif; ?>
 
 <?php elseif ($week): ?>
     <!-- WEEK SUMMARY VIEW -->

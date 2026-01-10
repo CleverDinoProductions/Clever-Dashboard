@@ -184,44 +184,6 @@ $busiest_count = !empty($daily_stats) ? max($daily_stats) : 0;
     <?php endif; ?>
 </div>
 
-<!-- Recent Invitations -->
-<div class="panel">
-    <h2>🎫 Recent Invitations</h2>
-    <p style="color: #888; margin-bottom: 15px;">Latest 50 people welcomed by MouseBot</p>
-    <?php if (empty($recent_invitations)): ?>
-        <p style="color: #888;">No recent invitations</p>
-    <?php else: ?>
-    <table>
-        <tr>
-            <th>#</th>
-            <th>Username</th>
-            <th>Welcomed</th>
-            <th>Time Ago</th>
-        </tr>
-        <?php foreach ($recent_invitations as $idx => $inv): ?>
-        <?php
-        $time_diff = time() - ($inv['time'] / 1000);
-        if ($time_diff < 60) {
-            $time_ago = 'Just now';
-        } elseif ($time_diff < 3600) {
-            $time_ago = floor($time_diff / 60) . 'm ago';
-        } elseif ($time_diff < 86400) {
-            $time_ago = floor($time_diff / 3600) . 'h ago';
-        } else {
-            $time_ago = floor($time_diff / 86400) . 'd ago';
-        }
-        ?>
-        <tr>
-            <td style="color: #888;"><?= $idx + 1 ?></td>
-            <td><span class="badge badge-voice"><?= htmlspecialchars($inv['username']) ?></span></td>
-            <td><?= $inv['timestamp'] ?></td>
-            <td style="color: #888; font-style: italic;"><?= $time_ago ?></td>
-        </tr>
-        <?php endforeach; ?>
-    </table>
-    <?php endif; ?>
-</div>
-
 <!-- Summary Stats -->
 <div class="panel">
     <h2>📈 Summary Statistics</h2>

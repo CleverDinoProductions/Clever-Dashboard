@@ -231,28 +231,6 @@ if (isset($data['invites'])) {
         </div>
     </div>
     
-    <?php if (!empty($data['invites'])): ?>
-    <div class="panel">
-        <h2>👥 All Invitations (<?= count($data['invites']) ?>)</h2>
-        <table>
-            <tr>
-                <th>#</th>
-                <th>Username</th>
-                <th>Welcomed</th>
-                <th>Interviewed By</th>
-            </tr>
-            <?php foreach ($data['invites'] as $idx => $invite): ?>
-            <tr>
-                <td style="color: #888;"><?= $idx + 1 ?></td>
-                <td><span class="badge badge-user"><?= htmlspecialchars($invite['username']) ?></span></td>
-                <td style="font-size: 11px;"><?= $invite['time'] ?></td>
-                <td><span class="badge badge-voice"><?= htmlspecialchars($invite['staff']) ?></span></td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
-    <?php endif; ?>
-
 <?php elseif ($week): ?>
     <!-- WEEK SUMMARY VIEW -->
     <div class="panel">

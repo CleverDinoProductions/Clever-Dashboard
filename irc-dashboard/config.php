@@ -1,10 +1,13 @@
 <?php
-// Database Configuration - CleverLounge DB (READ-ONLY)
+// Database Configuration - CleverLounge DB (STRICTLY READ-ONLY, AGGREGATE QUERIES ONLY)
+// Per HK compliance: No user/nick/staff/member data, no write operations, only aggregate stats allowed.
 $dbPath = '/home/paul/.thelounge/logs/DinoDude.sqlite3'; // Adjust to your path
 
 try {
     $db = new PDO("sqlite:$dbPath");
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Enforce read-only mode (SQLite):
+    $db->query('PRAGMA query_only = 1;');
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
