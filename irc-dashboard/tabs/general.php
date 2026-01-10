@@ -104,18 +104,4 @@ $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endforeach; ?>
         </table>
     </div>
-
-    <div class="panel">
-        <h2>🏆 Top Users Network-Wide (7 Days)</h2>
-        <table>
-            <tr><th>User</th><th>Messages</th><th>Channels</th></tr>
-            <?php foreach ($top_users_network as $user): ?>
-            <tr>
-                <td><span class="badge badge-user"><?= htmlspecialchars($user['nick']) ?></span></td>
-                <td><?= number_format($user['messages']) ?></td>
-                <td><?= $user['channels_active'] ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </table>
-    </div>
 </div>
