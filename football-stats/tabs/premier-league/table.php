@@ -1,6 +1,6 @@
 <?php
 // Fetch league table
-$stmt = $db->query("SELECT * FROM league_table ORDER BY position ASC");
+$stmt = $db->query("SELECT * FROM league_table_2025_2026 ORDER BY position ASC");
 $standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
@@ -47,12 +47,6 @@ $team_info = [
     ],
     'Brighton & Hove Albion' => [
         'name' => 'Brighton',
-        'common_name' => 'Brighton',
-        'nickname' => 'The Seagulls',
-        'short' => 'BHA',
-        'color' => '#0057B8',
-    ],
-    'Brighton' => [
         'common_name' => 'Brighton',
         'nickname' => 'The Seagulls',
         'short' => 'BHA',
@@ -149,12 +143,12 @@ $team_info = [
         'short' => 'NFO',
         'color' => '#DD0000',
     ],
-    'Southampton' => [
-        'name' => 'Southampton',
-        'common_name' => 'Southampton',
-        'nickname' => 'The Saints',
-        'short' => 'SOU',
-        'color' => '#D71920',
+    'Sunderland' => [
+        'name' => 'Sunderland',
+        'common_name' => 'Sunderland',
+        'nickname' => 'The Black Cats',
+        'short' => 'SUN',
+        'color' => '#FF0000',
     ],
     'Tottenham Hotspur' => [
         'name' => 'Tottenham Hotspur',
