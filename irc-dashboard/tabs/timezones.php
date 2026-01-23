@@ -8,13 +8,46 @@ $voice_channel = '#anonamouse.net';
 
 // Timezone regions to track
 $timezones = [
+    // North America
+    'Hawaii' => ['offset' => -10, 'name' => 'Hawaii (HST)', 'color' => '#5865F2'],
+    'Alaska' => ['offset' => -9, 'name' => 'Alaska (AKST)', 'color' => '#5865F2'],
     'US-West' => ['offset' => -8, 'name' => 'US West (PST)', 'color' => '#5865F2'],
+    'US-Mountain' => ['offset' => -7, 'name' => 'US Mountain (MST)', 'color' => '#5865F2'],
+    'US-Central' => ['offset' => -6, 'name' => 'US Central (CST)', 'color' => '#5865F2'],
     'US-East' => ['offset' => -5, 'name' => 'US East (EST)', 'color' => '#5865F2'],
+    // South America
+    'Chile' => ['offset' => -4, 'name' => 'Chile (CLT)', 'color' => '#5865F2'],
+    'Argentina' => ['offset' => -3, 'name' => 'Argentina (ART)', 'color' => '#5865F2'],
+    // Atlantic and Caribbean
+    'Atlantic' => ['offset' => -4, 'name' => 'Atlantic Standard Time (AST)', 'color' => '#5865F2'],
+    'Brazil' => ['offset' => -3, 'name' => 'Brazil (BRT)', 'color' => '#5865F2'],
+    'Western Greenland' => ['offset' => -2, 'name' => 'Western Greenland Time (WGT)', 'color' => '#5865F2'],
+    'Cape Verde' => ['offset' => -1, 'name' => 'Cape Verde Time (CVT)', 'color' => '#5865F2'],
+    // Africa
+    'West Africa' => ['offset' => 0, 'name' => 'West Africa (WAT)', 'color' => '#43b581'],
+    'Central Africa' => ['offset' => 1, 'name' => 'Central Africa (CAT)', 'color' => '#43b581'],
+    'East Africa' => ['offset' => 3, 'name' => 'East Africa (EAT)', 'color' => '#43b581'],
+    // Europe
     'UK' => ['offset' => 0, 'name' => 'UK (GMT)', 'color' => '#43b581'],
     'EU-Central' => ['offset' => 1, 'name' => 'EU Central (CET)', 'color' => '#43b581'],
+    'EU-East' => ['offset' => 2, 'name' => 'EU East (EET)', 'color' => '#43b581'],
+    'Russia' => ['offset' => 3, 'name' => 'Russia (MSK)', 'color' => '#43b581'],
+    // Middle East
+    'UAE' => ['offset' => 4, 'name' => 'UAE (GST)', 'color' => '#43b581'],
+    // South Asia
     'India' => ['offset' => 5.5, 'name' => 'India (IST)', 'color' => '#faa61a'],
+    'Pakistan' => ['offset' => 5, 'name' => 'Pakistan (PKT)', 'color' => '#faa61a'],
+    'Bangladesh' => ['offset' => 6, 'name' => 'Bangladesh (BST)', 'color' => '#faa61a'],
+    // East Asia
     'China' => ['offset' => 8, 'name' => 'China (CST)', 'color' => '#faa61a'],
-    'Australia' => ['offset' => 11, 'name' => 'Australia (AEDT)', 'color' => '#f04747'],
+    'Japan' => ['offset' => 9, 'name' => 'Japan (JST)', 'color' => '#faa61a'],
+    'Korea' => ['offset' => 9, 'name' => 'Korea (KST)', 'color' => '#faa61a'],
+    // Oceania
+    'Western Australia' => ['offset' => 8, 'name' => 'Western Australia (AWST)', 'color' => '#f04747'],
+    'Northern Territory' => ['offset' => 9, 'name' => 'Northern Territory (ACST)', 'color' => '#f04747'],
+    'Central Australia' => ['offset' => 9.5, 'name' => 'Central Australia (ACST)', 'color' => '#f04747'],
+    'Eastern Australia' => ['offset' => 10, 'name' => 'Eastern Australia (AEST)', 'color' => '#f04747'],
+    'New Zealand' => ['offset' => 12, 'name' => 'New Zealand (NZST)', 'color' => '#f04747'],
 ];
 
 // Helper: Check if hour is "awake time" (6am-2am local = 06:00-26:00)
