@@ -443,6 +443,17 @@ tr:nth-child(25) td:first-child {
 
             // Calculate max points possible (current points + performance)
             $max_points_possible = round($team['points'] + $performance, 0);
+            if ($max_points_possible >= 60) {
+                $max_points_possible_color = '#006400'; // Dark Green for 60+ max points possible
+            } elseif ($max_points_possible >= 40) {
+                $max_points_possible_color = '#00FF00'; // Green for 40-59 max points possible
+            } elseif ($max_points_possible >= 30) {
+                $max_points_possible_color = '#faa61a'; // Orange for 30-39 max points possible
+            } elseif ($max_points_possible >= 20) {
+                $max_points_possible_color = '#f04747'; // Red for 20-29 max points possible
+            } else {
+                $max_points_possible_color = '#8B4513'; // Brown for below 40 max points possible
+            }
 
             // Calculate points required (points needed) to reach max points possible
             $points_needed_max = $max_points_possible - $team['points'];
@@ -461,15 +472,15 @@ tr:nth-child(25) td:first-child {
             // Calculate max points possible if all remaining games are wins, draws, or 50/50
             $max_points_possible_win = round($team['points'] + ($games_remaining * 3), 0);
             if ($max_points_possible_win >= 60) {
-                $max_points_color = '#006400'; // Dark Green for 60+ max points possible
+                $max_points_win_color = '#006400'; // Dark Green for 60+ max points possible
             } elseif ($max_points_possible_win >= 40) {
-                $max_points_color = '#00FF00'; // Green for 40-59 max points possible
+                $max_points_win_color = '#00FF00'; // Green for 40-59 max points possible
             } elseif ($max_points_possible_win >= 30) {
-                $max_points_color = '#faa61a'; // Orange for 30-39 max points possible
+                $max_points_win_color = '#faa61a'; // Orange for 30-39 max points possible
             } elseif ($max_points_possible_win >= 20) {
-                $max_points_color = '#f04747'; // Red for 20-29 max points possible
+                $max_points_win_color = '#f04747'; // Red for 20-29 max points possible
             } else {
-                $max_points_color = '#8B4513'; // Brown for below 40 max points possible
+                $max_points_win_color = '#8B4513'; // Brown for below 40 max points possible
             }
             $max_points_possible_draw = round($team['points'] + ($games_remaining * 1), 0);
             if ($max_points_possible_draw >= 60) {
@@ -571,7 +582,7 @@ tr:nth-child(25) td:first-child {
             <td style="color: <?= $ppg_needed_46_color ?>; font-weight: bold;"><?= $ppg_needed_46 ?></td>
             <td style="color: <?= $performance_color ?>; font-weight: bold;"><?= round($performance, 2) ?></td>
             <td style="color: <?= $buffer_color ?>; font-weight: bold;"><?= $buffer ?></td>
-            <td style="color: <?= $max_points_color ?>; font-weight: bold;"><?= $max_points_possible ?></td>
+            <td style="color: <?= $max_points_possible_color ?>; font-weight: bold;"><?= $max_points_possible ?></td>
             <td style="color: <?= $max_points_win_color ?>; font-weight: bold;"><?= $max_points_possible_win ?></td>
             <td style="color: <?= $max_points_draw_color ?>; font-weight: bold;"><?= $max_points_possible_draw ?></td>
             <td style="color: <?= $max_points_win_draw_color ?>; font-weight: bold;"><?= $max_points_possible_win_draw ?></td>
