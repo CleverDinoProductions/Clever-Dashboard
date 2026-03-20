@@ -72,6 +72,7 @@ foreach ($groups as $team) {
 
 // Pot 1 Elite Teams
 $pot1Elite = ['Spain', 'Argentina', 'France', 'England', 'Brazil', 'Portugal', 'Netherlands', 'Belgium', 'Germany'];
+$hosts = ['USA', 'Canada', 'Mexico'];
 
 // Death bracket groups (D-I)
 $deathBracketGroups = ['Group D', 'Group E', 'Group F', 'Group G', 'Group H', 'Group I'];
@@ -84,7 +85,7 @@ $goldenPathElite = [];
 foreach ($groupData as $groupName => $teams) {
     if (isset($teams[0])) {
         $winner = $teams[0]['team_name'];
-        if (in_array($winner, $pot1Elite)) {
+        if (in_array($winner, $pot1Elite) || in_array($winner, $hosts)) {
             if (in_array($groupName, $deathBracketGroups)) {
                 $deathBracketElite[] = $winner;
             } else {
@@ -137,7 +138,7 @@ $sf2Team2 = null;
 $deathBracketWinners = [];
 foreach ($deathBracketGroups as $group) {
     $winner = getGroupWinner($groupData, $group);
-    if ($winner && in_array($winner, $pot1Elite)) {
+    if ($winner && (in_array($winner, $pot1Elite) || in_array($winner, $hosts))) {
         $deathBracketWinners[] = $winner;
     }
 }
@@ -146,7 +147,7 @@ foreach ($deathBracketGroups as $group) {
 $goldenPathWinners = [];
 foreach ($goldenPathGroups as $group) {
     $winner = getGroupWinner($groupData, $group);
-    if ($winner && in_array($winner, $pot1Elite)) {
+    if ($winner && (in_array($winner, $pot1Elite) || in_array($winner, $hosts))) {
         $goldenPathWinners[] = $winner;
     }
 }

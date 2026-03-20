@@ -310,4 +310,43 @@ $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
             </div>
         </div>
     <?php endif; ?>
+    <?php
+// Fetch all 3rd place teams
+$third_stmt = $db->query("SELECT * FROM wc_third_place ORDER BY points DESC, gd DESC, gf DESC");
+$third_teams = $third_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if (!empty($third_teams)): 
+?>
+    <div style="margin-top: 40px; border-top: 2px solid #40444b; padding-top: 20px;">
+        <h3 style="color: #faa61a;">🥉 Best 3rd Place Teams (Top 8 Qualify)</h3>
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <tr style="background: #202225; color: #888;">
+                <th style="text-align: left; padding: 8px;">Rank</th>
+                <th style="text-align: left;">Team</th>
+                <th>Group</th>
+                <th>Pts</th>
+                <th>GD</th>
+                <th>GF</th>
+                <th>Status</th>
+            </tr>
+            <?php foreach ($third_teams as $index => $team): 
+                $rank = $index + 1;
+                $is_qualified = $rank <= 8;
+                $bg_color = $is_qualified ? 'rgba(67, 181, 129, 0.1)' : 'rgba(240, 71, 71, 0.1)';
+            ?>
+            <tr style="background: <?= $bg_color ?>; border-bottom: 1px solid #2f3136;">
+                <td style="padding: 8px;"><strong><?= $rank ?></strong></td>
+                <td><?= htmlspecialchars($team['team_name']) ?></td>
+                <td style="text-align: center;"><?= str_replace('Group ', '', $team['group_name']) ?></td>
+                <td style="text-align: center;"><strong><?= $team['points'] ?></strong></td>
+                <td style="text-align: center;"><?= $team['gd'] > 0 ? '+'.$team['gd'] : $team['gd'] ?></td>
+                <td style="text-align: center;"><?= $team['gf'] ?></td>
+                <td style="text-align: center;">
+                    <?= $is_qualified ? '<span style="color:#43b581">QUALIFIED</span>' : '<span style="color:#f04747">ELIMINATED</span>' ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
+<?php endif; ?>
 </div>
