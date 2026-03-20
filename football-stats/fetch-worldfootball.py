@@ -13,8 +13,9 @@ conn = sqlite3.connect('football-stats.sqlite3')
 cursor = conn.cursor()
 
 # Create tables if they don't exist
+# League tables for Premier League and Championship
 cursor.execute("""
-    CREATE TABLE IF NOT EXISTS league_table (
+    CREATE TABLE IF NOT EXISTS league_table_PL (
         team_name TEXT,
         position INTEGER,
         played INTEGER,
@@ -28,6 +29,23 @@ cursor.execute("""
         updated_at INTEGER
     )
 """)
+
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS league_table_ELC (
+        team_name TEXT,
+        position INTEGER,
+        played INTEGER,
+        won INTEGER,
+        drawn INTEGER,
+        lost INTEGER,
+        gf INTEGER,
+        ga INTEGER,
+        gd INTEGER,
+        points INTEGER,
+        updated_at INTEGER
+    )
+""")
+
 
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS wc_groups (
@@ -109,12 +127,12 @@ if response.status_code == 200:
         ))
     
     # Update database
-    cursor.execute("DELETE FROM league_table")
+    cursor.execute("DELETE FROM league_table_PL")
     
     timestamp = int(time.time() * 1000)
     for team in teams_data:
         cursor.execute("""
-            INSERT INTO league_table VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO league_table_PL VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (*team, timestamp))
     
     conn.commit()
@@ -123,6 +141,45 @@ if response.status_code == 200:
     print(f"  ✓ Updated at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 else:
     print(f"  ✗ Failed: {response.status_code}")
+
+# ============================================
+# FETCH Championship DATA 
+# ============================================
+print("\n[1.5/2] Fetching Championship...")
+url_champ = "https://api.football-data.org/v4/competitions/ELC/standings"
+response_champ = requests.get(url_champ, headers=headers_api)
+if response_champ.status_code == 200:
+    data_champ = response_champ.json()
+    standings_champ = data_champ['standings'][0]['table']
+    
+    teams_data_champ = []
+    for team in standings_champ:
+        teams_data_champ.append((
+            team['team']['name'],
+            team['position'],
+            team['playedGames'],
+            team['won'],
+            team['draw'],
+            team['lost'],
+            team['goalsFor'],
+            team['goalsAgainst'],
+            team['goalDifference'],
+            team['points']
+        ))
+    
+    # Update database
+    cursor.execute("DELETE FROM league_table_ELC")
+    
+    timestamp = int(time.time() * 1000)
+    for team in teams_data_champ:
+        cursor.execute("""
+            INSERT INTO league_table_ELC VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (*team, timestamp))
+    
+    conn.commit()
+    
+    print(f"  ✓ Successfully fetched {len(teams_data_champ)} Championship teams")
+    print(f"  ✓ Updated at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 # ============================================
 # FETCH WORLD CUP DATA (2026 FORMAT)
@@ -234,6 +291,35 @@ elif response_wc.status_code == 404:
     print(f"  ℹ World Cup 2026 starts June 11, 2026")
 else:
     print(f"  ✗ Failed: {response_wc.status_code}")
+
+print("\n[3/2] Calculating Best 3rd Place Teams...")
+
+# 1. Fetch all 3rd place teams
+cursor.execute("SELECT team_name, points, gd, gf FROM wc_third_place")
+teams = cursor.fetchall()
+
+# 2. Sort them: Points -> Goal Difference -> Goals For
+# (Python's sort is stable, so we sort in reverse order of importance)
+teams.sort(key=lambda x: x[3], reverse=True) # GF
+teams.sort(key=lambda x: x[2], reverse=True) # GD
+teams.sort(key=lambda x: x[1], reverse=True) # Points
+
+# 3. Update the database with their rank and qualification status
+# Top 8 qualify for Round of 32
+for rank, team in enumerate(teams, 1):
+    team_name = team[0]
+    qualified = 1 if rank <= 8 else 0
+    
+    cursor.execute("""
+        UPDATE wc_third_place 
+        SET rank = ?, qualified = ? 
+        WHERE team_name = ?
+    """, (rank, qualified, team_name))
+    
+    status = "✅ Q" if qualified else "❌"
+    print(f"   {rank}. {team_name} ({status})")
+
+conn.commit()
 
 conn.close()
 

@@ -12,6 +12,7 @@ body {
     background: #1e1e1e;
     color: #dcddde;
     line-height: 1.6;
+    text-align: center;
 }
 
 .site-container {
@@ -177,134 +178,44 @@ body {
 }
 
 /* ============================================
-   PANELS & CARDS
+   PANELS & CARDS (FIXED FOR DYNAMIC HEIGHT)
    ============================================ */
 .panel {
     background: #2e3136;
     border-radius: 8px;
-    padding: 25px;
+    padding: 30px 25px; /* Combined padding for cleaner code */
     margin-bottom: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-.panel h2 {
-    color: #5865F2;
-    font-size: 22px;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #5865F2;
-    padding-bottom: 10px;
-}
-
-.panel h3 {
-    color: #00ff88;
-    font-size: 18px;
-    margin-bottom: 12px;
+    
+    /* THE FIXES */
+    height: auto;           /* Allows it to grow with the table */
+    min-height: min-content; /* Ensures it stays as big as its content */
+    display: flex;          /* Helps with internal alignment */
+    flex-direction: column;
+    overflow: visible;      /* Let the table expand the panel */
 }
 
 /* ============================================
-   TABLES
+   TABLES (FIXED FOR OVERFLOW)
    ============================================ */
+/* 1. Add a wrapper in your HTML if possible: <div class="table-container"><table>...</table></div> */
+.table-container {
+    width: 100%;
+    overflow-x: auto; /* Horizontal scroll if table is too wide for mobile */
+    -webkit-overflow-scrolling: touch;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
+    table-layout: auto; /* Allows columns to breathe based on content */
 }
 
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #40444b;
+/* Ensure rows don't "lag" or overlap */
+tr {
+    display: table-row;
 }
-
-th {
-    color: #5865F2;
-    font-weight: 600;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: #23272a;
-}
-
-td {
-    color: #b9bbbe;
-    font-size: 14px;
-}
-
-tr:hover {
-    background: #36393e;
-}
-
-/* Table - Points Column */
-td:last-child {
-    font-weight: bold;
-    font-size: 16px;
-    color: #5865F2;
-}
-
-/* Premier League Position Colors */
-/* Champions League (1-4) */
-tr:nth-child(2) td:first-child,
-tr:nth-child(3) td:first-child,
-tr:nth-child(4) td:first-child,
-tr:nth-child(5) td:first-child {
-    color: #43b581;
-    font-weight: bold;
-}
-
-/* Europa League (5) */
-tr:nth-child(6) td:first-child {
-    color: #5865F2;
-    font-weight: bold;
-}
-
-/* Relegation Zone (18-20) */
-tr:nth-child(19) td:first-child,
-tr:nth-child(20) td:first-child,
-tr:nth-child(21) td:first-child {
-    color: #f04747;
-    font-weight: bold;
-}
-
-/* ============================================
-   BADGES & LABELS
-   ============================================ */
-.badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.badge-champions {
-    background: #43b581;
-    color: white;
-}
-
-.badge-europa {
-    background: #5865F2;
-    color: white;
-}
-
-.badge-relegation {
-    background: #f04747;
-    color: white;
-}
-
-.badge-team {
-    background: #40444b;
-    color: #dcddde;
-}
-
-.badge-host {
-    background: rgba(0, 255, 136, 0.2);
-    color: #00ff88;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 11px;
-}
-
 /* ============================================
    STATS & METRICS
    ============================================ */

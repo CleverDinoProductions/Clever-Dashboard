@@ -32,6 +32,10 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                class="pill-tab <?php echo ($currentMainTab == 'premier-league') ? 'active' : ''; ?>">
                 🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League
             </a>
+            <a href="?tab=championship&subtab=table" 
+               class="pill-tab <?php echo ($currentMainTab == 'championship') ? 'active' : ''; ?>">
+                🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship
+            </a>
             <a href="?tab=world-cup&subtab=groups" 
                class="pill-tab <?php echo ($currentMainTab == 'world-cup') ? 'active' : ''; ?>">
                 🌍 World Cup 2026
@@ -43,8 +47,12 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
             <?php if ($currentMainTab == 'premier-league'): ?>
                 <a href="?tab=premier-league&subtab=table" 
                    class="pill-tab <?php echo ($currentSubTab == 'table') ? 'active' : ''; ?>">
-                    📊 Table
+                    📊 Regular Table
                 </a>
+                <a href="?tab=premier-league&subtab=table-2" 
+                   class="pill-tab <?php echo ($currentSubTab == 'table-2') ? 'active' : ''; ?>">
+                    🔢 Deep Dive Table
+                </a>    
                 <a href="?tab=premier-league&subtab=blocks-overview" 
                    class="pill-tab <?php echo (strpos($currentSubTab, 'blocks') === 0) ? 'active' : ''; ?>">
                     🔢 Blocks of 4
@@ -52,6 +60,10 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                 <a href="?tab=premier-league&subtab=relegation" 
                    class="pill-tab <?php echo ($currentSubTab == 'relegation') ? 'active' : ''; ?>">
                     ⚠️ Relegation Battle
+                </a>
+                <a href="?tab=premier-league&subtab=relegation-2" 
+                   class="pill-tab <?php echo ($currentSubTab == 'relegation-2') ? 'active' : ''; ?>">
+                    🛡️ Relegation Deep Dive
                 </a>
                 <a href="?tab=premier-league&subtab=leeds" 
                    class="pill-tab <?php echo ($currentSubTab == 'leeds') ? 'active' : ''; ?>">
@@ -64,6 +76,15 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                 <a href="?tab=premier-league&subtab=leeds-3" 
                    class="pill-tab <?php echo ($currentSubTab == 'leeds-3') ? 'active' : ''; ?>">
                     🤍 Leeds Classic
+                </a>
+            <?php elseif ($currentMainTab == 'championship'): ?>
+                <a href="?tab=championship&subtab=table" 
+                   class="pill-tab <?php echo ($currentSubTab == 'table') ? 'active' : ''; ?>">
+                    📊 Regular Table
+                </a>
+                <a href="?tab=championship&subtab=table-2" 
+                   class="pill-tab <?php echo ($currentSubTab == 'table-2') ? 'active' : ''; ?>">
+                    🔢 Deep Dive Table
                 </a>
             <?php elseif ($currentMainTab == 'world-cup'): ?>
                 <a href="?tab=world-cup&subtab=groups" 

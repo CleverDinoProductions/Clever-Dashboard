@@ -19,6 +19,9 @@ include 'includes/header.php';
             case 'table':
                 include 'tabs/premier-league/table.php';
                 break;
+            case 'table-2':
+                include 'tabs/premier-league/table2.php';
+                break;
             case 'blocks-overview':
                 include 'tabs/premier-league/blocks-overview.php';
                 break;
@@ -43,6 +46,9 @@ include 'includes/header.php';
             case 'relegation':
                 include 'tabs/premier-league/relegation.php';
                 break;
+            case 'relegation-2':
+                include 'tabs/premier-league/relegation2.php';
+                break;
             case 'leeds':
                 include 'tabs/premier-league/leeds.php';
                 break;
@@ -54,6 +60,17 @@ include 'includes/header.php';
                 break;
             default:
                 include 'tabs/premier-league/table.php';
+        }
+    } elseif ($currentMainTab == 'championship') {
+        switch ($currentSubTab) {
+            case 'table':
+                include 'tabs/championship/table.php';
+                break;
+            case 'table-2':
+                include 'tabs/championship/table2.php';
+                break;
+            default:
+                include 'tabs/championship/table.php';
         }
     } elseif ($currentMainTab == 'world-cup') {
         switch ($currentSubTab) {
