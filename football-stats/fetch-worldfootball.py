@@ -97,6 +97,23 @@ cursor.execute("""
     )
 """)
 
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS wc_standings (
+        team_name TEXT,
+        stage TEXT,
+        rank INTEGER,
+        played INTEGER,
+        won INTEGER,
+        drawn INTEGER,
+        lost INTEGER,
+        gf INTEGER,
+        ga INTEGER,
+        gd INTEGER,
+        points INTEGER,
+        updated_at INTEGER
+    )
+""")
+
 conn.commit()
 
 # ============================================
@@ -195,6 +212,8 @@ if response_wc.status_code == 200:
     # Clear existing World Cup data
     cursor.execute("DELETE FROM wc_groups")
     cursor.execute("DELETE FROM wc_third_place")
+    cursor.execute("DELETE FROM wc_knockout")
+    cursor.execute("DELETE FROM wc_standings")
     
     timestamp = int(time.time() * 1000)
     
@@ -241,6 +260,24 @@ if response_wc.status_code == 200:
                         0,  # Qualified flag (1 if in top 8)
                         timestamp
                     ))
+
+                # Insert into overall standings for knockout qualification tracking
+                cursor.execute("""
+                    INSERT INTO wc_standings VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    team['team']['name'],
+                    group_name,
+                    team['position'],
+                    team['playedGames'],
+                    team['won'],
+                    team['draw'],
+                    team['lost'],
+                    team['goalsFor'],
+                    team['goalsAgainst'],
+                    team['goalDifference'],
+                    team['points'],
+                    timestamp
+                ))
     
     conn.commit()
     print(f"  ✓ Successfully fetched World Cup group data")
