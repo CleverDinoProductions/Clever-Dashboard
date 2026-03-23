@@ -354,9 +354,12 @@ tr:nth-child(21) td:first-child {
             <th title="Games remaining">GR</th>
             <th title="Points">Pts</th>
             <th title="Points per Game">PPG</th>
+            <th title="Points needed to reach 38 points">Pts Needed (38)</th>
+            <th title="Points needed to reach 40 points">Pts Needed (40)</th>
             <th title="Required points needed to reach max points possible">Pts Required</th>
             <th title="Required points per game to reach max points possible">PPG Required</th>
             <th title="PPG needed to reach 38 points">PPG Required (38)</th>
+            <th title="PPG needed to reach 40 points">PPG Required (40)</th>
             <th title="Performance points based on current PPG and games remaining">Performance</th>
             <th title="Points relative to games played (The 1:1 Ratio)">+/- Buffer</th>
             <th title="Max Points Possible weighted on current performance">Max Pts</th>
@@ -434,12 +437,40 @@ tr:nth-child(21) td:first-child {
                 $max_points_color = '#006400'; // Dark Green for 60+ max points possible
             } elseif ($max_points_possible >= 40) {
                 $max_points_color = '#00FF00'; // Green for 40-59 max points possible
-            } elseif ($max_points_possible >= 30) {
-                $max_points_color = '#faa61a'; // Orange for 30-39 max points possible
-            } elseif ($max_points_possible >= 20) {
-                $max_points_color = '#f04747'; // Red for 20-29 max points possible
+            } elseif ($max_points_possible >= 30 || $games_remaining <= 5) {
+                $max_points_color = '#faa61a'; // Orange for 30-39 max points possible or 5 or fewer games remaining
+            } elseif ($max_points_possible >= 20 || $games_remaining <= 3) {
+                $max_points_color = '#f04747'; // Red for 20-29 max points possible or 3 or fewer games remaining
             } else {
                 $max_points_color = '#8B4513'; // Brown for below 20 max points possible
+            }
+
+            // Calculate points required to reach 38 points
+            $points_needed_38 = max(0, 38 - $team['points']);
+            if ($points_needed_38 <= 0) {
+                $points_needed_38_color = '#43b581'; // Green if already at or above 38 points
+            } elseif ($points_needed_38 <= 10) {
+                $points_needed_38_color = '#00FF00'; // Green for 1-10 points needed
+            } elseif ($points_needed_38 <= 20) {
+                $points_needed_38_color = '#faa61a'; // Orange for 11-20 points needed
+            } elseif ($points_needed_38 <= 30) {
+                $points_needed_38_color = '#f04747'; // Red for 21-30 points needed
+            } else {
+                $points_needed_38_color = '#8B4513'; // Brown for above 30 points needed
+            }
+
+            // Calculate points required to reach 40 points
+            $points_needed_40 = max(0, 40 - $team['points']);
+            if ($points_needed_40 <= 0) {
+                $points_needed_40_color = '#43b581'; // Green if already at or above 40 points
+            } elseif ($points_needed_40 <= 10) {
+                $points_needed_40_color = '#00FF00'; // Green for 1-10 points needed
+            } elseif ($points_needed_40 <= 20) {
+                $points_needed_40_color = '#faa61a'; // Orange for 11-20 points needed
+            } elseif ($points_needed_40 <= 30) {
+                $points_needed_40_color = '#f04747'; // Red for 21-30 points needed
+            } else {
+                $points_needed_40_color = '#8B4513'; // Brown for above 30 points needed
             }
 
             // Calculate points required (points needed) to reach max points possible
@@ -510,6 +541,23 @@ tr:nth-child(21) td:first-child {
             } else {
                 $ppg_needed_38_color = '#8B4513'; // Brown for 10+ PPG needed
             }
+
+            // Calculate PPG needed to reach 40 points based on current PPG, points and games remaining
+            $points_needed_40 = max(0, 40 - $team['points']);
+            $ppg_needed_40 = ($games_remaining > 0) ? round($points_needed_40 / $games_remaining, 2) : 0;
+            if ($ppg_needed_40 <= 0) {
+                $ppg_needed_40_color = '#006400'; // Dark Green for 2+ PPG needed
+            } elseif ($ppg_needed_40 <= 2) {
+                $ppg_needed_40_color = '#00FF00'; // Green for 3-4 PPG needed
+            } elseif ($ppg_needed_40 <= 3) {
+                $ppg_needed_40_color = '#ffff00'; // Yellow for 2-4 PPG needed
+            } elseif ($ppg_needed_40 <= 5) {
+                $ppg_needed_40_color = '#faa61a'; // Orange for 5-6 PPG needed
+            } elseif ($ppg_needed_40 <= 10) {
+                $ppg_needed_40_color = '#f04747'; // Red for 7-9 PPG needed
+            } else {
+                $ppg_needed_40_color = '#8B4513'; // Brown for 10+ PPG needed
+            }
             
             // Calculate PPG needed to reach max points possible based on current PPG, points and games remaining
             $points_needed_max = max(0, $max_points_possible - $team['points']);
@@ -566,9 +614,12 @@ tr:nth-child(21) td:first-child {
             <td style="color: <?= $games_color ?>; font-weight: bold;"><?= $games_remaining ?></td>
             <td style="color: <?= $points_color ?>; font-weight: bold;"><?= $points ?></td>
             <td style="color: <?= $ppg_color ?>; font-weight: bold;"><?= $ppg ?></td>
+            <td style="color: <?= $points_needed_38_color ?>; font-weight: bold;"><?= $points_needed_38 ?></td>
+            <td style="color: <?= $points_needed_40_color ?>; font-weight: bold;"><?= $points_needed_40 ?></td>
             <td style="color: <?= $points_needed_color ?>; font-weight: bold;"><?= $points_needed_max ?></td>
             <td style="color: <?= $ppg_required_color ?>; font-weight: bold;"><?= $ppg_needed ?></td>
             <td style="color: <?= $ppg_needed_38_color ?>; font-weight: bold;"><?= $ppg_needed_38 ?></td>
+            <td style="color: <?= $ppg_needed_40_color ?>; font-weight: bold;"><?= $ppg_needed_40 ?></td>
             <td style="color: <?= $performance_color ?>; font-weight: bold;"><?= round($performance, 2) ?></td>
             <td style="color: <?= $buffer_color ?>; font-weight: bold;"><?= $buffer ?></td>
             <td style="color: <?= $max_points_color ?>; font-weight: bold;"><?= $max_points_possible ?></td>
