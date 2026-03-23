@@ -10,6 +10,7 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Football Stats Dashboard - <?php echo ucfirst(str_replace('-', ' ', $currentMainTab)); ?></title>
     <link rel="stylesheet" href="assets/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
 </head>
 <body>
     <div class="site-container">
@@ -90,10 +91,6 @@ $currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : 'table';
                 <a href="?tab=world-cup&subtab=groups" 
                    class="pill-tab <?php echo ($currentSubTab == 'groups') ? 'active' : ''; ?>">
                     🔢 Groups
-                </a>
-                <a href="?tab=world-cup&subtab=third-place" 
-                   class="pill-tab <?php echo ($currentSubTab == 'third-place') ? 'active' : ''; ?>">
-                    📊 Third-Place Rankings
                 </a>
                 <a href="?tab=world-cup&subtab=knockout" 
                    class="pill-tab <?php echo ($currentSubTab == 'knockout') ? 'active' : ''; ?>">

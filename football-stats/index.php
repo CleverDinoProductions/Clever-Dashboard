@@ -77,13 +77,6 @@ include 'includes/header.php';
             case 'groups':
                 include 'tabs/world-cup/groups.php';
                 break;
-            case 'third-place':
-                if (file_exists('tabs/world-cup/third-place-teams.php')) {
-                    include 'tabs/world-cup/third-place-teams.php';
-                } else {
-                    echo '<div class="panel"><p style="color: #888;">Content coming soon...</p></div>';
-                }
-                break;
             case 'knockout':
                 include 'tabs/world-cup/knockout.php';
                 break;
