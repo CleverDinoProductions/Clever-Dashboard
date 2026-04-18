@@ -416,7 +416,7 @@ tr:nth-child(21) td:first-child {
             //remaining games
             $games_remaining = $total_games - $team['played'];
             if ($games_remaining == 0) {
-                $games_color = '#808080'; // Grey for 0 games remaining meaning the season is over and the team has no more chances to change their fate
+                $games_color = '#808080'; // Grey for 0 games remaining meaning the season is over and the team has no more chances to change their fate as their fate is sealed i.e. Survival, Relegation, etc.
             } elseif ($games_remaining <= 3) {
                 $games_color = '#8B0000'; // Dark Red for 2 or fewer games remaining meaning the season is almost over and the team has little chance to change their fate
             } elseif ($games_remaining <= 6) {
