@@ -56,17 +56,18 @@ This feature implements your analytical framework for dividing the Premier Leagu
 ## Navigation Structure
 
 ### URL Parameters
-- Overview: `?tab=premier-league&subtab=blocks-overview`
-- Block 1: `?tab=premier-league&subtab=blocks-1`
-- Block 2: `?tab=premier-league&subtab=blocks-2`
-- Block 3: `?tab=premier-league&subtab=blocks-3`
-- Block 4: `?tab=premier-league&subtab=blocks-4`
-- Block 5: `?tab=premier-league&subtab=blocks-5`
+- Overview: `?tab=2025-2026&league=premier-league&subtab=blocks-overview`
+- Block 1: `?tab=2025-2026&league=premier-league&subtab=blocks-1`
+- Block 2: `?tab=2025-2026&league=premier-league&subtab=blocks-2`
+- Block 3: `?tab=2025-2026&league=premier-league&subtab=blocks-3`
+- Block 4: `?tab=2025-2026&league=premier-league&subtab=blocks-4`
+- Block 5: `?tab=2025-2026&league=premier-league&subtab=blocks-5`
 
 ### Navigation Levels
-1. **Main Pills:** Premier League | World Cup
-2. **Sub Pills:** Table | **Blocks of 4** | Relegation | Leeds Tabs
-3. **Tertiary Pills** (only shows in blocks section): Overview | Block 1 | Block 2 | Block 3 | Block 4 | Block 5
+1. **Main Pills:** 2025/26 | 2026/27 | World Cup 2026
+2. **Sub Pills:** Premier League | Championship
+3. **Tertiary Pills:** League-specific pages for the selected season and league
+4. **Blocks Sub-Navigation** (only shows in blocks section): Overview | Live Data | Block 1 | Block 2 | Block 3 | Block 4 | Block 5
 
 ## Key Features from Your Analysis
 
