@@ -1,9 +1,9 @@
 <?php
-// Fetch league table
-$stmt = $db->query("SELECT * FROM league_table_PL ORDER BY position ASC");
-$standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$standings = $tableView['standings'];
+$last_update = $tableView['last_update'];
 
 // Safety calculation
 $halfway_games = 19; // Halfway point in season
@@ -270,6 +270,11 @@ th {
     border-bottom: 2px solid #444;
 }
 
+td {
+    border-bottom: 2px solid #444;
+    border-right: 2px solid #444;
+}
+
 /* 2. Important fix for tables */
 table {
     border-collapse: collapse; /* Required for sticky borders to show up correctly */
@@ -319,15 +324,21 @@ td:last-child {
 tr:nth-child(2) td:first-child,
 tr:nth-child(3) td:first-child,
 tr:nth-child(4) td:first-child,
-tr:nth-child(5) td:first-child {
+tr:nth-child(5) td:first-child,
+tr:nth-child(6) td:first-child {
     color: #43b581;
     font-weight: bold;
 }
 
 /* Europa League (5) */
-tr:nth-child(6) td:first-child,
 tr:nth-child(7) td:first-child {
     color: #5865F2;
+    font-weight: bold;
+}
+
+/* Conference League (6) */
+tr:nth-child(8) td:first-child {
+    color: #FFCD00;
     font-weight: bold;
 }
 
@@ -338,12 +349,28 @@ tr:nth-child(21) td:first-child {
     color: #f04747;
     font-weight: bold;
 }
+
+.team-crest {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Ensure the team cell uses flex for better alignment */
+.team-cell {
+    display: flex;
+    align-items: center;
+}
 </style>
 
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>
+    <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table-2'); ?>
     <p class="update-info">
-        Last updated: <?= date('Y-m-d H:i:s', $last_update['ts'] / 1000) ?>
+        <?= htmlspecialchars($tableView['updated_label'], ENT_QUOTES, 'UTF-8') ?>:
+        <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>
     </p>
     
     <table>
@@ -388,12 +415,24 @@ tr:nth-child(21) td:first-child {
 
             //remaining games
             $games_remaining = $total_games - $team['played'];
-            if ($games_remaining <= 5) {
-                $games_color = '#f04747'; // Red for 5 or fewer games remaining
+            if ($games_remaining == 0) {
+                $games_color = '#808080'; // Grey for 0 games remaining meaning the season is over and the team has no more chances to change their fate
+            } elseif ($games_remaining <= 3) {
+                $games_color = '#8B0000'; // Dark Red for 2 or fewer games remaining meaning the season is almost over and the team has little chance to change their fate
+            } elseif ($games_remaining <= 6) {
+                $games_color = '#FF0000'; // Red for 2-6 games remaining meaning the season is in the final stages and every game is crucial for the team's survival chances
             } elseif ($games_remaining <= 10) {
-                $games_color = '#faa61a'; // Orange for 6-10 games remaining
+                $games_color = '#FF8C00'; // Dark Orange for 7-10 games remaining meaning the team is in the middle of the season and needs to start picking up points soon to ensure safety
+            } elseif ($games_remaining <= 15) {
+                $games_color = '#FFA500'; // Orange for 11-15 games remaining meaning the team is in the early stages of the season and has time to recover but needs to be cautious
+            } elseif ($games_remaining <= 38 * 0.25) {
+                $games_color = '#FFD700'; // Dark Yellow for when games remaining is more than 75% of the season meaning the team has plenty of time to improve and should focus on building momentum and confidence
+            } elseif ($games_remaining <= 38 * 0.5) {
+                $games_color = '#FFFF00'; // Yellow for when games remaining is less than half the season
+            }elseif ($games_remaining <= 38 * 0.75) {
+                $games_color = '#006400'; // Dark Green for when games remaining is more than 50% but less than 75% of the season 
             } else {
-                $games_color = '#43b581'; // Green for more than 10 games remaining
+                $games_color = '#00FF00'; // Green for more than 75% of games remaining
             }
 
             // Points
@@ -416,18 +455,20 @@ tr:nth-child(21) td:first-child {
                 $buffer_color = '#888'; // Grey for neutral
             }
 
-            // Performance
+            // Performance which is the points the team is projected to earn based on current PPG and games remaining
             $performance = round($ppg * $games_remaining, 0);
             if ($performance >= 10) {
-                $performance_color = '#006400'; // Dark Green for 30+ performance
-            } elseif ($performance >= 8) {
-                $performance_color = '#00FF00'; // Green for 20-29.99 performance
+                $performance_color = '#006400'; // Dark Green for 10+ performance
+            } elseif ($performance >= 7) {
+                $performance_color = '#00FF00'; // Green for 7-9.99 performance
             } elseif ($performance >= 5) {
-                $performance_color = '#faa61a'; // Orange for 7-19.99 performance
+                $performance_color = '#FFFF00'; // Yellow for 5-6.99 performance
+            } elseif ($performance >= 3) {
+                $performance_color = '#faa61a'; // Orange for 3-4.99 performance
             } elseif ($performance >= 0) {
-                $performance_color = '#f04747'; // Red for 5-6.99 performance
+                $performance_color = '#f04747'; // Red for 0-2.99 performance
             } else {
-                $performance_color = '#8B4513'; // Brown for below 5 performance
+                $performance_color = '#8B4513'; // Brown for below 0 performance
             }
 
 
@@ -435,10 +476,10 @@ tr:nth-child(21) td:first-child {
             $max_points_possible = round($team['points'] + $performance, 0);
             if ($max_points_possible >= 60) {
                 $max_points_color = '#006400'; // Dark Green for 60+ max points possible
-            } elseif ($max_points_possible >= 40) {
-                $max_points_color = '#00FF00'; // Green for 40-59 max points possible
-            } elseif ($max_points_possible >= 30 || $games_remaining <= 5) {
-                $max_points_color = '#faa61a'; // Orange for 30-39 max points possible or 5 or fewer games remaining
+            } elseif ($max_points_possible >= 38) {
+                $max_points_color = '#00FF00'; // Green for 38-59 max points possible
+            } elseif ($max_points_possible >= 37 || $games_remaining <= 5) {
+                $max_points_color = '#faa61a'; // Orange for 30-37 max points possible or 5 or fewer games remaining
             } elseif ($max_points_possible >= 20 || $games_remaining <= 3) {
                 $max_points_color = '#f04747'; // Red for 20-29 max points possible or 3 or fewer games remaining
             } else {
@@ -578,13 +619,15 @@ tr:nth-child(21) td:first-child {
             $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
             $row_style = '';
             if ($is_leeds) {
-                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFCD00;';
+                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF;';
             } elseif ($team['position'] >= 18) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
-            } elseif ($team['position'] <= 4) {
+            } elseif ($team['position'] <= 5) {
                 $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
             } elseif ($team['position'] <= 6) {
                 $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
+            } elseif ($team['position'] == 7) {
+                $row_style = 'background: rgba(255, 205, 0, 0.1); border-left: 4px solid #FFCD00;';
             }
             
             // Check if official name differs from common name
@@ -593,22 +636,28 @@ tr:nth-child(21) td:first-child {
         <tr style="<?= $row_style ?>">
             <td><strong><?= $team['position'] ?></strong></td>
             <td>
-                <span class="team-name">
-                    <span class="team-official">
-                        <?= htmlspecialchars($info['name']) ?>
-                    </span>
-                    <?php if ($show_common): ?>
-                        <span class="team-common">(<?= $team['team_name'] ?>)</span>
-                    <?php endif; ?>
-                    <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
-                        <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
-                            <?= $info['nickname'] ?>
+                <div class="team-cell">
+                    <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
+                        alt="<?= htmlspecialchars($info['name']) ?> crest" 
+                        class="team-crest"
+                        onerror="this.style.display='none'"> <span class="team-name">
+                        <span class="team-official">
+                            <?= htmlspecialchars($info['name']) ?>
                         </span>
-                        <span class="tooltip-short">
-                            Abbreviated: <?= $info['short'] ?>
+                        <?php if ($show_common): ?>
+                            <span class="team-common">(<?= $team['team_name'] ?>)</span>
+                        <?php endif; ?>
+                
+                        <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
+                            <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
+                                <?= $info['nickname'] ?>
+                            </span>
+                            <span class="tooltip-short">
+                                Abbreviated: <?= $info['short'] ?>
+                            </span>
                         </span>
                     </span>
-                </span>
+                </div>
             </td>
             <td><?= $team['played'] ?></td>
             <td style="color: <?= $games_color ?>; font-weight: bold;"><?= $games_remaining ?></td>
@@ -633,7 +682,8 @@ tr:nth-child(21) td:first-child {
     <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap;">
         <div><span style="color: #43b581;">■</span> Champions League (1st-4th)</div>
         <div><span style="color: #5865F2;">■</span> Europa League (5th-6th)</div>
-        <div><span style="color: #FFCD00;">■</span> Leeds United 🤍💛💙</div>
+        <div><span style="color: #FFCD00;">■</span> Conference League (7th)</div>
+        <div><span style="color: #FFFFFF;">■</span> Leeds United 🤍💛💙</div>
         <div><span style="color: #f04747;">■</span> Relegation to Championship (18th-20th)</div>
         <div style="margin-left: auto; color: #888;">
             💡 Hover over team names for nicknames

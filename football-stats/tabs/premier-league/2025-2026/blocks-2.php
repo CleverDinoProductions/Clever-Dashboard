@@ -9,20 +9,17 @@ $blockInfo = [
     'title' => 'European Contenders',
     'emoji' => '🌍',
     'color' => '#5865F2',
-    'positions' => '5-7',
-    'description' => 'Europa League & Conference League Qualification Zone'
+    'positions' => '1-7',
+    'description' => 'Champions League, Europa League & Conference League Qualification Zone'
 ];
 
-// Fetch league table - $db comes from parent include
-$stmt = $db->query("SELECT * FROM league_table WHERE position BETWEEN 5 AND 7 ORDER BY position ASC");
-$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get current matchday
-$matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM league_table");
-$currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
-
-// Get last update timestamp
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$teams = array_values(array_filter($tableView['standings'], function ($team) {
+    return $team['position'] >= 1 && $team['position'] <= 7;
+}));
+$currentMatchday = $tableView['active_matchweek'] ?? (!empty($tableView['standings']) ? max(array_map('intval', array_column($tableView['standings'], 'played'))) : 1);
+$last_update = $tableView['last_update'];
+$tableViewNavParams = football_stats_get_current_table_view_params();
 ?>
 
 <div class="block-detail-page">
@@ -36,8 +33,9 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
                 Positions <?php echo $blockInfo['positions']; ?>
             </span>
         </div>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-2'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
-            <?php echo $blockInfo['description']; ?> - Teams competing for Europa League (5th-6th) and Conference League (7th) spots, bringing European football and valuable revenue.
+            <?php echo $blockInfo['description']; ?> - Teams competing for Champions League (1st-4th), Europa League (5th-6th) and Conference League (7th) spots, bringing European football and valuable revenue.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
             📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
@@ -230,9 +228,9 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
     <!-- Navigation -->
     <div class="panel">
         <div class="block-navigation">
-            <a href="?tab=premier-league&subtab=blocks-1" class="nav-btn">← Block 1</a>
-            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">Overview</a>
-            <a href="?tab=premier-league&subtab=blocks-3" class="nav-btn">Block 3 →</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-1', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">← Block 1</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-overview', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">Overview</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-3', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">Block 3 →</a>
         </div>
     </div>
 </div>

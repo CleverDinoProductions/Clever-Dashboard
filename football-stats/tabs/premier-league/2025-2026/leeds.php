@@ -1,16 +1,17 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // LEEDS UNITED SURVIVAL TRACKER - Data queries
 
-// Get Leeds stats
-$stmt = $db->prepare("SELECT * FROM league_table WHERE team_name = 'Leeds United'");
-$stmt->execute();
-$leeds = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// If not found, try alternative spellings
-if (!$leeds) {
-    $stmt = $db->prepare("SELECT * FROM league_table WHERE team_name LIKE '%Leeds%'");
-    $stmt->execute();
-    $leeds = $stmt->fetch(PDO::FETCH_ASSOC);
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$standings = $tableView['standings'];
+$leeds = null;
+foreach ($standings as $teamRow) {
+    if ($teamRow['team_name'] === 'Leeds United' || stripos($teamRow['team_name'], 'Leeds') !== false) {
+        $leeds = $teamRow;
+        break;
+    }
 }
 
 // Safety check
@@ -20,8 +21,7 @@ if (!$leeds) {
     echo "<p>Please check that Leeds United data has been loaded.</p>";
     
     // Show available teams
-    $stmt = $db->query("SELECT team_name FROM league_table ORDER BY position ASC");
-    $teams = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $teams = array_column($standings, 'team_name');
     echo "<h3>Available teams in database:</h3>";
     echo "<pre>" . implode("\n", $teams) . "</pre>";
     echo "</div>";
@@ -109,18 +109,18 @@ if ($games_played >= $halfway_point) {
     }
 }
 
-// Get bottom 6 teams for comparison
-$stmt = $db->query("
-    SELECT * FROM league_table 
-    WHERE position >= 15 
-    ORDER BY position ASC
-");
-$bottom_six = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$bottom_six = array_values(array_filter($standings, function ($teamRow) {
+    return (int) $teamRow['position'] >= 15;
+}));
 
-// Calculate gap to 18th place (relegation zone)
-$stmt = $db->query("SELECT points FROM league_table WHERE position = 18");
-$eighteenth = $stmt->fetch(PDO::FETCH_ASSOC);
-$gap_to_18th = $leeds['points'] - ($eighteenth['points'] ?? 0);
+$eighteenth = null;
+foreach ($standings as $teamRow) {
+    if ((int) $teamRow['position'] === 18) {
+        $eighteenth = $teamRow;
+        break;
+    }
+}
+$gap_to_18th = (int) $leeds['points'] - (int) ($eighteenth['points'] ?? 0);
 
 // Survival status
 if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
@@ -168,6 +168,7 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
                 📊 Survival Probability: <strong style="color: #FFCD00;"><?php echo $survival_chance; ?></strong>
             </span>
         </div>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds'); ?>
     </div>
 </div>
 

@@ -69,7 +69,7 @@ try {
     echo "🎯 Matchday: 18 of 38\n";
     echo "📅 Updated: " . date('Y-m-d H:i:s', $timestamp) . "\n\n";
     echo "You can now view your blocks analysis at:\n";
-    echo "→ http://your-dashboard/football-stats/?tab=premier-league&subtab=blocks-overview\n\n";
+    echo "→ http://your-dashboard/football-stats/?tab=2025-2026&league=premier-league&subtab=blocks-overview\n\n";
     
 } catch (PDOException $e) {
     echo "\n❌ ERROR: " . $e->getMessage() . "\n";

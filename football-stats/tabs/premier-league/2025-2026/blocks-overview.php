@@ -4,22 +4,17 @@
  * Comprehensive overview showing all 5 blocks with live data
  */
 
-// Fetch complete league table - $db comes from parent include
-$stmt = $db->query("SELECT * FROM league_table ORDER BY position ASC");
-$allTeams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get current matchday
-$matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM league_table");
-$currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
-
-// Get last update timestamp
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$allTeams = $tableView['standings'];
+$currentMatchday = $tableView['active_matchweek'] ?? (!empty($allTeams) ? max(array_map('intval', array_column($allTeams, 'played'))) : 1);
+$last_update = $tableView['last_update'];
+$tableViewNavParams = football_stats_get_current_table_view_params();
 
 // Organize teams into blocks
 $blocks = [
-    1 => ['teams' => [], 'range' => '1-4', 'title' => 'Title Contenders', 'emoji' => '🏆', 'color' => '#FFD700', 'desc' => 'Champions League'],
-    2 => ['teams' => [], 'range' => '5-7', 'title' => 'European Contenders', 'emoji' => '🌍', 'color' => '#5865F2', 'desc' => 'Europa/Conference'],
-    3 => ['teams' => [], 'range' => '8-14', 'title' => 'Mid-Table Security', 'emoji' => '⚖️', 'color' => '#99AAB5', 'desc' => 'Safe & Stable'],
+    1 => ['teams' => [], 'range' => '1-2', 'title' => 'Title Contenders', 'emoji' => '🏆', 'color' => '#FFD700', 'desc' => 'Title'],
+    2 => ['teams' => [], 'range' => '1-5', 'title' => 'European Contenders', 'emoji' => '🌍', 'color' => '#5865F2', 'desc' => 'Champions League, Europa League and Conference League'],
+    3 => ['teams' => [], 'range' => '5-14', 'title' => 'Mid-Table Security', 'emoji' => '⚖️', 'color' => '#99AAB5', 'desc' => 'Safe & Stable'],
     4 => ['teams' => [], 'range' => '15-17', 'title' => 'Relegation Battle', 'emoji' => '⚠️', 'color' => '#FFA500', 'desc' => 'Danger Zone'],
     5 => ['teams' => [], 'range' => '18-20', 'title' => 'Relegation Zone', 'emoji' => '🔴', 'color' => '#F44336', 'desc' => 'Drop Zone']
 ];
@@ -27,11 +22,21 @@ $blocks = [
 // Assign teams to blocks
 foreach ($allTeams as $team) {
     $pos = $team['position'];
-    if ($pos <= 4) $blocks[1]['teams'][] = $team;
-    elseif ($pos <= 7) $blocks[2]['teams'][] = $team;
-    elseif ($pos <= 14) $blocks[3]['teams'][] = $team;
-    elseif ($pos <= 17) $blocks[4]['teams'][] = $team;
-    else $blocks[5]['teams'][] = $team;
+    if ($pos >= 1 && $pos <= 2) {
+        $blocks[1]['teams'][] = $team;
+    }
+    if ($pos >= 1 && $pos <= 5) {
+        $blocks[2]['teams'][] = $team;
+    }
+    if ($pos >= 8 && $pos <= 15) {
+        $blocks[3]['teams'][] = $team;
+    }
+    if ($pos >= 15 && $pos <= 17) {
+        $blocks[4]['teams'][] = $team;
+    }
+    if ($pos >= 18 && $pos <= 20) {
+        $blocks[5]['teams'][] = $team;
+    }
 }
 ?>
 
@@ -40,8 +45,9 @@ foreach ($allTeams as $team) {
     <div class="panel" style="border-left: 4px solid #5865F2;">
         <div class="overview-header">
             <h2>📊 Blocks of 4 Framework Overview</h2>
-            <span class="season-badge">2024/25 Season</span>
+            <span class="season-badge">2025/26 Season</span>
         </div>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-overview'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
             The Premier League divided into 5 strategic blocks, each representing distinct competitive zones 
             with unique targets, challenges, and psychological boundaries.
@@ -52,8 +58,10 @@ foreach ($allTeams as $team) {
                 First half of season
             <?php elseif ($currentMatchday == 19): ?>
                 🎯 Halfway point!
-            <?php else: ?>
-                Second half of season
+            <?php elseif ($currentMatchday > 19 && $currentMatchday <= 29): ?>
+                Mid-season phase
+            <?php elseif ($currentMatchday > 29 && $currentMatchday < 38): ?>
+                Final stretch
             <?php endif; ?>
             <?php if ($last_update && isset($last_update['ts'])): ?>
             <span style="margin-left: 15px;">
@@ -150,9 +158,9 @@ foreach ($allTeams as $team) {
                 $blockTargets = [
                     1 => ['target' => '70-90 pts', 'ppg' => '1.8-2.4', 'status' => 'Champions League qualified'],
                     2 => ['target' => '55-68 pts', 'ppg' => '1.5-1.8', 'status' => 'European qualification'],
-                    3 => ['target' => '45-55 pts', 'ppg' => '1.2-1.5', 'status' => 'Safe mid-table'],
-                    4 => ['target' => '35-45 pts', 'ppg' => '0.9-1.2', 'status' => 'Survival battle'],
-                    5 => ['target' => '<38 pts', 'ppg' => '<1.0', 'status' => 'Relegation danger']
+                    3 => ['target' => '40-55 pts', 'ppg' => '1.0-1.5', 'status' => 'Safe mid-table'],
+                    4 => ['target' => '35-40 pts', 'ppg' => '0.9-1.0', 'status' => 'Survival battle'],
+                    5 => ['target' => '<35 pts', 'ppg' => '<0.9', 'status' => 'Relegation danger']
                 ];
             ?>
             <div class="stats-grid">
@@ -181,7 +189,7 @@ foreach ($allTeams as $team) {
             </p>
         </div>
 
-        <a href="?tab=premier-league&subtab=blocks-<?php echo $blockNum; ?>" class="view-detail-btn" style="border-color: <?php echo $block['color']; ?>; color: <?php echo $block['color']; ?>;">
+        <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-' . $blockNum, $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="view-detail-btn" style="border-color: <?php echo $block['color']; ?>; color: <?php echo $block['color']; ?>;">
             View Detailed Block <?php echo $blockNum; ?> Analysis →
         </a>
         <?php else: ?>
@@ -313,32 +321,32 @@ foreach ($allTeams as $team) {
     <div class="panel">
         <h3>🧭 Detailed Block Analysis</h3>
         <div class="block-nav-grid">
-            <a href="?tab=premier-league&subtab=blocks-1" class="block-nav-btn" style="border-left-color: #FFD700; background: rgba(255, 215, 0, 0.05);">
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-1', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="block-nav-btn" style="border-left-color: #FFD700; background: rgba(255, 215, 0, 0.05);">
                 <span class="nav-emoji">🏆</span>
                 <span class="nav-title">Block 1</span>
                 <span class="nav-subtitle">Title Contenders</span>
             </a>
-            <a href="?tab=premier-league&subtab=blocks-2" class="block-nav-btn" style="border-left-color: #5865F2; background: rgba(88, 101, 242, 0.05);">
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-2', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="block-nav-btn" style="border-left-color: #5865F2; background: rgba(88, 101, 242, 0.05);">
                 <span class="nav-emoji">🌍</span>
                 <span class="nav-title">Block 2</span>
                 <span class="nav-subtitle">European Contenders</span>
             </a>
-            <a href="?tab=premier-league&subtab=blocks-3" class="block-nav-btn" style="border-left-color: #99AAB5; background: rgba(153, 170, 181, 0.05);">
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-3', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="block-nav-btn" style="border-left-color: #99AAB5; background: rgba(153, 170, 181, 0.05);">
                 <span class="nav-emoji">⚖️</span>
                 <span class="nav-title">Block 3</span>
                 <span class="nav-subtitle">Mid-Table Security</span>
             </a>
-            <a href="?tab=premier-league&subtab=blocks-4" class="block-nav-btn" style="border-left-color: #FFA500; background: rgba(255, 165, 0, 0.05);">
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-4', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="block-nav-btn" style="border-left-color: #FFA500; background: rgba(255, 165, 0, 0.05);">
                 <span class="nav-emoji">⚠️</span>
                 <span class="nav-title">Block 4</span>
                 <span class="nav-subtitle">Relegation Battle</span>
             </a>
-            <a href="?tab=premier-league&subtab=blocks-5" class="block-nav-btn" style="border-left-color: #F44336; background: rgba(244, 67, 54, 0.05);">
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-5', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="block-nav-btn" style="border-left-color: #F44336; background: rgba(244, 67, 54, 0.05);">
                 <span class="nav-emoji">🔴</span>
                 <span class="nav-title">Block 5</span>
                 <span class="nav-subtitle">Relegation Zone</span>
             </a>
-            <a href="?tab=premier-league&subtab=blocks-dynamic" class="block-nav-btn" style="border-left-color: #00D9FF; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(255, 107, 107, 0.1));">
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-dynamic', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="block-nav-btn" style="border-left-color: #00D9FF; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1), rgba(255, 107, 107, 0.1));">
                 <span class="nav-emoji">🔥</span>
                 <span class="nav-title">Live Data</span>
                 <span class="nav-subtitle">Dynamic Predictions</span>

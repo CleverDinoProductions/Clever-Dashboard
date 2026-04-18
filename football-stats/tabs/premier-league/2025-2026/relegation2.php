@@ -5,8 +5,10 @@
  */
 
 // 1. DATABASE FETCH (Existing logic)
-$stmt = $db->query("SELECT * FROM league_table WHERE position >= 11 ORDER BY position ASC");
-$bottom_teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$bottom_teams = array_values(array_filter($tableView['standings'], function ($team) {
+    return $team['position'] >= 11;
+}));
 
 // 2. CONFIGURATION & FDR DATA (Next 4 Matches)
 $halfway_point = 19;
@@ -113,6 +115,7 @@ foreach ($teams_analysis as $analysis) { $risk_counts[$analysis['risk_level']]++
     <div style="text-align: center;">
         <h1 style="color: #FFFFFF; font-size: 48px; margin: 0;">⚔️ RELEGATION WAR ROOM</h1>
         <h2 style="color: #ff6b6b; font-size: 32px; margin: 10px 0;">Schedule Difficulty & Sack Watch</h2>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'relegation-2'); ?>
     </div>
 </div>
 

@@ -1,15 +1,19 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // LEEDS UNITED - COMPREHENSIVE SURVIVAL TRACKER
 // Includes: Position, Points, Dual Halfway Targets, Form, Fixtures, Stats
 
-// Fetch league table
-$stmt = $db->query("SELECT * FROM league_table ORDER BY position ASC");
-$standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get Leeds data
-$stmt = $db->prepare("SELECT * FROM league_table WHERE team_name = 'Leeds United' OR team_name LIKE '%Leeds%'");
-$stmt->execute();
-$leeds = $stmt->fetch(PDO::FETCH_ASSOC);
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$standings = $tableView['standings'];
+$leeds = null;
+foreach ($standings as $teamRow) {
+    if ($teamRow['team_name'] === 'Leeds United' || stripos($teamRow['team_name'], 'Leeds') !== false) {
+        $leeds = $teamRow;
+        break;
+    }
+}
 
 if (!$leeds) {
     echo "<div class='panel'><h2>Leeds United data not found</h2></div>";
@@ -149,6 +153,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 15px;">
             Marching On Together - Season Survival Tracker
         </p>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds-2'); ?>
     </div>
 </div>
 

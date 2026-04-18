@@ -1,9 +1,9 @@
 <?php
-// Fetch championship table
-$stmt = $db->query("SELECT * FROM league_table_ELC ORDER BY position ASC");
-$standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$standings = $tableView['standings'];
+$last_update = $tableView['last_update'];
 
 // Safety calculation
 $halfway_games = 23; // Halfway point in season
@@ -321,12 +321,28 @@ tr:nth-child(25) td:first-child {
     color: #f04747;
     font-weight: bold;
 }
+
+.team-crest {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Ensure the team cell uses flex for better alignment */
+.team-cell {
+    display: flex;
+    align-items: center;
+}
 </style>
 
 <div class="panel">
-    <h2> Championship Table 2025/26</h2>
+    <h2>Championship Table 2025/26</h2>
+    <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'championship', $currentSubTab ?? 'table'); ?>
     <p class="update-info">
-        Last updated: <?= date('Y-m-d H:i:s', $last_update['ts'] / 1000) ?>
+        <?= htmlspecialchars($tableView['updated_label'], ENT_QUOTES, 'UTF-8') ?>:
+        <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>
     </p>
     
     <table>
@@ -452,22 +468,28 @@ tr:nth-child(25) td:first-child {
         <tr style="<?= $row_style ?>">
             <td><strong><?= $team['position'] ?></strong></td>
             <td>
-                <span class="team-name">
-                    <span class="team-official">
-                        <?= htmlspecialchars($info['name']) ?>
-                    </span>
-                    <?php if ($show_common): ?>
-                        <span class="team-common">(<?= $team['team_name'] ?>)</span>
-                    <?php endif; ?>
-                    <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
-                        <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
-                            <?= $info['nickname'] ?>
+                <div class="team-cell">
+                    <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
+                        alt="<?= htmlspecialchars($info['name']) ?> crest" 
+                        class="team-crest"
+                        onerror="this.style.display='none'"> <span class="team-name">
+                        <span class="team-official">
+                            <?= htmlspecialchars($info['name']) ?>
                         </span>
-                        <span class="tooltip-short">
-                            Abbreviated: <?= $info['short'] ?>
+                        <?php if ($show_common): ?>
+                            <span class="team-common">(<?= $team['team_name'] ?>)</span>
+                        <?php endif; ?>
+                
+                        <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
+                            <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
+                                <?= $info['nickname'] ?>
+                            </span>
+                            <span class="tooltip-short">
+                                Abbreviated: <?= $info['short'] ?>
+                            </span>
                         </span>
                     </span>
-                </span>
+                </div>
             </td>
             <td><?= $team['played'] ?></td>
             <td style="color: <?= $games_color ?>; font-weight: bold;"><?= $games_remaining ?></td>

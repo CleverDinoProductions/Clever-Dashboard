@@ -1,9 +1,10 @@
 <?php
 // RELEGATION BATTLE ANALYZER - Who's at risk?
 
-// Get all teams in bottom 10
-$stmt = $db->query("SELECT * FROM league_table WHERE position >= 11 ORDER BY position ASC");
-$bottom_teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$bottom_teams = array_values(array_filter($tableView['standings'], function ($team) {
+    return $team['position'] >= 11;
+}));
 
 // Halfway point constants
 $halfway_point = 19;
@@ -198,6 +199,7 @@ $teams_at_risk = array_filter($teams_analysis, function($a) use ($target_75pct) 
         <p style="color: #dcddde; font-size: 16px; margin-top: 15px;">
             Analyzing bottom 10 teams' chances of reaching 15 points (75% of 20) at halfway
         </p>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'relegation'); ?>
     </div>
 </div>
 

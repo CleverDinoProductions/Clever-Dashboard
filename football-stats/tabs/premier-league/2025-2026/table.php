@@ -1,9 +1,9 @@
 <?php
-// Fetch league table
-$stmt = $db->query("SELECT * FROM league_table_PL ORDER BY position ASC");
-$standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$standings = $tableView['standings'];
+$last_update = $tableView['last_update'];
 
 // Safety calculation
 $halfway_games = 19; // Halfway point in season
@@ -313,15 +313,21 @@ td:last-child {
 tr:nth-child(2) td:first-child,
 tr:nth-child(3) td:first-child,
 tr:nth-child(4) td:first-child,
-tr:nth-child(5) td:first-child {
+tr:nth-child(5) td:first-child,
+tr:nth-child(6) td:first-child {
     color: #43b581;
     font-weight: bold;
 }
 
 /* Europa League (5) */
-tr:nth-child(6) td:first-child,
 tr:nth-child(7) td:first-child {
     color: #5865F2;
+    font-weight: bold;
+}
+
+/* Conference League (7) */
+tr:nth-child(8) td:first-child {
+    color: #FFCD00;
     font-weight: bold;
 }
 
@@ -332,12 +338,28 @@ tr:nth-child(21) td:first-child {
     color: #f04747;
     font-weight: bold;
 }
+
+.team-crest {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Ensure the team cell uses flex for better alignment */
+.team-cell {
+    display: flex;
+    align-items: center;
+}
 </style>
 
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>
+    <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table'); ?>
     <p class="update-info">
-        Last updated: <?= date('Y-m-d H:i:s', $last_update['ts'] / 1000) ?>
+        <?= htmlspecialchars($tableView['updated_label'], ENT_QUOTES, 'UTF-8') ?>:
+        <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>
     </p>
     
     <table>
@@ -381,13 +403,15 @@ tr:nth-child(21) td:first-child {
             $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
             $row_style = '';
             if ($is_leeds) {
-                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFCD00;';
+                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF;';
             } elseif ($team['position'] >= 18) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             } elseif ($team['position'] <= 4) {
                 $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
             } elseif ($team['position'] <= 6) {
                 $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
+            } elseif ($team['position'] == 7) {
+                $row_style = 'background: rgba(255, 205, 0, 0.1); border-left: 4px solid #FFCD00;';
             }
             
             // Check if official name differs from common name
@@ -396,22 +420,28 @@ tr:nth-child(21) td:first-child {
         <tr style="<?= $row_style ?>">
             <td><strong><?= $team['position'] ?></strong></td>
             <td>
-                <span class="team-name">
-                    <span class="team-official">
-                        <?= htmlspecialchars($info['name']) ?>
-                    </span>
-                    <?php if ($show_common): ?>
-                        <span class="team-common">(<?= $team['team_name'] ?>)</span>
-                    <?php endif; ?>
-                    <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
-                        <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
-                            <?= $info['nickname'] ?>
+                <div class="team-cell">
+                    <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
+                        alt="<?= htmlspecialchars($info['name']) ?> crest" 
+                        class="team-crest"
+                        onerror="this.style.display='none'"> <span class="team-name">
+                        <span class="team-official">
+                            <?= htmlspecialchars($info['name']) ?>
                         </span>
-                        <span class="tooltip-short">
-                            Abbreviated: <?= $info['short'] ?>
+                        <?php if ($show_common): ?>
+                            <span class="team-common">(<?= $team['team_name'] ?>)</span>
+                        <?php endif; ?>
+                
+                        <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
+                            <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
+                                <?= $info['nickname'] ?>
+                            </span>
+                            <span class="tooltip-short">
+                                Abbreviated: <?= $info['short'] ?>
+                            </span>
                         </span>
                     </span>
-                </span>
+                </div>
             </td>
             <td><?= $team['played'] ?></td>
             <td style="color: <?= $games_color ?>; font-weight: bold;"><?= $games_remaining ?></td>
@@ -439,7 +469,8 @@ tr:nth-child(21) td:first-child {
     <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap;">
         <div><span style="color: #43b581;">■</span> Champions League (1st-4th)</div>
         <div><span style="color: #5865F2;">■</span> Europa League (5th-6th)</div>
-        <div><span style="color: #FFCD00;">■</span> Leeds United 🤍💛💙</div>
+        <div><span style="color: #FFCD00;">■</span> Conference League (7th)</div>
+        <div><span style="color: #ffffff;">■</span> Leeds United 🤍💛💙</div>
         <div><span style="color: #f04747;">■</span> Relegation to Championship (18th-20th)</div>
         <div style="margin-left: auto; color: #888;">
             💡 Hover over team names for nicknames

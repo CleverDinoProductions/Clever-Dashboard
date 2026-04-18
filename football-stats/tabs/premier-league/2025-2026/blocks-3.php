@@ -1,28 +1,25 @@
 <?php
 /**
- * Block 1: Title Contenders (Positions 1-4)
- * Champions League qualification zone
+ * Block 3: Mid-Table Security (Positions 8-14)
+ * Safe from relegation, no European pressure
  */
 
-$blockNumber = 1;
+$blockNumber = 3;
 $blockInfo = [
-    'title' => 'Title Contenders',
-    'emoji' => '🏆',
-    'color' => '#FFD700',
-    'positions' => '1-4',
-    'description' => 'Champions League Qualification Zone'
+    'title' => 'Mid-Table Security',
+    'emoji' => '⚖️',
+    'color' => '#99AAB5',
+    'positions' => '8-14',
+    'description' => 'Mid-Table Comfort Zone'
 ];
 
-// Fetch league table - $db comes from parent include
-$stmt = $db->query("SELECT * FROM league_table WHERE position BETWEEN 1 AND 4 ORDER BY position ASC");
-$teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get current matchday
-$matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM league_table");
-$currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
-
-// Get last update timestamp
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$teams = array_values(array_filter($tableView['standings'], function ($team) {
+    return $team['position'] >= 8 && $team['position'] <= 15;
+}));
+$currentMatchday = $tableView['active_matchweek'] ?? (!empty($tableView['standings']) ? max(array_map('intval', array_column($tableView['standings'], 'played'))) : 1);
+$last_update = $tableView['last_update'];
+$tableViewNavParams = football_stats_get_current_table_view_params();
 ?>
 
 <div class="block-detail-page">
@@ -32,13 +29,13 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
             <h2 style="color: <?php echo $blockInfo['color']; ?>;">
                 <?php echo $blockInfo['emoji']; ?> Block <?php echo $blockNumber; ?>: <?php echo $blockInfo['title']; ?>
             </h2>
-            <span class="position-badge" style="background: rgba(255, 215, 0, 0.2); color: <?php echo $blockInfo['color']; ?>; border: 1px solid <?php echo $blockInfo['color']; ?>;">
+            <span class="position-badge" style="background: rgba(153, 170, 181, 0.2); color: <?php echo $blockInfo['color']; ?>; border: 1px solid <?php echo $blockInfo['color']; ?>;">
                 Positions <?php echo $blockInfo['positions']; ?>
             </span>
         </div>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-3'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
-            <?php echo $blockInfo['description']; ?> - The elite tier of English football where teams compete for
-            the Premier League title and automatic Champions League qualification.
+            <?php echo $blockInfo['description']; ?> - The comfortable middle ground where teams are safe from relegation worries but unlikely to challenge for European spots.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
             📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
@@ -60,11 +57,11 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
     <!-- Live Table Data -->
     <?php if (!empty($teams)): ?>
     <div class="panel">
-        <h3>📊 Live Block 1 Standings</h3>
+        <h3>📊 Live Block 3 Standings</h3>
         <div class="table-wrapper">
             <table class="block-table">
                 <thead>
-                    <tr style="background: rgba(255, 215, 0, 0.15); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;">
+                    <tr style="background: rgba(153, 170, 181, 0.15); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;">
                         <th>Pos</th>
                         <th>Team</th>
                         <th>Pld</th>
@@ -82,8 +79,6 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
                 <tbody>
                     <?php foreach ($teams as $team): 
                         $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
-                        $projectedPoints = round($ppg * 38, 1);
-                        $halfwayTarget = round($ppg * 19, 1);
                     ?>
                     <tr>
                         <td class="pos-cell" style="color: <?php echo $blockInfo['color']; ?>; font-weight: bold;"><?php echo $team['position']; ?></td>
@@ -97,7 +92,7 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
                         <td class="<?php echo $team['gd'] > 0 ? 'positive' : ($team['gd'] < 0 ? 'negative' : ''); ?>">
                             <?php echo ($team['gd'] > 0 ? '+' : '') . $team['gd']; ?>
                         </td>
-                        <td class="pts-cell" style="background: rgba(255, 215, 0, 0.2); font-weight: bold; font-size: 1.1em;"><?php echo $team['points']; ?></td>
+                        <td class="pts-cell" style="background: rgba(153, 170, 181, 0.2); font-weight: bold; font-size: 1.1em;"><?php echo $team['points']; ?></td>
                         <td style="color: <?php echo $blockInfo['color']; ?>; font-weight: bold;"><?php echo $ppg; ?></td>
                         <td class="form-cell"><?php echo $team['form'] ?? '-'; ?></td>
                     </tr>
@@ -114,11 +109,7 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
             <?php foreach ($teams as $team): 
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                 $projectedPoints = round($ppg * 38, 0);
-                $halfwayTarget = round($ppg * 19, 0);
-                $halfwayActual = $team['points'];
                 $remainingGames = 38 - $team['played'];
-                $pointsNeededFor70 = max(0, 70 - $team['points']);
-                $ppgNeededFor70 = $remainingGames > 0 ? round($pointsNeededFor70 / $remainingGames, 2) : 0;
             ?>
             <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
                 <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
@@ -132,41 +123,19 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
                         <span class="proj-value"><strong><?php echo $team['points']; ?></strong></span>
                     </div>
                     <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-                        <span class="proj-label">🎯 Halfway (MD19):</span>
-                        <span class="proj-value"><?php echo $halfwayTarget; ?> pts target</span>
-                    </div>
-                    <?php if ($currentMatchday >= 19): ?>
-                    <div class="proj-row">
-                        <span class="proj-label">Actual at MD19:</span>
-                        <span class="proj-value <?php echo $halfwayActual >= $halfwayTarget ? 'success' : 'warning'; ?>">
-                            <?php echo $halfwayActual; ?> pts
-                            <?php if ($halfwayActual >= $halfwayTarget): ?>
-                                ✅
-                            <?php else: ?>
-                                ⚠️
-                            <?php endif; ?>
-                        </span>
-                    </div>
-                    <?php endif; ?>
-                    <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
                         <span class="proj-label">🏁 Season End (MD38):</span>
                         <span class="proj-value" style="font-size: 1.2em; color: <?php echo $blockInfo['color']; ?>;">
                             <strong><?php echo $projectedPoints; ?> pts</strong>
                         </span>
                     </div>
                     <div class="proj-row">
-                        <span class="proj-label">Minimum for CL:</span>
-                        <span class="proj-value">~70 pts</span>
+                        <span class="proj-label">Mid-table range:</span>
+                        <span class="proj-value">40-55 pts</span>
                     </div>
                     <div class="proj-row">
                         <span class="proj-label">Games remaining:</span>
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
                     </div>
-                    <?php if ($projectedPoints < 70): ?>
-                    <div class="proj-alert" style="background: rgba(255, 152, 0, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #FF9800;">
-                        <strong>⚠️ PPG needed for 70pts:</strong> <?php echo $ppgNeededFor70; ?>
-                    </div>
-                    <?php endif; ?>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -175,39 +144,30 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
     <?php else: ?>
     <div class="panel" style="background: rgba(255, 152, 0, 0.1); border-left: 3px solid #FF9800;">
         <h3>⚠️ No Live Data Available</h3>
-        <p>Database connection not available or no teams in Block 1 positions. The framework explanation and targets are shown below.</p>
+        <p>Database connection not available or no teams in Block 3 positions.</p>
     </div>
     <?php endif; ?>
 
     <!-- Block Characteristics -->
     <div class="panel">
-        <h3>🎯 Block 1 Targets & Benchmarks</h3>
+        <h3>🎯 Block 3 Targets & Benchmarks</h3>
         <div class="benchmarks-grid">
             <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
-                <h4>🏆 Title Challenge</h4>
+                <h4>⚖️ Mid-Table Comfort</h4>
                 <ul>
-                    <li><strong>Target PPG:</strong> 2.3-2.5</li>
-                    <li><strong>Halfway (MD19):</strong> 44-48 points</li>
-                    <li><strong>Season End (MD38):</strong> 88-95 points</li>
-                    <li><strong>Win Rate:</strong> 70%+</li>
+                    <li><strong>Target PPG:</strong> 1.0-1.5</li>
+                    <li><strong>Halfway (MD19):</strong> 19-28 points</li>
+                    <li><strong>Season End (MD38):</strong> 40-55 points</li>
+                    <li><strong>Win Rate:</strong> 35-42%</li>
                 </ul>
             </div>
             <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
-                <h4>🥈 2nd-3rd Place</h4>
+                <h4>📊 Typical Characteristics</h4>
                 <ul>
-                    <li><strong>Target PPG:</strong> 2.0-2.2</li>
-                    <li><strong>Halfway (MD19):</strong> 38-42 points</li>
-                    <li><strong>Season End (MD38):</strong> 76-84 points</li>
-                    <li><strong>Win Rate:</strong> 60-65%</li>
-                </ul>
-            </div>
-            <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
-                <h4>⚽ 4th Place (Last CL Spot)</h4>
-                <ul>
-                    <li><strong>Target PPG:</strong> 1.8-2.0</li>
-                    <li><strong>Halfway (MD19):</strong> 34-38 points</li>
-                    <li><strong>Season End (MD38):</strong> 68-76 points</li>
-                    <li><strong>Win Rate:</strong> 55%+</li>
+                    <li>Consistent performers</li>
+                    <li>Strong home records</li>
+                    <li>Balance over brilliance</li>
+                    <li>Few standout players</li>
                 </ul>
             </div>
         </div>
@@ -215,51 +175,32 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
 
     <!-- Historical Context -->
     <div class="panel">
-        <h3>📜 Historical Block 1 Points</h3>
+        <h3>📜 Historical Block 3 Points</h3>
         <div class="history-table">
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr style="background: rgba(255, 215, 0, 0.1); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;">
-                        <th style="padding: 12px; text-align: left;">Position</th>
+                    <tr style="background: rgba(153, 170, 181, 0.1); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;">
+                        <th style="padding: 12px; text-align: left;">Position Range</th>
                         <th style="padding: 12px; text-align: center;">Typical Points</th>
                         <th style="padding: 12px; text-align: center;">At Halfway (MD19)</th>
                         <th style="padding: 12px; text-align: center;">PPG Required</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px;"><strong>1st - Champions</strong></td>
-                        <td style="padding: 10px; text-align: center;">88-95 pts</td>
-                        <td style="padding: 10px; text-align: center;">44-48 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>2.3-2.5</strong></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px;"><strong>2nd Place</strong></td>
-                        <td style="padding: 10px; text-align: center;">78-86 pts</td>
-                        <td style="padding: 10px; text-align: center;">39-43 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>2.0-2.3</strong></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px;"><strong>3rd Place</strong></td>
-                        <td style="padding: 10px; text-align: center;">72-80 pts</td>
-                        <td style="padding: 10px; text-align: center;">36-40 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.9-2.1</strong></td>
-                    </tr>
                     <tr>
-                        <td style="padding: 10px;"><strong>4th - Last CL Spot</strong></td>
-                        <td style="padding: 10px; text-align: center;">68-76 pts</td>
-                        <td style="padding: 10px; text-align: center;">34-38 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.8-2.0</strong></td>
+                        <td style="padding: 10px;"><strong>8th-15th Place</strong></td>
+                        <td style="padding: 10px; text-align: center;">40-55 pts</td>
+                        <td style="padding: 10px; text-align: center;">19-28 pts</td>
+                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.0-1.5</strong></td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <div class="insight-box" style="background: rgba(255, 215, 0, 0.1); border-left: 3px solid <?php echo $blockInfo['color']; ?>; margin-top: 20px; padding: 15px; border-radius: 5px;">
+        <div class="insight-box" style="background: rgba(153, 170, 181, 0.1); border-left: 3px solid <?php echo $blockInfo['color']; ?>; margin-top: 20px; padding: 15px; border-radius: 5px;">
             <h4>💡 Key Insight</h4>
             <p>
-                The gap between 4th place (last Champions League spot) and 5th place averages <strong>8-12 points</strong>
-                per season. This represents the massive financial and prestige difference between Block 1 and Block 2.
-                Teams on 70+ points by season end are virtually guaranteed Champions League football.
+                Block 3 is the most stable zone in the Premier League. Teams here rarely get relegated with <strong>45+ points</strong> 
+                providing almost guaranteed safety. These clubs focus on consolidation, youth development, and occasional cup runs rather than chasing European qualification.
             </p>
         </div>
     </div>
@@ -267,9 +208,9 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
     <!-- Navigation -->
     <div class="panel">
         <div class="block-navigation">
-            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">← Overview</a>
-            <a href="?tab=premier-league&subtab=blocks-dynamic" class="nav-btn" style="background: rgba(255, 215, 0, 0.1); color: <?php echo $blockInfo['color']; ?>; border-color: <?php echo $blockInfo['color']; ?>;">🔥 Live Data</a>
-            <a href="?tab=premier-league&subtab=blocks-2" class="nav-btn">Block 2 →</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-2', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">← Block 2</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-overview', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">Overview</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-4', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">Block 4 →</a>
         </div>
     </div>
 </div>
@@ -297,8 +238,6 @@ $last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fet
 .proj-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; }
 .proj-label { color: #888; font-size: 0.9em; }
 .proj-value { color: #fff; font-weight: 500; }
-.proj-value.success { color: #4CAF50; }
-.proj-value.warning { color: #FF9800; }
 .benchmarks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
 .benchmark-card { background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 8px; border-left: 4px solid; }
 .benchmark-card h4 { margin: 0 0 15px 0; color: #fff; }

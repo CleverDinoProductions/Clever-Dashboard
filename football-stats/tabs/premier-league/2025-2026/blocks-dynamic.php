@@ -4,16 +4,11 @@
  * Real-time analysis with PPG-based season projections
  */
 
-// Fetch complete league table - $db comes from parent include
-$stmt = $db->query("SELECT * FROM league_table ORDER BY position ASC");
-$allTeams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Get current matchday
-$matchdayQuery = $db->query("SELECT MAX(played) as current_matchday FROM league_table");
-$currentMatchday = $matchdayQuery->fetch(PDO::FETCH_ASSOC)['current_matchday'] ?? 1;
-
-// Get last update timestamp
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM league_table")->fetch();
+$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$allTeams = $tableView['standings'];
+$currentMatchday = $tableView['active_matchweek'] ?? (!empty($allTeams) ? max(array_map('intval', array_column($allTeams, 'played'))) : 1);
+$last_update = $tableView['last_update'];
+$tableViewNavParams = football_stats_get_current_table_view_params();
 
 // Calculate projections for all teams
 $projections = [];
@@ -26,8 +21,8 @@ foreach ($allTeams as $team) {
     $predictedBlock = 5; // Default to worst case
     if ($projectedPoints >= 70) $predictedBlock = 1;
     elseif ($projectedPoints >= 60) $predictedBlock = 2;
-    elseif ($projectedPoints >= 45) $predictedBlock = 3;
-    elseif ($projectedPoints >= 38) $predictedBlock = 4;
+    elseif ($projectedPoints >= 38) $predictedBlock = 3;
+    elseif ($projectedPoints >= 37) $predictedBlock = 4;
     
     // Current block
     $currentBlock = 5;
@@ -43,7 +38,7 @@ foreach ($allTeams as $team) {
     $ppgFor70 = $remainingGames > 0 ? round($pointsFor70 / $remainingGames, 2) : 0;
     
     // Risk assessment
-    if ($projectedPoints >= 40) {
+    if ($projectedPoints >= 38) {
         $risk = 'Safe';
         $riskColor = '#4CAF50';
     } elseif ($projectedPoints >= 37) {
@@ -94,6 +89,93 @@ $blockNames = [
 ];
 ?>
 
+<style>
+.team-name {
+    position: relative;
+    cursor: help;
+    display: inline-block;
+    transition: color 0.2s ease;
+}
+
+.team-name:hover {
+    color: #FFCD00;
+}
+
+.team-official {
+    color: #dcddde;
+}
+
+.team-common {
+    color: #888;
+    font-size: 12px;
+    margin-left: 6px;
+    font-weight: normal;
+}
+
+.team-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #2e3136, #40444b);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    white-space: nowrap;
+    z-index: 1000;
+    font-size: 13px;
+    border: 2px solid;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.team-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: inherit;
+}
+
+.team-name:hover .team-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tooltip-nickname {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.tooltip-short {
+    display: block;
+    font-size: 11px;
+    color: #dcddde;
+}
+
+/* 1. Target the header cells specifically */
+th {
+    position: sticky;
+    top: 0;
+    z-index: 10; /* Keeps the header above the scrolling body rows */
+    background-color: #222; /* Use your team/site brand color here */
+    color: white;
+    white-space: nowrap; /* Prevents long titles from breaking the layout */
+    border-bottom: 2px solid #444;
+}
+
+/* 2. Important fix for tables */
+table {
+    border-collapse: collapse; /* Required for sticky borders to show up correctly */
+}
+</style>
+
 <div class="dynamic-blocks-page">
     <!-- Header -->
     <div class="panel" style="border-left: 4px solid #00D9FF;">
@@ -101,6 +183,7 @@ $blockNames = [
             <h2>🔥 Dynamic Blocks - Live Predictions</h2>
             <span class="live-badge">LIVE DATA</span>
         </div>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-dynamic'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
             Real-time PPG (Points Per Game) projections showing where teams are likely to finish based on 
             current form. Updated after every matchday.
@@ -396,9 +479,9 @@ $blockNames = [
     <!-- Navigation -->
     <div class="panel">
         <div class="block-navigation">
-            <a href="?tab=premier-league&subtab=blocks-overview" class="nav-btn">← Blocks Overview</a>
-            <a href="?tab=premier-league&subtab=table" class="nav-btn">Full Table</a>
-            <a href="?tab=premier-league&subtab=blocks-1" class="nav-btn">Detailed Blocks →</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-overview', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">← Blocks Overview</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'table', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">Full Table</a>
+            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', 'blocks-1', $tableViewNavParams), ENT_QUOTES, 'UTF-8'); ?>" class="nav-btn">Detailed Blocks →</a>
         </div>
     </div>
 </div>
