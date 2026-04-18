@@ -231,8 +231,7 @@ table {
     <div class="panel">
         <h3>🎯 Complete Season Projections</h3>
         <div class="table-wrapper">
-            <table class="projections-table">
-                <thead>
+            <table>
                     <tr>
                         <th>Pos</th>
                         <th>Team</th>
@@ -246,8 +245,6 @@ table {
                         <th>Risk Status</th>
                         <th>Form</th>
                     </tr>
-                </thead>
-                <tbody>
                     <?php foreach ($projections as $idx => $proj): 
                         $team = $proj['team'];
                         $projectedPos = $idx + 1;
