@@ -25,8 +25,15 @@ if ($selected_mw !== '') {
 }
 $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+<?php
+// Find the first date for the selected matchweek (or first matchweek if none selected)
+$first_date = '';
+if (!empty($matches)) {
+    $first_date = $matches[0]['match_date'];
+}
+?>
 <div class="panel">
-    <h2>Championship 2025/26 – Matches</h2>
+    <h2>Championship 2025/26 – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?><?php if ($first_date): ?> <span style="font-size:14px; color:#00ff88;">(<?= htmlspecialchars($first_date) ?>)</span><?php endif; ?></h2>
     <form method="get" style="margin-bottom: 18px;">
         <?php
         // Preserve tab/league/subtab params

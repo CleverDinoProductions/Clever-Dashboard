@@ -159,12 +159,20 @@ if (!function_exists('football_stats_get_table_view')) {
     }
 }
 
+require_once __DIR__ . '/table-view-date-helper.php';
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {
         $currentStateLabel = $tableView['is_snapshot_view'] ? 'Snapshot view' : 'Live table';
         $seasonLabel = htmlspecialchars((string) $tableView['active_season_label'], ENT_QUOTES, 'UTF-8');
         $controlId = 'table-view-' . preg_replace('/[^a-z0-9\-]+/i', '-', (string) $subtab);
+
+        // Try to get the first date for the current matchweek (if available)
+        $firstDate = '';
+        if ($tableView['active_matchweek'] !== null && isset($GLOBALS['db'])) {
+            $competitionCode = ($league === 'premier-league') ? 'PL' : (($league === 'championship') ? 'ELC' : $league);
+            $firstDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $tableView['active_season_label'], $tableView['active_matchweek']);
+        }
 
         ?>
         <style>
@@ -238,11 +246,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         </style>
 
         <div class="table-view-switcher">
+
             <div class="table-view-summary">
                 <span class="table-view-pill"><?php echo htmlspecialchars($currentStateLabel, ENT_QUOTES, 'UTF-8'); ?></span>
                 <span>Season <?php echo $seasonLabel; ?></span>
                 <?php if ($tableView['active_matchweek'] !== null): ?>
                     <span>Matchweek <?php echo (int) $tableView['active_matchweek']; ?></span>
+                <?php endif; ?>
+                <?php if (!empty($firstDate)): ?>
+                    <span style="color:#00ff88; font-size:13px;">(<?php echo htmlspecialchars($firstDate); ?>)</span>
                 <?php endif; ?>
             </div>
 
