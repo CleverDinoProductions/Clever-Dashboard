@@ -499,15 +499,18 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
         <?php endif; ?>
     </div>
 
-    <!-- What If Scenarios -->
+    <!-- What If Scenarios (Next 3 Games) -->
     <div class="panel" style="background: #2e3136;">
         <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 3 Games)</h2>
         <?php
         $quick_scenarios = [
             ['wins' => 3, 'draws' => 0, 'label' => '3 wins'],
             ['wins' => 2, 'draws' => 1, 'label' => '2 wins, 1 draw'],
+            ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 1 loss'],
             ['wins' => 1, 'draws' => 2, 'label' => '1 win, 2 draws'],
+            ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw, 1 loss'],
             ['wins' => 0, 'draws' => 3, 'label' => '3 draws'],
+            ['wins' => 0, 'draws' => 0, 'label' => '3 losses']
         ];
         ?>
         <div style="margin-top: 15px;">
@@ -529,6 +532,103 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
                 </div>
             <?php endforeach; ?>
         </div>
+    </div>
+</div>
+
+<!-- What If Scenarios (Next 2 Games) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 2 Games)</h2>
+    <?php
+    $two_game_scenarios = [
+        ['wins' => 2, 'draws' => 0, 'label' => '2 wins'],
+        ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw'],
+        ['wins' => 1, 'draws' => 0, 'label' => '1 win, 1 loss'],
+        ['wins' => 0, 'draws' => 2, 'label' => '2 draws'],
+        ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 1 loss'],
+        ['wins' => 0, 'draws' => 0, 'label' => '2 losses']
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($two_game_scenarios as $scenario): ?>
+            <?php 
+            $scenario_points = $leeds['points'] + ($scenario['wins'] * 3) + $scenario['draws'] * 1;
+            $scenario_gap = $scenario_points - $safety_target;
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- What If Scenarios (Next Game) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next Game)</h2>
+    <?php
+    $next_game_scenarios = [
+        ['result' => 'win', 'points' => 3, 'label' => 'Win'],
+        ['result' => 'draw', 'points' => 1, 'label' => 'Draw'],
+        ['result' => 'loss', 'points' => 0, 'label' => 'Loss']
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($next_game_scenarios as $scenario): ?>
+            <?php 
+            $scenario_points = $leeds['points'] + $scenario['points'];
+            $scenario_gap = $scenario_points - $safety_target;
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+
+<!-- What If Scenarios (Full Season based on PPG for points) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
+    <?php
+    $season_scenarios = [
+        ['ppg' => 1.5, 'label' => '1.5 PPG (57 pts)'],
+        ['ppg' => 1.25, 'label' => '1.25 PPG (47 pts)'],
+        ['ppg' => 1.0, 'label' => '1.0 PPG (38 pts)'],
+        ['ppg' => 0.75, 'label' => '0.75 PPG (29 pts)'],
+        ['ppg' => 0.5, 'label' => '0.5 PPG (19 pts)']
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($season_scenarios as $scenario): ?>
+            <?php 
+            $scenario_points = round($scenario['ppg'] * 38);
+            $scenario_gap = $scenario_points - $safety_target;
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>
 
