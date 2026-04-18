@@ -483,6 +483,11 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
 
     # Remove old snapshots for this comp/season
     c.execute("DELETE FROM league_table_snapshots WHERE competition_code = ? AND season_label = ?", (competition_code, season_label))
+
+    # Insert pre-season snapshot (matchweek 0) with all teams at zero
+    insert_snapshot(db_conn, 0, teams, updated_at)
+    print(f"  · Pre-season snapshot inserted (matchweek 0)...")
+
     # Rebuild snapshots by processing all matches in each matchweek together
     for mw in sorted(matches_by_week.keys()):
         for match in matches_by_week[mw]:
