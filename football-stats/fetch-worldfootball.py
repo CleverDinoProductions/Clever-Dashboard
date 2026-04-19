@@ -394,8 +394,7 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
     c.execute("SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ?", (competition_code, season_label))
     existing_snapshots = set(row[0] for row in c.fetchall())
     if set(matchweeks).issubset(existing_snapshots):
-        print(f"  • Snapshots already exist for all matchweeks in {competition_code} {season_label}, skipping recalculation.")
-        return
+        print(f"  • Snapshots already exist for all matchweeks in {competition_code} {season_label}, but will recalculate and update latest snapshot.")
     print(f"  • Recalculating league_table_snapshots for {competition_code} {season_label} from matches table...")
     c = db_conn.cursor()
 
@@ -465,7 +464,7 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
                 competition_code,
                 season_label,
                 matchweek,
-                team['team_crest'],
+                "",
                 team['team_name'],
                 team['position'],
                 team['played'],
@@ -495,6 +494,44 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
         insert_snapshot(db_conn, mw, teams, updated_at)
         print(f"  · Snapshots recalculated for matchweek {mw}...")
     print(f"  ✓ Snapshots recalculated from matches.")
+
+    # --- Overwrite latest matchweek snapshot with current live table ---
+    # Get current matchweek from live_table_metadata
+    c.execute("SELECT matchweek FROM live_table_metadata WHERE competition_code = ?", (competition_code,))
+    row = c.fetchone()
+    if row:
+        current_mw = row[0]
+        # Get live table rows
+        live_table_name = f"league_table_{competition_code}"
+        c.execute(f"SELECT * FROM {live_table_name} ORDER BY position ASC")
+        live_rows = c.fetchall()
+        # Overwrite snapshot for current matchweek
+        c2 = db_conn.cursor()
+        for team in live_rows:
+            c2.execute('''
+                INSERT OR REPLACE INTO league_table_snapshots (
+                    competition_code, season_label, matchweek, team_crest, team_name, position, played, won, drawn, lost, gf, ga, gd, points, source_updated_at, archived_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                competition_code,
+                season_label,
+                current_mw,
+                "",
+                team['team_name'],
+                team['position'],
+                team['played'],
+                team['won'],
+                team['drawn'],
+                team['lost'],
+                team['gf'],
+                team['ga'],
+                team['gd'],
+                team['points'],
+                team['updated_at'],
+                int(time.time() * 1000)
+            ))
+        db_conn.commit()
+        print(f"  · Snapshot for matchweek {current_mw} updated to mirror current live table.")
 
 # Call after matches are fetched
 recalculate_snapshots_from_matches(conn, 'PL', season_label)
