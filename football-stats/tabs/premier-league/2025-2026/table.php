@@ -406,9 +406,9 @@ tr:nth-child(21) td:first-child {
                 $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF;';
             } elseif ($team['position'] >= 18) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
-            } elseif ($team['position'] <= 4) {
+            } elseif ($team['position'] <= 5) {
                 $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-            } elseif ($team['position'] <= 6) {
+            } elseif ($team['position'] == 6) {
                 $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
             } elseif ($team['position'] == 7) {
                 $row_style = 'background: rgba(255, 205, 0, 0.1); border-left: 4px solid #FFCD00;';
