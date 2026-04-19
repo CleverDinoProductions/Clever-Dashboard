@@ -268,7 +268,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         Live table
                     </option>
                     <?php foreach ($tableView['available_matchweeks'] as $matchweek): ?>
-                        <?php $snapshotUrl = football_stats_build_table_view_url(
+                        <?php 
+                        $snapshotUrl = football_stats_build_table_view_url(
                             $tab,
                             $league,
                             $subtab,
@@ -277,10 +278,17 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 'matchweek' => $matchweek,
                                 'snapshot_season' => $tableView['requested_season_label'],
                             ]
-                        ); ?>
+                        );
+                        // Get first match date for this matchweek
+                        $competitionCode = ($league === 'premier-league') ? 'PL' : (($league === 'championship') ? 'ELC' : $league);
+                        $firstDate = '';
+                        if (isset($GLOBALS['db'])) {
+                            $firstDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $tableView['requested_season_label'], $matchweek);
+                        }
+                        ?>
                         <option value="<?php echo htmlspecialchars($snapshotUrl, ENT_QUOTES, 'UTF-8'); ?>"
                             <?php echo ($tableView['is_snapshot_view'] && (int) $tableView['active_matchweek'] === (int) $matchweek) ? 'selected' : ''; ?>>
-                            Snapshot matchweek <?php echo (int) $matchweek; ?>
+                            Snapshot matchweek <?php echo (int) $matchweek; ?><?php if ($firstDate) echo ' (' . htmlspecialchars($firstDate) . ')'; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
