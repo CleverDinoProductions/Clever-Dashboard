@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../../includes/table-view.php';
+require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 
 $tableView = football_stats_get_table_view($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
 $standings = $tableView['standings'];
