@@ -619,7 +619,7 @@ tr:nth-child(21) td:first-child {
             $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
             $row_style = '';
             if ($is_leeds) {
-                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF;';
+                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
             } elseif ($team['position'] >= 18) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             } elseif ($team['position'] <= 5) {
