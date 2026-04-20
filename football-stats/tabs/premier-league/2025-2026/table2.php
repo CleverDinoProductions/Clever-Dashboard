@@ -569,11 +569,11 @@ tr:nth-child(21) td:first-child {
             // Calculate PPG needed to reach 38 points based on current PPG, points and games remaining
             $points_needed_38 = max(0, 38 - $team['points']);
             $ppg_needed_38 = ($games_remaining > 0) ? round($points_needed_38 / $games_remaining, 2) : 0;
-            if ($ppg_needed_38 <= 0) {
+            if ($ppg_needed_38 <= 0.5) {
                 $ppg_needed_38_color = '#006400'; // Dark Green for 2+ PPG needed
+            } elseif ($ppg_needed_38 <= 1) {
+                $ppg_needed_38_color = '#00FF00'; // Green for 1-1.99 PPG needed
             } elseif ($ppg_needed_38 <= 2) {
-                $ppg_needed_38_color = '#00FF00'; // Green for 3-4 PPG needed
-            } elseif ($ppg_needed_38 <= 3) {
                 $ppg_needed_38_color = '#ffff00'; // Yellow for 2-4 PPG needed
             } elseif ($ppg_needed_38 <= 5) {
                 $ppg_needed_38_color = '#faa61a'; // Orange for 5-6 PPG needed
@@ -586,11 +586,11 @@ tr:nth-child(21) td:first-child {
             // Calculate PPG needed to reach 40 points based on current PPG, points and games remaining
             $points_needed_40 = max(0, 40 - $team['points']);
             $ppg_needed_40 = ($games_remaining > 0) ? round($points_needed_40 / $games_remaining, 2) : 0;
-            if ($ppg_needed_40 <= 0) {
+            if ($ppg_needed_40 <= 0.5) {
                 $ppg_needed_40_color = '#006400'; // Dark Green for 2+ PPG needed
-            } elseif ($ppg_needed_40 <= 2) {
+            } elseif ($ppg_needed_40 <= 1) {
                 $ppg_needed_40_color = '#00FF00'; // Green for 3-4 PPG needed
-            } elseif ($ppg_needed_40 <= 3) {
+            } elseif ($ppg_needed_40 <= 2) {
                 $ppg_needed_40_color = '#ffff00'; // Yellow for 2-4 PPG needed
             } elseif ($ppg_needed_40 <= 5) {
                 $ppg_needed_40_color = '#faa61a'; // Orange for 5-6 PPG needed
