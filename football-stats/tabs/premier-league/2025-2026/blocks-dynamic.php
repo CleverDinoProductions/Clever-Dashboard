@@ -26,11 +26,18 @@ foreach ($allTeams as $team) {
     elseif ($projectedPoints >= 32) $predictedBlock = 4; // Danger zone
     
     // Current block
-    $currentBlock = 5;
     if ($team['position'] <= 2) $currentBlock = 1;
     elseif ($team['position'] <= 7) $currentBlock = 2;
     elseif ($team['position'] <= 15) $currentBlock = 3;
     elseif ($team['position'] <= 17) $currentBlock = 4;
+    elseif ($team['position'] >= 18) $currentBlock = 5;
+
+    // Final block based on current position
+    if ($team['position'] <= 1) $finalBlock = 1;
+    elseif ($team['position'] <= 7) $finalBlock = 2;
+    elseif ($team['position'] <= 15) $finalBlock = 3;
+    elseif ($team['position'] <= 17) $finalBlock = 4;
+    elseif ($team['position'] >= 18) $finalBlock = 5;
     
     // Calculate various targets
     $pointsFor40 = max(0, 40 - $team['points']);
@@ -56,6 +63,7 @@ foreach ($allTeams as $team) {
         'projected' => $projectedPoints,
         'remaining' => $remainingGames,
         'currentBlock' => $currentBlock,
+        'finalBlock' => $finalBlock, 
         'predictedBlock' => $predictedBlock,
         'blockChange' => $predictedBlock - $currentBlock,
         'pointsFor40' => $pointsFor40,
@@ -242,6 +250,7 @@ table {
                         <th>Projected</th>
                         <th>Current Block</th>
                         <th>Predicted Block</th>
+                        <th>Final Block</th>
                         <th>Movement</th>
                         <th>Risk Status</th>
                         <th>Form</th>
@@ -296,6 +305,17 @@ table {
                                 echo $rgb;
                             ?>, 0.3); color: <?php echo $blockColors[$proj['predictedBlock']]; ?>;">
                                 Block <?php echo $proj['predictedBlock']; ?>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="block-badge" style="background: rgba(<?php 
+                                $rgb = $proj['finalBlock'] == 1 ? '255,215,0' : 
+                                       ($proj['finalBlock'] == 2 ? '88,101,242' : 
+                                       ($proj['finalBlock'] == 3 ? '153,170,181' : 
+                                       ($proj['finalBlock'] == 4 ? '255,165,0' : '244,67,54')));
+                                echo $rgb;
+                            ?>, 0.3); color: <?php echo $blockColors[$proj['finalBlock']]; ?>;">
+                                Block <?php echo $proj['finalBlock']; ?>
                             </span>
                         </td>
                         <td>
