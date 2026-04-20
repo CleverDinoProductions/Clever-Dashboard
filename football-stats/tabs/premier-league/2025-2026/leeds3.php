@@ -42,8 +42,8 @@ $leedsGA       = (int)$leeds['ga'];
 $leedsGD       = (int)$leeds['gd'];
 $leedsPoints   = (int)$leeds['points'];
 
-// SAFETY CALCULATIONS – flat 35-point target
-$safetyTarget   = 35;                              // points needed for safety
+// SAFETY CALCULATIONS – flat 38-point target
+$safetyTarget   = 38;                              // points needed for safety
 $gamesRemaining = 38 - $leedsPlayed;
 $pointsToSafety = max(0, $safetyTarget - $leedsPoints);
 $ppgNeeded      = $gamesRemaining > 0
