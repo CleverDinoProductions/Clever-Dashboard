@@ -368,6 +368,10 @@ tr:nth-child(21) td:first-child {
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>
     <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table-2'); ?>
+    <div class="table-view-custom-nav" style="margin: 18px 0 18px 0;">
+        <a href="?tab=2025-2026&league=premier-league&subtab=table-2" style="margin-right: 12px; color:#c7d2fe; text-decoration:underline;">Table 2</a>
+        <a href="?tab=2025-2026&league=premier-league&subtab=whatifs" style="margin-right: 12px; color:#FFCD00; text-decoration:underline; font-weight:bold;">What-Ifs</a>
+    </div>
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label'], ENT_QUOTES, 'UTF-8') ?>:
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>

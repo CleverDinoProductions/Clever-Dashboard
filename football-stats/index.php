@@ -30,6 +30,7 @@ $seasonLeagueConfigs = [
                 'leeds' => ['label' => 'Leeds Tracker', 'icon' => '💛', 'file' => 'tabs/premier-league/2025-2026/leeds.php'],
                 'leeds-2' => ['label' => 'Leeds Dashboard', 'icon' => '💙', 'file' => 'tabs/premier-league/2025-2026/leeds2.php'],
                 'leeds-3' => ['label' => 'Leeds Classic', 'icon' => '🤍', 'file' => 'tabs/premier-league/2025-2026/leeds3.php'],
+                'whatifs' => ['label' => 'What-Ifs', 'icon' => '❓', 'file' => 'tabs/premier-league/2025-2026/whatifs.php'],
             ],
         ],
         'championship' => [
