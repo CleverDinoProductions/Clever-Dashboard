@@ -19,16 +19,17 @@ foreach ($allTeams as $team) {
     
     // Determine predicted block based on projected points
     $predictedBlock = 5; // Default to worst case
-    if ($projectedPoints >= 70) $predictedBlock = 1;
-    elseif ($projectedPoints >= 60) $predictedBlock = 2;
-    elseif ($projectedPoints >= 38) $predictedBlock = 3;
-    elseif ($projectedPoints >= 37) $predictedBlock = 4;
+    // Check projected points against historical block thresholds and current position to assign predicted block
+    if ($projectedPoints >= 70 ) $predictedBlock = 1; // Title contenders
+    elseif ($projectedPoints >= 60) $predictedBlock = 2; // European zone
+    elseif ($projectedPoints >= 39) $predictedBlock = 3; // Mid-table
+    elseif ($projectedPoints >= 32) $predictedBlock = 4; // Danger zone
     
     // Current block
     $currentBlock = 5;
-    if ($team['position'] <= 4) $currentBlock = 1;
+    if ($team['position'] <= 2) $currentBlock = 1;
     elseif ($team['position'] <= 7) $currentBlock = 2;
-    elseif ($team['position'] <= 14) $currentBlock = 3;
+    elseif ($team['position'] <= 15) $currentBlock = 3;
     elseif ($team['position'] <= 17) $currentBlock = 4;
     
     // Calculate various targets
