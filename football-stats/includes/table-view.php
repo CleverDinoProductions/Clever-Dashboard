@@ -288,7 +288,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         ?>
                         <option value="<?php echo htmlspecialchars($snapshotUrl, ENT_QUOTES, 'UTF-8'); ?>"
                             <?php echo ($tableView['is_snapshot_view'] && (int) $tableView['active_matchweek'] === (int) $matchweek) ? 'selected' : ''; ?>>
-                            Snapshot matchweek <?php echo (int) $matchweek; ?><?php if ($firstDate) echo ' (' . htmlspecialchars($firstDate) . ')'; ?>
+                            Matchweek <?php echo (int) $matchweek; ?><?php if ($firstDate) echo ' (' . htmlspecialchars($firstDate) . ')'; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
