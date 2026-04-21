@@ -453,7 +453,7 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
         for pos, team in enumerate(sorted_teams, 1):
             team['position'] = pos
         return sorted_teams
-    def insert_snapshot(conn, matchweek, teams, updated_at):
+    def insert_snapshot(conn, matchweek, teams, updated_at, archived_at=None):
         c2 = conn.cursor()
         for team in standings_snapshot(teams):
             c2.execute('''
@@ -476,7 +476,7 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
                 team['gd'],
                 team['points'],
                 updated_at,
-                updated_at
+                archived_at if archived_at is not None else updated_at
             ))
         conn.commit()
 
@@ -484,15 +484,40 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
     c.execute("DELETE FROM league_table_snapshots WHERE competition_code = ? AND season_label = ?", (competition_code, season_label))
 
     # Insert pre-season snapshot (matchweek 0) with all teams at zero
-    insert_snapshot(db_conn, 0, teams, updated_at)
+    insert_snapshot(db_conn, 0, teams, updated_at, archived_at=updated_at)
     print(f"  · Pre-season snapshot inserted (matchweek 0)...")
 
     # Rebuild snapshots by processing all matches in each matchweek together
-    for mw in sorted(matches_by_week.keys()):
+    today_str = time.strftime("%Y-%m-%d")
+    matchweeks_sorted = sorted(matches_by_week.keys())
+    # Always reconstruct all historical snapshots
+    for mw in matchweeks_sorted:
         for match in matches_by_week[mw]:
             update_standings(teams, match)
-        insert_snapshot(db_conn, mw, teams, updated_at)
-        print(f"  · Snapshots recalculated for matchweek {mw}...")
+        # Find the earliest match_date for this matchweek
+        c.execute("SELECT MIN(match_date) FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ?", (competition_code, season_label, mw))
+        min_date_row = c.fetchone()
+        if min_date_row and min_date_row[0]:
+            min_date = min_date_row[0]
+            try:
+                archived_at_ts = int(time.mktime(time.strptime(min_date, "%Y-%m-%d"))) * 1000
+            except Exception:
+                archived_at_ts = updated_at
+        else:
+            min_date = None
+            archived_at_ts = updated_at
+        insert_snapshot(db_conn, mw, teams, updated_at, archived_at=archived_at_ts)
+        print(f"  · Snapshot recalculated for matchweek {mw} (archived_at={archived_at_ts})")
+
+    # For the current matchweek (if any), only create/overwrite snapshot if today is the first fixture date
+    if matchweeks_sorted:
+        current_mw = matchweeks_sorted[-1]
+        c.execute("SELECT MIN(match_date) FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ?", (competition_code, season_label, current_mw))
+        min_date_row = c.fetchone()
+        if min_date_row and min_date_row[0] == today_str:
+            # Overwrite snapshot for current MW with today's state
+            insert_snapshot(db_conn, current_mw, teams, updated_at, archived_at=archived_at_ts)
+            print(f"  · Snapshot for current MW{current_mw} created/updated for today ({today_str})")
     print(f"  ✓ Snapshots recalculated from matches.")
 
     # --- Overwrite latest matchweek snapshot with current live table ---
