@@ -110,8 +110,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                 $projectedPoints = round($ppg * 38, 0);
                 $remainingGames = 38 - $team['played'];
-                $pointsNeededFor40 = max(0, 40 - $team['points']);
-                $ppgNeededFor40 = $remainingGames > 0 ? round($pointsNeededFor40 / $remainingGames, 2) : 0;
+                $pointsNeededFor38 = max(0, 38 - $team['points']);
+                $ppgNeededFor38 = $remainingGames > 0 ? round($pointsNeededFor38 / $remainingGames, 2) : 0;
             ?>
             <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
                 <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
@@ -140,9 +140,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                     </div>
                     <?php if ($projectedPoints < 40): ?>
                     <div class="proj-alert" style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #F44336;">
-                        <strong>🚨 PPG needed for 40pts:</strong> <?php echo $ppgNeededFor40; ?>
+                        <strong>🚨 PPG needed for 38pts:</strong> <?php echo $ppgNeededFor38; ?>
                         <br>
-                        <span style="font-size: 0.85em; color: #888;">Points needed: <?php echo $pointsNeededFor40; ?></span>
+                        <span style="font-size: 0.85em; color: #888;">Points needed: <?php echo $pointsNeededFor38; ?></span>
                     </div>
                     <?php else: ?>
                     <div class="proj-alert" style="background: rgba(76, 175, 129, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #4CAF50;">

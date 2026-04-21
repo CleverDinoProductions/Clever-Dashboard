@@ -113,8 +113,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                 $projectedPoints = round($ppg * 38, 0);
                 $remainingGames = 38 - $team['played'];
-                $pointsNeededFor40 = max(0, 40 - $team['points']);
-                $ppgNeededFor40 = $remainingGames > 0 ? round($pointsNeededFor40 / $remainingGames, 2) : 0;
+                $pointsNeededFor38 = max(0, 38 - $team['points']);
+                $ppgNeededFor38 = $remainingGames > 0 ? round($pointsNeededFor38 / $remainingGames, 2) : 0;
                 
                 // Get points to 17th place from the active live/snapshot standings
                 $team17th = null;
@@ -158,9 +158,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
                     </div>
                     <div class="proj-alert" style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #F44336;">
-                        <strong>🚨 PPG needed for escape (35pts):</strong> <?php echo $ppgNeededFor40; ?>
+                        <strong>🚨 PPG needed for escape (38pts):</strong> <?php echo $ppgNeededFor38; ?>
                         <br>
-                        <span style="font-size: 0.85em; color: #888;">Must gain <?php echo $pointsNeededFor40; ?> points from <?php echo $remainingGames; ?> games</span>
+                        <span style="font-size: 0.85em; color: #888;">Must gain <?php echo $pointsNeededFor38; ?> points from <?php echo $remainingGames; ?> games</span>
                     </div>
                 </div>
             </div>
