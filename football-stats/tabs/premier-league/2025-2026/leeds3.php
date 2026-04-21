@@ -300,8 +300,14 @@ if ($leedsPosition < 17 && $leedsPoints >= $safetyTarget) {
         <?php
         if ($leedsPosition >= 18) {
             echo "WE'RE IN THE FIGHT! MARCHING ON TOGETHER!";
+        } elseif ($pointsToSafety <= 0) {
+            echo "SAFETY SECURED! CELEBRATE THE SURVIVAL!";
         } elseif ($pointsToSafety <= 5) {
             echo "ALMOST THERE! KEEP PUSHING LEEDS!";
+        } elseif ($pointsToSafety <= 10) {
+            echo "ON THE RIGHT TRACK! LET'S KEEP IT UP LEEDS!";
+        } elseif ($pointsToSafety <= 15) {
+            echo "NEED TO STEP UP, BUT WE BELIEVE IN YOU LEEDS!";
         } else {
             echo "STRONG POSITION! STAY FOCUSED LEEDS!";
         }
@@ -310,6 +316,16 @@ if ($leedsPosition < 17 && $leedsPoints >= $safetyTarget) {
     <p style="color:white;font-size:18px;margin-top:15px">
         <?= $gamesRemaining ?> games to go.
         <?= $pointsToSafety ?> points needed.
-        We can do this!
+        <?php
+        if ($pointsToSafety <= 0) {
+            echo "Enjoy the safety, but let's finish strong!";
+        } elseif ($pointsToSafety <= 5) {
+            echo "Every point counts now, let's go for it!";
+        } elseif ($pointsToSafety <= 10) {
+            echo "We can do this! Keep the faith!";
+        } else {
+            echo "It's a challenge, but we're behind you all the way!";
+        }
+        ?>
     </p>
 </div>
