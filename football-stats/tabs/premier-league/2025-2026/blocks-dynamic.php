@@ -22,7 +22,7 @@ foreach ($allTeams as $team) {
     // Check projected points against historical block thresholds and current position to assign predicted block
     if ($projectedPoints >= 70 ) $predictedBlock = 1; // Title contenders
     elseif ($projectedPoints >= 60) $predictedBlock = 2; // European zone
-    elseif ($projectedPoints >= 39) $predictedBlock = 3; // Mid-table
+    elseif ($projectedPoints >= 38) $predictedBlock = 3; // Mid-table
     elseif ($projectedPoints >= 32) $predictedBlock = 4; // Danger zone
     
     // Current block
@@ -49,7 +49,7 @@ foreach ($allTeams as $team) {
     if ($projectedPoints >= 38) {
         $risk = 'Safe';
         $riskColor = '#4CAF50';
-    } elseif ($projectedPoints >= 37) {
+    } elseif ($projectedPoints >= 36) {
         $risk = 'Caution';
         $riskColor = '#FFA500';
     } else {
