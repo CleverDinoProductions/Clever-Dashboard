@@ -106,6 +106,30 @@ if ($games_played >= $halfway_point) {
     }
 }
 
+// Season safety status
+if ($leeds['points'] >= 43) {
+    $full_season_status = "🏆 Guaranteed Safety with " . $projected_points . " pts!";
+    $full_season_color = "#43b581";
+    $survival_chance = "100%";
+} elseif ($leeds['points'] >= 40) {
+    $full_season_status = "🏆 Extended Season Safety with " . $leeds['points'] . " pts!";
+    $full_season_color = "#43b581";
+    $survival_chance = "95%+";
+} elseif ($leeds['points'] >= 38) {
+    $full_season_status = "✅ Full Season Safety with " . $leeds['points'] . " pts!";
+    $full_season_color = "#43b581";
+    $survival_chance = "95%+";
+} elseif ($leeds['points'] >= 30) {
+    $full_season_status = "✅ On track for safety with " . $leeds['points'] . " pts!";
+    $full_season_color = "#43b581";
+} elseif ($leeds['points'] >= 20) {
+    $full_season_status = "⚠️ Need to reach 38-point target (currently at " . $leeds['points'] . " pts)";
+    $full_season_color = "#faa61a";
+} else {
+    $full_season_status = "🚨 Critical! Far from 38-point target";
+    $full_season_color = "#f04747";
+}
+
 $bottom_six = array_values(array_filter($standings, function ($teamRow) {
     return (int) $teamRow['position'] >= 15;
 }));
@@ -148,7 +172,7 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
             🤍💛💙 LEEDS UNITED
         </h1>
         <h2 style="color: #FFCD00; font-size: 32px; margin: 10px 0; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">
-            Survival Tracker 2025/26
+            Survival Tracker
         </h2>
         <div style="background: <?php echo $status_color; ?>; display: inline-block; padding: 15px 40px; border-radius: 8px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
             <span style="font-size: 28px; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
@@ -158,6 +182,11 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
         <div style="margin-top: 15px; background: <?php echo $halfway_color; ?>; display: inline-block; padding: 10px 25px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
             <span style="font-size: 16px; font-weight: bold; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
                 <?php echo $halfway_status; ?>
+            </span>
+        </div>
+        <div style="margin-top: 10px; background: <?php echo $full_season_color; ?>; display: inline-block; padding: 10px 25px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
+            <span style="font-size: 16px; font-weight: bold; color: white; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                <?php echo $full_season_status; ?>
             </span>
         </div>
         <div style="margin-top: 10px;">
@@ -325,12 +354,149 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
             <?php 
             if ($halfway_progress_pct >= 100) {
                 echo "🏆 100% Target Hit! Exceptional!";
-            } elseif ($halfway_progress_pct >= 75) {
-                echo "✅ Above 75% - Excellent Position!";
             } elseif ($halfway_progress_pct >= 50) {
                 echo "⚠️ Need " . $points_to_75pct . " more to hit 75%";
-            } else {
-                echo "🚨 Critical - Far from target";
+            }
+            ?>
+        </span>
+    </div>
+</div>
+
+<!-- 38 pts progress bars -->
+<div class="panel">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Full Season Safety Progress (38-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Target: 38 points for full season safety (historically 95%+ survival rate)
+    </p> 
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php 
+        $full_season_progress_pct = ($leeds['points'] / 38) * 100;
+        
+        // Color based on proximity to 38 points
+        if ($full_season_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($full_season_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($full_season_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $full_season_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+        
+        <!-- 38-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Full Safety (38 pts)
+        </div>
+        
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $leeds['points']; ?> / 38 points (<?php echo round($full_season_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php 
+            if ($full_season_progress_pct >= 100) {
+                echo "🏆 Full Season Target Hit! Exceptional!";
+            } elseif ($full_season_progress_pct >= 50) {
+                echo "⚠️ Need " . (38 - $leeds['points']) . " more to hit safety";
+            }
+            ?>
+        </span>
+    </div>
+</div>    
+
+<!-- 40 pt Progress Bar -->
+<div class="panel">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Extended Safety Target Progress (40-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Extended target: 40 points for extra safety margin (historically 98%+ survival rate)
+    </p>
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php 
+        $extended_target_progress_pct = ($leeds['points'] / 40) * 100;  
+
+        // Color based on proximity to 40 points
+        if ($extended_target_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($extended_target_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($extended_target_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $extended_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 40-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Extended Safety (40 pts)
+        </div>  
+
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $leeds['points']; ?> / 40 points (<?php echo round($extended_target_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php 
+            if ($extended_target_progress_pct >= 100) {
+                echo "🏆 Extended Target Hit! Exceptional!";
+            } elseif ($extended_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (40 - $leeds['points']) . " more to hit extended target";
+            }
+            ?>
+        </span>
+    </div>
+</div>
+
+<!-- 42 pt Progress Bar -->
+<div class="panel">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Ultimate Safety Target Progress (42-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Ultimate target: 42 points for maximum safety margin (historically 99%+ survival rate)
+    </p>
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php 
+        $ultimate_target_progress_pct = ($leeds['points'] / 42) * 100;
+
+        // Color based on proximity to 42 points
+        if ($ultimate_target_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($ultimate_target_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($ultimate_target_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $ultimate_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 42-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Ultimate Safety (42 pts)
+        </div>
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $leeds['points']; ?> / 42 points (<?php echo round($ultimate_target_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php 
+            if ($ultimate_target_progress_pct >= 100) {
+                echo "🏆 Ultimate Target Hit! Exceptional!";
+            } elseif ($ultimate_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (42 - $leeds['points']) . " more to hit ultimate target";
             }
             ?>
         </span>
