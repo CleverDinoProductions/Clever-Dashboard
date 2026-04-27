@@ -65,9 +65,41 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
         </header>
         
         <!-- Info Bar (like CleverLounge) -->
-        <div class="info-bar">
-            Live data • Updates Daily • <?php echo date('Y-m-d H:i:s'); ?> UTC
+        <div class="info-bar" style="display:flex;align-items:center;gap:18px;">
+            <span>Live data • Updates Daily • <?php echo date('Y-m-d H:i:s'); ?> UTC</span>
+            <button id="update-data-btn" style="margin-left:auto;padding:6px 16px;font-size:1em;cursor:pointer;">🔄 Update Data</button>
+            <span id="update-status" style="font-size:0.95em;color:#2a8c2a;display:none;"></span>
         </div>
+        <script>
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.getElementById('update-data-btn');
+    var status = document.getElementById('update-status');
+    btn.addEventListener('click', function() {
+        btn.disabled = true;
+        status.style.display = 'inline';
+        status.style.color = '#888';
+        status.textContent = 'Updating...';
+        fetch('update-data.php', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                status.style.color = data.success ? '#2a8c2a' : '#c00';
+                status.textContent = data.message;
+                setTimeout(function() {
+                    status.style.display = 'none';
+                    btn.disabled = false;
+                }, 3500);
+            })
+            .catch(() => {
+                status.style.color = '#c00';
+                status.textContent = 'Error starting update.';
+                setTimeout(function() {
+                    status.style.display = 'none';
+                    btn.disabled = false;
+                }, 3500);
+            });
+    });
+});
+</script>
         
         <!-- Main Navigation Pills -->
         <nav class="pill-nav main-pills">
@@ -153,3 +185,14 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
         
         <!-- Main Content Area -->
         <main class="main-content">
+            <?php
+            if ($currentMainTab === 'world-cup') {
+                // World Cup content
+            } else {
+                // Season content
+            }
+            ?>
+        </main>
+    </div>
+</body>
+</html>

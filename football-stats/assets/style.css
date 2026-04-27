@@ -499,3 +499,13 @@ tr {
 .eliminated {
     background: rgba(136, 136, 136, 0.1);
 }
+
+.main-content,
+.content-wrapper {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+.panel {
+    padding-top: 10px !important;
+}
