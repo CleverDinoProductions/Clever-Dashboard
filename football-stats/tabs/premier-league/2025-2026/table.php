@@ -264,6 +264,11 @@ th {
     border-bottom: 2px solid #444;
 }
 
+td {
+    border-bottom: 2px solid #444;
+    border-right: 2px solid #444;
+}
+
 /* 2. Important fix for tables */
 table {
     border-collapse: collapse; /* Required for sticky borders to show up correctly */
