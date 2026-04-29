@@ -44,7 +44,7 @@ $team_info = [
         'short' => 'BRE',
         'color' => '#D20000',
     ],
-    'Brighton & Hove Albion' => [
+    'Brighton and Hove Albion' => [
         'name' => 'Brighton',
         'common_name' => 'Brighton',
         'nickname' => 'The Seagulls',
@@ -182,181 +182,23 @@ function getTeamInfo($team_name, $team_info) {
 }
 ?>
 
-<!-- Add custom tooltip CSS -->
 <style>
-.team-name {
-    position: relative;
-    cursor: help;
-    display: inline-block;
-    transition: color 0.2s ease;
-}
+.team-name { position: relative; cursor: help; display: inline-block; transition: color 0.2s ease; }
+.team-name:hover { color: #FFCD00; }
+.team-official { color: #dcddde; }
+.team-common { color: #888; font-size: 12px; margin-left: 6px; font-weight: normal; }
+.team-tooltip { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2e3136, #40444b); color: white; padding: 10px 15px; border-radius: 8px; white-space: nowrap; z-index: 1000; font-size: 13px; border: 2px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: opacity 0.3s ease, visibility 0.3s ease; }
+.team-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: inherit; }
+.team-name:hover .team-tooltip { visibility: visible; opacity: 1; }
+.tooltip-nickname { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
+.tooltip-short { display: block; font-size: 11px; color: #dcddde; }
 
-.team-name:hover {
-    color: #FFCD00;
-}
-
-.team-official {
-    color: #dcddde;
-}
-
-.team-common {
-    color: #888;
-    font-size: 12px;
-    margin-left: 6px;
-    font-weight: normal;
-}
-
-.team-tooltip {
-    visibility: hidden;
-    opacity: 0;
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: linear-gradient(135deg, #2e3136, #40444b);
-    color: white;
-    padding: 10px 15px;
-    border-radius: 8px;
-    white-space: nowrap;
-    z-index: 1000;
-    font-size: 13px;
-    border: 2px solid;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.team-tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: inherit;
-}
-
-.team-name:hover .team-tooltip {
-    visibility: visible;
-    opacity: 1;
-}
-
-.tooltip-nickname {
-    display: block;
-    font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 3px;
-}
-
-.tooltip-short {
-    display: block;
-    font-size: 11px;
-    color: #dcddde;
-}
-
-/* 1. Target the header cells specifically */
-th {
-    position: sticky;
-    top: 0;
-    z-index: 10; /* Keeps the header above the scrolling body rows */
-    background-color: #222; /* Use your team/site brand color here */
-    color: white;
-    white-space: nowrap; /* Prevents long titles from breaking the layout */
-    border-bottom: 2px solid #444;
-}
-
-td {
-    border-bottom: 2px solid #444;
-    border-right: 2px solid #444;
-}
-
-/* 2. Important fix for tables */
-table {
-    border-collapse: collapse; /* Required for sticky borders to show up correctly */
-}
-
-/* ============================================
-   BADGES & LABELS
-   ============================================ */
-.badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.badge-champions {
-    background: #43b581;
-    color: white;
-}
-
-.badge-europa {
-    background: #5865F2;
-    color: white;
-}
-
-.badge-relegation {
-    background: #f04747;
-    color: white;
-}
-
-.badge-team {
-    background: #40444b;
-    color: #dcddde;
-}
-
-/* Table - Points Column */
-td:last-child {
-    font-weight: bold;
-    font-size: 16px;
-    color: #5865F2;
-}
-
-/* Premier League Position Colors */
-/* Champions League (1-4) */
-tr:nth-child(2) td:first-child,
-tr:nth-child(3) td:first-child,
-tr:nth-child(4) td:first-child,
-tr:nth-child(5) td:first-child,
-tr:nth-child(6) td:first-child {
-    color: #43b581;
-    font-weight: bold;
-}
-
-/* Europa League (5) */
-tr:nth-child(7) td:first-child {
-    color: #5865F2;
-    font-weight: bold;
-}
-
-/* Conference League (7) */
-tr:nth-child(8) td:first-child {
-    color: #FFCD00;
-    font-weight: bold;
-}
-
-/* Relegation Zone (18-20) */
-tr:nth-child(19) td:first-child,
-tr:nth-child(20) td:first-child,
-tr:nth-child(21) td:first-child {
-    color: #f04747;
-    font-weight: bold;
-}
-
-.team-crest {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    vertical-align: middle;
-    margin-right: 10px;
-}
-
-/* Ensure the team cell uses flex for better alignment */
-.team-cell {
-    display: flex;
-    align-items: center;
-}
+th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 10px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
+.team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
+.team-cell { display: flex; align-items: center; text-align: left; }
+.update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
 </style>
 
 <div class="panel">
