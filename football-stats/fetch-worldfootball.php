@@ -22,6 +22,9 @@ $db       = new SQLite3('football-stats.sqlite3');
 $tables = [
     "league_table_PL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_ELC" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
+    "league_table_L1" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
+    "league_table_L2" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
+    "league_table_NL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, source TEXT",
     "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
@@ -160,8 +163,11 @@ function sync_world_cup($db, $BASE_URL) {
 
 // --- 4. Execution ---
 
-sync_league($db, $BASE_URL, 'PL', '4328');
-sync_league($db, $BASE_URL, 'ELC', '4329');
+sync_league($db, $BASE_URL, 'PL', '4328'); // Premier League
+sync_league($db, $BASE_URL, 'ELC', '4329'); // Championship
+sync_league($db, $BASE_URL, 'L1', '4396'); // League 1
+sync_league($db, $BASE_URL, 'L2', '4397'); // League 2s
+sync_league($db, $BASE_URL, 'NL', '4590'); // National League
 sync_world_cup($db, $BASE_URL);
 
 echo "\n🏁 Master Sync Complete. Your database is now fully populated and visually complete.\n";

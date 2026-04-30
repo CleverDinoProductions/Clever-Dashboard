@@ -205,7 +205,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 .team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
 .team-cell { display: flex; align-items: center; text-align: left; }
 .update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
-</style>
+</style>*
 
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>

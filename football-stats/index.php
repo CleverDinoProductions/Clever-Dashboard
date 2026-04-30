@@ -53,6 +53,33 @@ $seasonLeagueConfigs = [
                 'relegation' => ['label' => 'Relegation Battle', 'icon' => '🚨', 'file' => 'tabs/championship/2025-2026/relegation.php'],
             ],
         ],
+        'league-one' => [
+            'label' => 'League One',
+            'defaultSubTab' => 'table',
+            'tabs' => [
+                'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/league-one/2025-2026/table.php'],
+                'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/league-one/2025-2026/table2.php'],
+                'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/league-one/2025-2026/matches.php'],
+            ],
+        ],
+        'league-two' => [
+            'label' => 'League Two',
+            'defaultSubTab' => 'table',
+            'tabs' => [
+                'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/league-two/2025-2026/table.php'],
+                'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/league-two/2025-2026/table2.php'],
+                'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/league-two/2025-2026/matches.php'],
+            ],
+        ],
+        'national-league' => [
+            'label' => 'National League',
+            'defaultSubTab' => 'table',
+            'tabs' => [
+                'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/national-league/2025-2026/table.php'],
+                'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/national-league/2025-2026/table2.php'],
+                'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/national-league/2025-2026/matches.php'],
+            ],
+        ],
     ],
     '2026-2027' => [
         'premier-league' => [
