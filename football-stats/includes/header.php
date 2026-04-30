@@ -45,6 +45,33 @@ if ($currentMainTab === 'world-cup') {
 
 $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'blocks') === 0;
 ?>
+<style>
+.site-header {
+    background: #1a237e; /* Match the dark blue in your screenshot */
+    padding: 30px 20px;
+    text-align: center;
+    border-bottom: 2px solid #ffd700; /* Gold accent */
+}
+
+.site-title {
+    font-size: 2.5rem;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: 10px;
+}
+
+.site-subtitle {
+    font-size: 1.1rem;
+    color: #ffd700; /* Matching the yellow text in image_e19c41.png */
+    margin: 5px 0;
+    font-weight: 600;
+}
+
+.site-subtitle a {
+    color: #5865f2; /* Discord-ish blue for the TSDB link */
+    text-decoration: underline;
+}
+</style>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,7 +87,9 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
         <header class="site-header">
             <div class="header-content">
                 <h1 class="site-title">⚽ Football Stats Tracker</h1>
-                <p class="site-subtitle">Premier League, Championship & World Cup Analytics</p>
+                <p class="site-subtitle">FA Premier League, EFL, National Leagues & World Cup Analytics</p>
+                <p class="site-subtitle">Entire Football Pyramid Past & Present</p>
+                <p class="site-subtitle">Data provided by SportsDB - <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer">Link</a></p>
             </div>
         </header>
         
