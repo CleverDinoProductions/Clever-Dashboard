@@ -122,7 +122,7 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
                     $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
                 } elseif ($pos <= 6) {
                     $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-                } elseif ($pos >= 22) {
+                } elseif ($pos >= 21) {
                     $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
                 }
 

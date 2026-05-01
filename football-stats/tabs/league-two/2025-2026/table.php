@@ -98,13 +98,13 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 $row_style = '';
                 $pos_color = '#dcddde'; // Default color for position number
                 
-                if ($pos <= 2) {
+                if ($pos <= 3) {
                     $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
                     $pos_color = '#43b581';
-                } elseif ($pos <= 6) {
+                } elseif ($pos <= 7) {
                     $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
                     $pos_color = '#5865F2';
-                } elseif ($pos >= 22) {
+                } elseif ($pos >= 23) {
                     $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
                     $pos_color = '#f04747';
                 }

@@ -101,7 +101,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 } elseif ($pos <= 6) {
                     $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
                     $pos_color = '#5865F2';
-                } elseif ($pos >= 22) {
+                } elseif ($pos >= 21) {
                     $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
                     $pos_color = '#f04747';
                 }
