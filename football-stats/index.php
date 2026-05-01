@@ -25,8 +25,6 @@ $seasonLeagueConfigs = [
                 'blocks-3' => ['label' => 'Block 3', 'icon' => '⚖️', 'file' => 'tabs/premier-league/2025-2026/blocks-3.php'],
                 'blocks-4' => ['label' => 'Block 4', 'icon' => '⚠️', 'file' => 'tabs/premier-league/2025-2026/blocks-4.php'],
                 'blocks-5' => ['label' => 'Block 5', 'icon' => '🔻', 'file' => 'tabs/premier-league/2025-2026/blocks-5.php'],
-                'relegation' => ['label' => 'Relegation Battle', 'icon' => '🚨', 'file' => 'tabs/premier-league/2025-2026/relegation.php'],
-                'relegation-2' => ['label' => 'Relegation Deep Dive', 'icon' => '🛡️', 'file' => 'tabs/premier-league/2025-2026/relegation2.php'],
                 'leeds' => ['label' => 'Leeds Tracker', 'icon' => '💛', 'file' => 'tabs/premier-league/2025-2026/leeds.php'],
                 'leeds-2' => ['label' => 'Leeds Dashboard', 'icon' => '💙', 'file' => 'tabs/premier-league/2025-2026/leeds2.php'],
                 'leeds-3' => ['label' => 'Leeds Classic', 'icon' => '🤍', 'file' => 'tabs/premier-league/2025-2026/leeds3.php'],
