@@ -1,34 +1,3 @@
-<?php
-session_start();
-
-/** 
- * ADMIN CREDENTIALS
- * Change these for your PebbleHost VPS security!
- */
-$admin_user = "admin";
-$admin_pass = "DinoMaster2026"; // Change this to something strong
-
-$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
-$error = "";
-
-// Handle Login Attempt
-if (isset($_POST['login'])) {
-    if ($_POST['user'] === $admin_user && $_POST['pass'] === $admin_pass) {
-        $_SESSION['logged_in'] = true;
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit;
-    } else {
-        $error = "Access Denied: Invalid Credentials";
-    }
-}
-
-// Handle Logout
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header("Location: " . $_SERVER['PHP_SELF']);
-    exit;
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,6 +5,7 @@ if (isset($_GET['logout'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* Unified Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
@@ -54,7 +24,6 @@ if (isset($_GET['logout'])) {
             text-align: center;
             margin-bottom: 50px;
             color: white;
-            position: relative;
         }
         
         .header h1 {
@@ -69,24 +38,6 @@ if (isset($_GET['logout'])) {
         .header p {
             font-size: 18px;
             color: #888;
-        }
-
-        .logout-link {
-            position: absolute;
-            right: 0;
-            top: 0;
-            color: #e74c3c;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            border: 1px solid #e74c3c;
-            padding: 5px 15px;
-            border-radius: 5px;
-        }
-
-        .logout-link:hover {
-            background: #e74c3c;
-            color: white;
         }
         
         .section-title {
@@ -112,6 +63,9 @@ if (isset($_GET['logout'])) {
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
         .card:hover {
@@ -139,7 +93,7 @@ if (isset($_GET['logout'])) {
             line-height: 1.6;
         }
         
-        .card a, .login-btn {
+        .card a {
             display: inline-block;
             padding: 12px 30px;
             background: linear-gradient(135deg, #5865F2, #4752c4);
@@ -148,31 +102,12 @@ if (isset($_GET['logout'])) {
             border-radius: 6px;
             font-weight: bold;
             transition: all 0.2s;
-            cursor: pointer;
-            border: none;
             width: 100%;
         }
         
-        .card a:hover, .login-btn:hover {
+        .card a:hover {
             background: linear-gradient(135deg, #4752c4, #3c44a8);
             transform: scale(1.02);
-        }
-
-        /* Login Form Styles */
-        .login-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #1e2124;
-            border: 1px solid #40444b;
-            color: white;
-            border-radius: 6px;
-        }
-
-        .error-msg {
-            color: #f04747;
-            font-size: 13px;
-            margin-top: 10px;
         }
         
         .status {
@@ -183,7 +118,7 @@ if (isset($_GET['logout'])) {
             border-radius: 12px;
             font-size: 12px;
             font-weight: bold;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         
         .footer {
@@ -234,15 +169,12 @@ if (isset($_GET['logout'])) {
         }
         
         .btn-secondary { background: linear-gradient(135deg, #43b581, #3a9d6f) !important; }
-        .btn-tertiary { background: linear-gradient(135deg, #faa61a, #f39c12) !important; }
+        .admin-btn { background: linear-gradient(135deg, #4f545c, #2f3136) !important; border: 1px solid #4f545c; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <?php if($is_logged_in): ?>
-                <a href="?logout=1" class="logout-link">Logout</a>
-            <?php endif; ?>
             <h1>🦖 Official Site for CleverDino</h1>
             <p>Home of many Dashboards and Analytics</p>
         </div>
@@ -266,75 +198,40 @@ if (isset($_GET['logout'])) {
         <!-- PUBLIC SECTION: Analytics -->
         <h2 class="section-title">📊 Analytics Dashboards</h2>
         <div class="cards">
+            <!-- Football Stats Card -->
             <div class="card">
-                <div class="card-icon">⚽</div>
-                <h2>Football Stats</h2>
-                <p>Live match tracking, player statistics, and league standings via FotMob</p>
+                <div>
+                    <div class="card-icon">⚽</div>
+                    <h2>Football Stats</h2>
+                    <p>Live match tracking, player statistics, and league standings via FotMob.</p>
+                </div>
                 <div class="btn-group">
                     <a href="/football-stats/" target="_blank">Dashboard</a>
                     <a href="/football-stats/tabs/fixtures.php" target="_blank" class="btn-secondary">Fixtures</a>
                 </div>
-                <div class="status">● ONLINE</div>
+                <div><span class="status">● ONLINE</span></div>
             </div>
         </div>
 
-        <!-- LOCKED SECTION: Admin Tools -->
-        <h2 class="section-title">🛠️ System & Admin Tools</h2>
+        <!-- Admin Section -->
+        <h2 class="section-title">🔐 Admin</h2>
         <div class="cards">
-            <?php if ($is_logged_in): ?>
-                <!-- Database Admin -->
-                <div class="card">
-                    <div class="card-icon">🗄️</div>
-                    <h2>Database Admin</h2>
-                    <p>Manage SQLite and MySQL databases, browse tables, and execute queries.</p>
-                    <a href="/phpmyadmin" target="_blank">Open phpMyAdmin</a>
-                    <div class="status">● AUTHORIZED</div>
+            <!-- New Admin Access Card -->
+            <div class="card" style="border: 1px solid #4f545c;">
+                <div>
+                    <div class="card-icon">🔑</div>
+                    <h2>Admin Portal</h2>
+                    <p>Access system tools, database management, and server logs.</p>
                 </div>
-
-                <!-- Quick Links -->
-                <div class="card">
-                    <div class="card-icon">🔗</div>
-                    <h2>Quick Links</h2>
-                    <div style="text-align: left;">
-                        <a href="/mam-dashboard/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b; color: white; text-decoration: none; border-radius: 4px;">🔍 MAM DB Check</a>
-                        <a href="/football-stats/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b; color: white; text-decoration: none; border-radius: 4px;">⚽ Football DB Check</a>
-                    </div>
-                </div>
-
-                <!-- System Info -->
-                <div class="card">
-                    <div class="card-icon">⚙️</div>
-                    <h2>System Info</h2>
-                    <p style="text-align: left;">
-                        <strong>Server:</strong> <?php echo explode(' ', $_SERVER['SERVER_SOFTWARE'])[0]; ?><br>
-                        <strong>PHP:</strong> <?php echo phpversion(); ?><br>
-                        <strong>Platform:</strong> <?php echo PHP_OS; ?><br>
-                        <strong>Web Port:</strong> <?php echo $_SERVER['SERVER_PORT']; ?><br>
-                        <strong>Client IP:</strong> <?php echo $_SERVER['REMOTE_ADDR']; ?>
-                    </p>
-                </div>
-            <?php else: ?>
-                <!-- LOGIN FORM CARD -->
-                <div class="card" style="border: 1px dashed #5865F2;">
-                    <div class="card-icon">🔒</div>
-                    <h2>Admin Login</h2>
-                    <p>Sensitive tools are currently restricted.</p>
-                    <form method="POST">
-                        <input type="text" name="user" class="login-input" placeholder="Username" required>
-                        <input type="password" name="pass" class="login-input" placeholder="Password" required>
-                        <button type="submit" name="login" class="login-btn">Unlock Tools</button>
-                    </form>
-                    <?php if($error): ?>
-                        <p class="error-msg"><?php echo $error; ?></p>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
+                <a href="/admin/admin.php" class="admin-btn">Secure Login</a>
+                <div><span class="status" style="background: #72767d;">RESTRICTED</span></div>
+            </div>
         </div>
 
         <div class="footer">
             <p><strong>CleverDino Hub</strong> • VPS Infrastructure • PebbleHost Deployment</p>
             <p style="margin-top: 10px; font-size: 11px; color: #666;">
-                MAM Analytics • Football Stats • YouTube Tracker • CleverLounge IRC • 100% Self-Hosted
+                CleverDino Hub • VPS Infrastructure • Football Stats • PebbleHost Deployment
             </p>
         </div>
     </div>
