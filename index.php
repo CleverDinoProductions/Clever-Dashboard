@@ -1,7 +1,38 @@
+<?php
+session_start();
+
+/** 
+ * ADMIN CREDENTIALS
+ * Change these for your PebbleHost VPS security!
+ */
+$admin_user = "admin";
+$admin_pass = "DinoMaster2026"; // Change this to something strong
+
+$is_logged_in = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true;
+$error = "";
+
+// Handle Login Attempt
+if (isset($_POST['login'])) {
+    if ($_POST['user'] === $admin_user && $_POST['pass'] === $admin_pass) {
+        $_SESSION['logged_in'] = true;
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
+    } else {
+        $error = "Access Denied: Invalid Credentials";
+    }
+}
+
+// Handle Logout
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+}
+?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>CleverDino Hub</title>
+    <title>Official Site for CleverDino</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
@@ -23,6 +54,7 @@
             text-align: center;
             margin-bottom: 50px;
             color: white;
+            position: relative;
         }
         
         .header h1 {
@@ -37,6 +69,24 @@
         .header p {
             font-size: 18px;
             color: #888;
+        }
+
+        .logout-link {
+            position: absolute;
+            right: 0;
+            top: 0;
+            color: #e74c3c;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #e74c3c;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+
+        .logout-link:hover {
+            background: #e74c3c;
+            color: white;
         }
         
         .section-title {
@@ -89,7 +139,7 @@
             line-height: 1.6;
         }
         
-        .card a {
+        .card a, .login-btn {
             display: inline-block;
             padding: 12px 30px;
             background: linear-gradient(135deg, #5865F2, #4752c4);
@@ -98,11 +148,31 @@
             border-radius: 6px;
             font-weight: bold;
             transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            width: 100%;
         }
         
-        .card a:hover {
+        .card a:hover, .login-btn:hover {
             background: linear-gradient(135deg, #4752c4, #3c44a8);
-            transform: scale(1.05);
+            transform: scale(1.02);
+        }
+
+        /* Login Form Styles */
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #1e2124;
+            border: 1px solid #40444b;
+            color: white;
+            border-radius: 6px;
+        }
+
+        .error-msg {
+            color: #f04747;
+            font-size: 13px;
+            margin-top: 10px;
         }
         
         .status {
@@ -114,10 +184,6 @@
             font-size: 12px;
             font-weight: bold;
             margin-top: 10px;
-        }
-        
-        .status.offline {
-            background: #f04747;
         }
         
         .footer {
@@ -167,26 +233,21 @@
             min-width: 100px;
         }
         
-        .btn-secondary {
-            background: linear-gradient(135deg, #43b581, #3a9d6f) !important;
-        }
-        
-        .btn-tertiary {
-            background: linear-gradient(135deg, #faa61a, #f39c12) !important;
-        }
-        
-        .btn-quaternary {
-            background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
-        }
+        .btn-secondary { background: linear-gradient(135deg, #43b581, #3a9d6f) !important; }
+        .btn-tertiary { background: linear-gradient(135deg, #faa61a, #f39c12) !important; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🦖 CleverDino Hub</h1>
-            <p>Your Self-Hosted Analytics & Tracking Dashboard Empire</p>
+            <?php if($is_logged_in): ?>
+                <a href="?logout=1" class="logout-link">Logout</a>
+            <?php endif; ?>
+            <h1>🦖 Official Site for CleverDino</h1>
+            <p>Home of many Dashboards and Analytics</p>
         </div>
 
+        <!-- Global Stats Section -->
         <div class="stats">
             <div class="stat-box">
                 <div class="number">6</div>
@@ -201,152 +262,119 @@
                 <div class="label">Uptime</div>
             </div>
             <div class="stat-box">
-                <div class="number">100%</div>
-                <div class="label">Self-Hosted</div>
+                <div class="number">Hosted by</div>
+                <div class="label">PebbleHost</div>
             </div>
         </div>
 
+        <!-- PUBLIC SECTION: Analytics -->
         <h2 class="section-title">📊 Analytics Dashboards</h2>
         <div class="cards">
-            <!-- MAM Dashboard -->
             <div class="card">
                 <div class="card-icon">📊</div>
                 <h2>MAM Analytics</h2>
-                <p>Real-time IRC queue tracking, invite windows, activity heatmaps, leaderboards, and historical trends</p>
+                <p>Real-time IRC queue tracking, activity heatmaps, and historical trends</p>
                 <div class="btn-group">
                     <a href="/mam-dashboard/" target="_blank">Dashboard</a>
                     <a href="/mam-dashboard/?tab=queue" target="_blank" class="btn-secondary">Queue</a>
-                    <a href="/mam-dashboard/?tab=live" target="_blank" class="btn-tertiary">Live Feed</a>
                 </div>
                 <div class="status">● ONLINE</div>
             </div>
 
-            <!-- Football Stats -->
             <div class="card">
                 <div class="card-icon">⚽</div>
                 <h2>Football Stats</h2>
-                <p>Live match tracking, player statistics, league standings, and fixture schedules from FotMob</p>
+                <p>Live match tracking, player statistics, and league standings via FotMob</p>
                 <div class="btn-group">
                     <a href="/football-stats/" target="_blank">Dashboard</a>
                     <a href="/football-stats/tabs/fixtures.php" target="_blank" class="btn-secondary">Fixtures</a>
-                    <a href="/football-stats/tabs/standings.php" target="_blank" class="btn-tertiary">Standings</a>
                 </div>
                 <div class="status">● ONLINE</div>
             </div>
 
-            <!-- YouTube Dashboard -->
             <div class="card">
                 <div class="card-icon">📺</div>
                 <h2>YouTube Tracker</h2>
-                <p>Multi-channel monitoring, upload timeline, location detection, and algorithm health analysis via RSS feeds</p>
+                <p>Multi-channel monitoring and upload timelines via RSS feeds</p>
                 <div class="btn-group">
                     <a href="/youtube-dashboard/" target="_blank">Dashboard</a>
-                    <a href="/youtube-dashboard/tabs/channels.php" target="_blank" class="btn-secondary">Channels</a>
                     <a href="/youtube-dashboard/tabs/analytics.php" target="_blank" class="btn-tertiary">Analytics</a>
                 </div>
                 <div class="status">● ONLINE</div>
             </div>
         </div>
 
+        <!-- PUBLIC SECTION: IRC -->
         <h2 class="section-title">💬 Communication & IRC</h2>
         <div class="cards">
-            <!-- CleverLounge IRC -->
             <div class="card">
                 <div class="card-icon">💬</div>
                 <h2>CleverLounge</h2>
-                <p>Custom IRC client for MyAnonaMouse with Discord-style interface, role colors, and persistent SQLite history</p>
+                <p>Custom IRC client for MyAnonaMouse with persistent SQLite history</p>
                 <div class="btn-group">
-                    <a href="http://localhost:9000" target="_blank">🏠 Local</a>
-                    <a href="http://irc.cleverdino.net:9000" target="_blank" class="btn-secondary">🌐 Network</a>
+                    <a href="http://irc.cleverdino.net:9000" target="_blank">🌐 Network</a>
                 </div>
                 <div class="status">● ONLINE</div>
             </div>
         </div>
 
+        <!-- LOCKED SECTION: Admin Tools -->
         <h2 class="section-title">🛠️ System & Admin Tools</h2>
         <div class="cards">
-            <!-- phpMyAdmin -->
-            <div class="card">
-                <div class="card-icon">🗄️</div>
-                <h2>Database Admin</h2>
-                <p>Manage SQLite and MySQL databases, browse tables, execute queries, and export data</p>
-                <a href="/phpmyadmin" target="_blank">Open phpMyAdmin</a>
-                <div class="status">● ONLINE</div>
-            </div>
+            <?php if ($is_logged_in): ?>
+                <!-- Database Admin -->
+                <div class="card">
+                    <div class="card-icon">🗄️</div>
+                    <h2>Database Admin</h2>
+                    <p>Manage SQLite and MySQL databases, browse tables, and execute queries.</p>
+                    <a href="/phpmyadmin" target="_blank">Open phpMyAdmin</a>
+                    <div class="status">● AUTHORIZED</div>
+                </div>
 
-            <!-- Quick Links -->
-            <div class="card">
-                <div class="card-icon">🔗</div>
-                <h2>Quick Links</h2>
-                <p style="text-align: left; margin-bottom: 15px;">
-                    <a href="http://localhost" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">🏠 XAMPP Dashboard</a>
-                    <a href="/mam-dashboard/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">🔍 MAM DB Check</a>
-                    <a href="/football-stats/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">⚽ Football DB Check</a>
-                    <a href="/youtube-dashboard/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">📺 YouTube DB Check</a>
-                </p>
-            </div>
+                <!-- Quick Links -->
+                <div class="card">
+                    <div class="card-icon">🔗</div>
+                    <h2>Quick Links</h2>
+                    <div style="text-align: left;">
+                        <a href="/mam-dashboard/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b; color: white; text-decoration: none; border-radius: 4px;">🔍 MAM DB Check</a>
+                        <a href="/football-stats/check-db.php" style="display: block; margin: 8px 0; padding: 8px; background: #40444b; color: white; text-decoration: none; border-radius: 4px;">⚽ Football DB Check</a>
+                    </div>
+                </div>
 
-            <!-- System Info -->
-            <div class="card">
-                <div class="card-icon">⚙️</div>
-                <h2>System Info</h2>
-                <p style="text-align: left;">
-                    <strong>Server:</strong> XAMPP<br>
-                    <strong>PHP:</strong> <?= phpversion() ?><br>
-                    <strong>Platform:</strong> Windows<br>
-                    <strong>IRC Port:</strong> 9000<br>
-                    <strong>Web Port:</strong> 80<br>
-                    <strong>Databases:</strong> 3 SQLite DBs
-                </p>
-            </div>
-        </div>
-
-        <h2 class="section-title">📖 Documentation & Resources</h2>
-        <div class="cards">
-            <!-- Dashboard Docs -->
-            <div class="card">
-                <div class="card-icon">📚</div>
-                <h2>Dashboard Documentation</h2>
-                <p style="text-align: left;">
-                    <strong>MAM Dashboard:</strong> IRC logs, queue tracking, invite windows<br>
-                    <strong>Football Stats:</strong> FotMob API integration, live scores<br>
-                    <strong>YouTube Tracker:</strong> RSS feeds, no API quota limits
-                </p>
-            </div>
-
-            <!-- External Links -->
-            <div class="card">
-                <div class="card-icon">🌐</div>
-                <h2>External Resources</h2>
-                <p style="text-align: left; margin-bottom: 15px;">
-                    <a href="https://www.myanonamouse.net" target="_blank" style="display: block; margin: 8px 0; padding: 8px; background: #f39c12;">🐭 MAM Website</a>
-                    <a href="https://github.com/thelounge/thelounge" target="_blank" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">💬 The Lounge Docs</a>
-                    <a href="https://www.fotmob.com" target="_blank" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">⚽ FotMob</a>
-                    <a href="https://youtube.com" target="_blank" style="display: block; margin: 8px 0; padding: 8px; background: #40444b;">📺 YouTube</a>
-                </p>
-            </div>
-
-            <!-- Tech Stack -->
-            <div class="card">
-                <div class="card-icon">🔧</div>
-                <h2>Tech Stack</h2>
-                <p style="text-align: left;">
-                    <strong>Frontend:</strong> PHP, HTML, CSS<br>
-                    <strong>Backend:</strong> Python, Node.js<br>
-                    <strong>Database:</strong> SQLite 3<br>
-                    <strong>IRC:</strong> The Lounge v4.4.3<br>
-                    <strong>Automation:</strong> Windows Task Scheduler
-                </p>
-            </div>
+                <!-- System Info -->
+                <div class="card">
+                    <div class="card-icon">⚙️</div>
+                    <h2>System Info</h2>
+                    <p style="text-align: left;">
+                        <strong>Server:</strong> <?php echo explode(' ', $_SERVER['SERVER_SOFTWARE'])[0]; ?><br>
+                        <strong>PHP:</strong> <?php echo phpversion(); ?><br>
+                        <strong>Platform:</strong> <?php echo PHP_OS; ?><br>
+                        <strong>Web Port:</strong> <?php echo $_SERVER['SERVER_PORT']; ?><br>
+                        <strong>Client IP:</strong> <?php echo $_SERVER['REMOTE_ADDR']; ?>
+                    </p>
+                </div>
+            <?php else: ?>
+                <!-- LOGIN FORM CARD -->
+                <div class="card" style="border: 1px dashed #5865F2;">
+                    <div class="card-icon">🔒</div>
+                    <h2>Admin Login</h2>
+                    <p>Sensitive tools are currently restricted.</p>
+                    <form method="POST">
+                        <input type="text" name="user" class="login-input" placeholder="Username" required>
+                        <input type="password" name="pass" class="login-input" placeholder="Password" required>
+                        <button type="submit" name="login" class="login-btn">Unlock Tools</button>
+                    </form>
+                    <?php if($error): ?>
+                        <p class="error-msg"><?php echo $error; ?></p>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="footer">
-            <p><strong>CleverDino Hub</strong> • Self-hosted Infrastructure • Powered by XAMPP, Node.js & Python</p>
-            <p style="margin-top: 10px; font-size: 12px;">
-                MAM Analytics • Football Stats • YouTube Tracker • CleverLounge IRC • 100% Self-Hosted • Zero API Costs
-            </p>
-            <p style="margin-top: 5px; font-size: 11px; color: #666;">
-                All dashboards modular • SQLite databases • RSS feeds • Automated data fetching • No platform dependency
+            <p><strong>CleverDino Hub</strong> • VPS Infrastructure • PebbleHost Deployment</p>
+            <p style="margin-top: 10px; font-size: 11px; color: #666;">
+                MAM Analytics • Football Stats • YouTube Tracker • CleverLounge IRC • 100% Self-Hosted
             </p>
         </div>
     </div>
