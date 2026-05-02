@@ -250,11 +250,7 @@ if (isset($_GET['logout'])) {
         <!-- Global Stats Section -->
         <div class="stats">
             <div class="stat-box">
-                <div class="number">6</div>
-                <div class="label">Active Services</div>
-            </div>
-            <div class="stat-box">
-                <div class="number">3</div>
+                <div class="number">1</div>
                 <div class="label">Analytics Dashboards</div>
             </div>
             <div class="stat-box">
@@ -271,48 +267,12 @@ if (isset($_GET['logout'])) {
         <h2 class="section-title">📊 Analytics Dashboards</h2>
         <div class="cards">
             <div class="card">
-                <div class="card-icon">📊</div>
-                <h2>MAM Analytics</h2>
-                <p>Real-time IRC queue tracking, activity heatmaps, and historical trends</p>
-                <div class="btn-group">
-                    <a href="/mam-dashboard/" target="_blank">Dashboard</a>
-                    <a href="/mam-dashboard/?tab=queue" target="_blank" class="btn-secondary">Queue</a>
-                </div>
-                <div class="status">● ONLINE</div>
-            </div>
-
-            <div class="card">
                 <div class="card-icon">⚽</div>
                 <h2>Football Stats</h2>
                 <p>Live match tracking, player statistics, and league standings via FotMob</p>
                 <div class="btn-group">
                     <a href="/football-stats/" target="_blank">Dashboard</a>
                     <a href="/football-stats/tabs/fixtures.php" target="_blank" class="btn-secondary">Fixtures</a>
-                </div>
-                <div class="status">● ONLINE</div>
-            </div>
-
-            <div class="card">
-                <div class="card-icon">📺</div>
-                <h2>YouTube Tracker</h2>
-                <p>Multi-channel monitoring and upload timelines via RSS feeds</p>
-                <div class="btn-group">
-                    <a href="/youtube-dashboard/" target="_blank">Dashboard</a>
-                    <a href="/youtube-dashboard/tabs/analytics.php" target="_blank" class="btn-tertiary">Analytics</a>
-                </div>
-                <div class="status">● ONLINE</div>
-            </div>
-        </div>
-
-        <!-- PUBLIC SECTION: IRC -->
-        <h2 class="section-title">💬 Communication & IRC</h2>
-        <div class="cards">
-            <div class="card">
-                <div class="card-icon">💬</div>
-                <h2>CleverLounge</h2>
-                <p>Custom IRC client for MyAnonaMouse with persistent SQLite history</p>
-                <div class="btn-group">
-                    <a href="http://irc.cleverdino.net:9000" target="_blank">🌐 Network</a>
                 </div>
                 <div class="status">● ONLINE</div>
             </div>
