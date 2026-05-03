@@ -108,7 +108,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
         <div class="projections-grid">
             <?php foreach ($teams as $team): 
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
-                $projectedPoints = round($ppg * 45, 0);
+                $projectedPoints = round($ppg * 38, 0);
                 $remainingGames = 38 - $team['played'];
                 $pointsNeededFor45 = max(0, 45 - $team['points']);
                 $ppgNeededFor45 = $remainingGames > 0 ? round($pointsNeededFor45 / $remainingGames, 2) : 0;
