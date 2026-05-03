@@ -42,7 +42,7 @@ if ($is_first_half) {
     $target_label = "20 pts by Halfway (Game 19)";
     $games_label = $games_to_halfway . " games to halfway";
 } else {
-    // SECOND HALF: Target is 38 points for full season safety
+    // SECOND HALF: Target is 38 points for full season safety based on 38 points over games played so far hence minimum of 1.0 ppg
     $safety_target = 38;
     $points_to_safety = max(0, $safety_target - $leeds['points']);
     $ppg_needed = $games_remaining > 0 ? round($points_to_safety / $games_remaining, 2) : 0;
@@ -107,14 +107,18 @@ if ($games_played >= $halfway_point) {
 }
 
 // Season safety status
-if ($leeds['points'] >= 43) {
-    $full_season_status = "🏆 Guaranteed Safety with " . $projected_points . " pts!";
+if ($leeds['points'] >= 45) {
+    $full_season_status = "🏆 Mathematical Safety with " . $leeds['points'] . " pts!";
     $full_season_color = "#43b581";
     $survival_chance = "100%";
+} else if ($leeds['points'] >= 43) {
+    $full_season_status = "🏆 Guaranteed Safety with " . $leeds['points'] . " pts!";
+    $full_season_color = "#43b581";
+    $survival_chance = "99%";
 } elseif ($leeds['points'] >= 40) {
     $full_season_status = "🏆 Extended Season Safety with " . $leeds['points'] . " pts!";
     $full_season_color = "#43b581";
-    $survival_chance = "95%+";
+    $survival_chance = "98%+";
 } elseif ($leeds['points'] >= 38) {
     $full_season_status = "✅ Full Season Safety with " . $leeds['points'] . " pts!";
     $full_season_color = "#43b581";
@@ -459,20 +463,20 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
 
 <!-- 42 pt Progress Bar -->
 <div class="panel">
-    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Ultimate Safety Target Progress (42-Point Target)</h2>
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Guaranteed Safety Target Progress (42-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        Ultimate target: 42 points for maximum safety margin (historically 99%+ survival rate)
+        Guaranteed target: 42 points for guaranteed safety margin (historically 99%+ survival rate)
     </p>
     <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
         <?php 
-        $ultimate_target_progress_pct = ($leeds['points'] / 42) * 100;
+        $guaranteed_target_progress_pct = ($leeds['points'] / 42) * 100;
 
         // Color based on proximity to 42 points
-        if ($ultimate_target_progress_pct >= 100) {
+        if ($guaranteed_target_progress_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
-        } elseif ($ultimate_target_progress_pct >= 75) {
+        } elseif ($guaranteed_target_progress_pct >= 75) {
             $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
-        } elseif ($ultimate_target_progress_pct >= 50) {
+        } elseif ($guaranteed_target_progress_pct >= 50) {
             $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
         } else {
             $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
@@ -483,20 +487,66 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
         <!-- 42-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
-            ▼ Ultimate Safety (42 pts)
+            ▼ Guaranteed Safety (42 pts)
         </div>
         <!-- Current progress text -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
-            <?php echo $leeds['points']; ?> / 42 points (<?php echo round($ultimate_target_progress_pct); ?>%)
+            <?php echo $leeds['points']; ?> / 42 points (<?php echo round($guaranteed_target_progress_pct); ?>%)
         </div>
     </div>
     <div style="margin-top: 15px; text-align: center;">
         <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
             <?php 
-            if ($ultimate_target_progress_pct >= 100) {
+            if ($guaranteed_target_progress_pct >= 100) {
                 echo "🏆 Ultimate Target Hit! Exceptional!";
-            } elseif ($ultimate_target_progress_pct >= 50) {
+            } elseif ($guaranteed_target_progress_pct >= 50) {
                 echo "⚠️ Need " . (42 - $leeds['points']) . " more to hit ultimate target";
+            }
+            ?>
+        </span>
+    </div>
+</div>
+
+<!-- 45 pt Progress Bar -->
+<div class="panel">
+    <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Mathematical Safety Target Progress (45-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Mathematical target: 45 points for Mathematical safety margin (historically 100% survival rate)
+    </p>
+    <div style="background: #40444b; border-radius: 6px; overflow: hidden; position: relative; height: 50px;">
+        <?php 
+        $mathematical_target_progress_pct = ($leeds['points'] / 45) * 100;
+
+        // Color based on proximity to 45 points
+        if ($mathematical_target_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($mathematical_target_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($mathematical_target_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $mathematical_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 45-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Mathematical Safety (45 pts)
+        </div>
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $leeds['points']; ?> / 45 points (<?php echo round($mathematical_target_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php 
+            if ($mathematical_target_progress_pct >= 100) {
+                echo "🏆 Ultimate Target Hit! Exceptional!";
+            } elseif ($mathematical_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (45 - $leeds['points']) . " more to hit mathematical target"; 
             }
             ?>
         </span>
@@ -661,12 +711,13 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
         </div>
         <?php endif; ?>
     </div>
+</div>
 
-    <!-- What If Scenarios (Next 3 Games) -->
+<!-- What If Scenarios (Next 3 Games) -->
     <div class="panel" style="background: #2e3136;">
         <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 3 Games)</h2>
         <?php
-        $quick_scenarios = [
+        $three_game_scenarios = [
             ['wins' => 3, 'draws' => 0, 'label' => '3 wins'],
             ['wins' => 2, 'draws' => 1, 'label' => '2 wins, 1 draw'],
             ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 1 loss'],
@@ -677,7 +728,7 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
         ];
         ?>
         <div style="margin-top: 15px;">
-            <?php foreach ($quick_scenarios as $scenario): ?>
+            <?php foreach ($three_game_scenarios as $scenario): ?>
                 <?php 
                 $scenario_points = $leeds['points'] + ($scenario['wins'] * 3) + $scenario['draws'] * 1;
                 $scenario_gap = $scenario_points - $safety_target;
@@ -696,19 +747,18 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
             <?php endforeach; ?>
         </div>
     </div>
-</div>
 
 <!-- What If Scenarios (Next 2 Games) -->
 <div class="panel" style="background: #2e3136;">
     <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 2 Games)</h2>
     <?php
     $two_game_scenarios = [
-        ['wins' => 2, 'draws' => 0, 'label' => '2 wins'],
-        ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw'],
-        ['wins' => 1, 'draws' => 0, 'label' => '1 win, 1 loss'],
-        ['wins' => 0, 'draws' => 2, 'label' => '2 draws'],
-        ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 1 loss'],
-        ['wins' => 0, 'draws' => 0, 'label' => '2 losses']
+            ['wins' => 2, 'draws' => 0, 'label' => '2 wins'],
+            ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw'],
+            ['wins' => 1, 'draws' => 0, 'label' => '1 win, 1 loss'],
+            ['wins' => 0, 'draws' => 2, 'label' => '2 draws'],
+            ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 1 loss'],
+            ['wins' => 0, 'draws' => 0, 'label' => '2 losses']
     ];
     ?>
     <div style="margin-top: 15px;">
@@ -736,11 +786,11 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
 <div class="panel" style="background: #2e3136;">
     <h2 style="color: #FFCD00; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next Game)</h2>
     <?php
-    $next_game_scenarios = [
-        ['result' => 'win', 'points' => 3, 'label' => 'Win'],
-        ['result' => 'draw', 'points' => 1, 'label' => 'Draw'],
-        ['result' => 'loss', 'points' => 0, 'label' => 'Loss']
-    ];
+        $next_game_scenarios = [
+            ['result' => 'win', 'points' => 3, 'label' => 'Win'],
+            ['result' => 'draw', 'points' => 1, 'label' => 'Draw'],
+            ['result' => 'loss', 'points' => 0, 'label' => 'Loss']
+        ];  
     ?>
     <div style="margin-top: 15px;">
         <?php foreach ($next_game_scenarios as $scenario): ?>
@@ -768,9 +818,15 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
     <?php
     $season_scenarios = [
         ['ppg' => 1.5, 'label' => '1.5 PPG (57 pts)'],
-        ['ppg' => 1.25, 'label' => '1.25 PPG (47 pts)'],
+        ['ppg' => 1.4, 'label' => '1.4 PPG (53 pts)'],
+        ['ppg' => 1.3, 'label' => '1.3 PPG (49 pts)'],
+        ['ppg' => 1.2, 'label' => '1.2 PPG (48 pts)'],
+        ['ppg' => 1.1, 'label' => '1.1 PPG (44 pts)'],
         ['ppg' => 1.0, 'label' => '1.0 PPG (38 pts)'],
-        ['ppg' => 0.75, 'label' => '0.75 PPG (29 pts)'],
+        ['ppg' => 0.9, 'label' => '0.9 PPG (34 pts)'],
+        ['ppg' => 0.8, 'label' => '0.8 PPG (30 pts)'],
+        ['ppg' => 0.7, 'label' => '0.75 PPG (29 pts)'],
+        ['ppg' => 0.6, 'label' => '0.6 PPG (24 pts)'],
         ['ppg' => 0.5, 'label' => '0.5 PPG (19 pts)']
     ];
     ?>
@@ -779,6 +835,7 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
             <?php 
             $scenario_points = round($scenario['ppg'] * 38);
             $scenario_gap = $scenario_points - $safety_target;
+            $leeds_comparison = $scenario_points - $leeds['points'];
             ?>
             <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -789,6 +846,9 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
                 </div>
                 <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
                     <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($leeds_comparison); ?> points <?php echo $leeds_comparison >= 0 ? 'above' : 'below'; ?> Leeds
                 </div>
             </div>
         <?php endforeach; ?>
