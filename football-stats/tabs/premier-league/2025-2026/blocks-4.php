@@ -141,7 +141,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                     <!-- Check if team is on track for survival by checking if points are less than 43 -->
                     <?php if ($team['points'] < 45 || $projectedPoints < 45): ?>
                     <div class="proj-alert" style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #F44336;">
-                        <strong>🚨 PPG needed for 43pts:</strong> <?php echo $ppgNeededFor45; ?>
+                        <strong>🚨 PPG needed for 45pts:</strong> <?php echo $ppgNeededFor45; ?>
                         <br>
                         <span style="font-size: 0.85em; color: #888;">Points needed: <?php echo $pointsNeededFor45; ?></span>
                     </div>
