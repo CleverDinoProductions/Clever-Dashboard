@@ -15,7 +15,7 @@ $blockInfo = [
 
 $tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
 $teams = array_values(array_filter($tableView['standings'], function ($team) {
-    return $team['position'] >= 15 && $team['position'] <= 17;
+    return $team['position'] >= 15 && $team['position'] <= 18;
 }));
 $currentMatchday = $tableView['active_matchweek'] ?? (!empty($tableView['standings']) ? max(array_map('intval', array_column($tableView['standings'], 'played'))) : 1);
 $last_update = $tableView['last_update'];
@@ -108,10 +108,10 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
         <div class="projections-grid">
             <?php foreach ($teams as $team): 
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
-                $projectedPoints = round($ppg * 38, 0);
+                $projectedPoints = round($ppg * 45, 0);
                 $remainingGames = 38 - $team['played'];
-                $pointsNeededFor38 = max(0, 38 - $team['points']);
-                $ppgNeededFor38 = $remainingGames > 0 ? round($pointsNeededFor38 / $remainingGames, 2) : 0;
+                $pointsNeededFor45 = max(0, 45 - $team['points']);
+                $ppgNeededFor45 = $remainingGames > 0 ? round($pointsNeededFor45 / $remainingGames, 2) : 0;
             ?>
             <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
                 <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
@@ -138,11 +138,12 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         <span class="proj-label">Games remaining:</span>
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
                     </div>
-                    <?php if ($projectedPoints < 40): ?>
+                    <!-- Check if team is on track for survival by checking if points are less than 43 -->
+                    <?php if ($team['points'] < 45 || $projectedPoints < 45): ?>
                     <div class="proj-alert" style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #F44336;">
-                        <strong>🚨 PPG needed for 38pts:</strong> <?php echo $ppgNeededFor38; ?>
+                        <strong>🚨 PPG needed for 43pts:</strong> <?php echo $ppgNeededFor45; ?>
                         <br>
-                        <span style="font-size: 0.85em; color: #888;">Points needed: <?php echo $pointsNeededFor38; ?></span>
+                        <span style="font-size: 0.85em; color: #888;">Points needed: <?php echo $pointsNeededFor45; ?></span>
                     </div>
                     <?php else: ?>
                     <div class="proj-alert" style="background: rgba(76, 175, 129, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #4CAF50;">
