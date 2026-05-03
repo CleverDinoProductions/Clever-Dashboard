@@ -14,8 +14,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
 $blocks = [
     1 => ['teams' => [], 'range' => '1-2', 'title' => 'Title Contenders', 'emoji' => '🏆', 'color' => '#FFD700', 'desc' => 'Title'],
     2 => ['teams' => [], 'range' => '1-5', 'title' => 'European Contenders', 'emoji' => '🌍', 'color' => '#5865F2', 'desc' => 'Champions League, Europa League and Conference League'],
-    3 => ['teams' => [], 'range' => '5-14', 'title' => 'Mid-Table Security', 'emoji' => '⚖️', 'color' => '#99AAB5', 'desc' => 'Safe & Stable'],
-    4 => ['teams' => [], 'range' => '15-17', 'title' => 'Relegation Battle', 'emoji' => '⚠️', 'color' => '#FFA500', 'desc' => 'Danger Zone'],
+    3 => ['teams' => [], 'range' => '5-15', 'title' => 'Mid-Table Security', 'emoji' => '⚖️', 'color' => '#99AAB5', 'desc' => 'Safe & Stable'],
+    4 => ['teams' => [], 'range' => '15-18', 'title' => 'Relegation Battle', 'emoji' => '⚠️', 'color' => '#FFA500', 'desc' => 'Danger Zone'],
     5 => ['teams' => [], 'range' => '18-20', 'title' => 'Relegation Zone', 'emoji' => '🔴', 'color' => '#F44336', 'desc' => 'Drop Zone']
 ];
 
@@ -31,7 +31,7 @@ foreach ($allTeams as $team) {
     if ($pos >= 8 && $pos <= 15) {
         $blocks[3]['teams'][] = $team;
     }
-    if ($pos >= 15 && $pos <= 17) {
+    if ($pos >= 15 && $pos <= 18) {
         $blocks[4]['teams'][] = $team;
     }
     if ($pos >= 18 && $pos <= 20) {
