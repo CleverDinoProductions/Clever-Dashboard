@@ -175,7 +175,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🦖 Official Site for CleverDino</h1>
+            <h1>🦖 Official Site for CleverDino 🦖</h1>
             <p>Home of many Dashboards and Analytics</p>
         </div>
 
