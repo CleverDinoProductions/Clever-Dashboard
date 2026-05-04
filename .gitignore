@@ -2,3 +2,4 @@ football-stats/venv/
 football-stats/__pycache__/
 kiwiirc/
 football-stats/football-stats.sqlite3
+football-stats.sqlite3
