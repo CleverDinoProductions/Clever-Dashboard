@@ -1,18 +1,17 @@
 <?php
 /**
- * fetch-worldfootball-final-omni.php
- * THE DEFINITIVE VERSION:
- * - Dynamic Seeding (Fixes disappearing teams in Championship)
- * - Snapshot Crest Injection (Latest TSDB Badges in history)
- * - Full Season Fixture Sync (Past & Future)
- * - World Cup Group & 3rd Place Logic
+ * fetch-worldfootball-badge-injector.php
+ * THE DEFINITIVE SMART VERSION:
+ * - Badge Injection: Ensures historical teams get modern TSDB badges.
+ * - Selective Reconstruction: Only builds snapshots if missing or current season.
+ * - Multi-Season Discovery: 2018-2019 to Present.
  */
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
 
-echo "⚽ Initializing Master Sync Engine (ELC 24-Team Fix)...\n";
+echo "⚽ Initializing Smart Sync & Badge Injector...\n";
 
 $API_KEY  = '876419';
 $BASE_URL = "https://www.thesportsdb.com/api/v1/json/$API_KEY/";
@@ -28,8 +27,6 @@ $tables = [
     "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, source TEXT",
     "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
-    "wc_groups" => "group_name TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
-    "wc_third_place" => "group_name TEXT, team_name TEXT, rank INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, qualified INTEGER, updated_at INTEGER"
 ];
 
 foreach ($tables as $name => $schema) {
@@ -42,52 +39,82 @@ function sync_league($db, $BASE_URL, $code, $id) {
     echo "\n[Syncing $code (ID: $id)]\n";
     $timestamp = round(microtime(true) * 1000);
     $crest_map = [];
-    $master_team_list = [];
+    $current_season = "";
 
-    // STEP A: Fetch Current Table to identify ALL teams and their CRESTS
-    $data = json_decode(@file_get_contents("{$BASE_URL}lookuptable.php?l=$id"), true);
-    if (!$data || !isset($data['table'])) {
-        echo "  ❌ Failed to fetch lookup table for $code.\n";
-        return;
+    // STEP A: Fetch Every Team in League to get ALL modern badges
+    // We use search_all_teams to ensure we catch teams promoted/relegated 
+    $teams_json = json_decode(@file_get_contents("{$BASE_URL}search_all_teams.php?l=" . urlencode($code)), true);
+    if ($teams_json && isset($teams_json['teams'])) {
+        foreach ($teams_json['teams'] as $t) {
+            $crest_map[$t['strTeam']] = $t['strTeamBadge'] ?? '';
+        }
     }
 
-    $season = $data['table'][0]['strSeason'] ?? '2025-2026';
-    $current_mw = max(array_column($data['table'], 'intPlayed'));
-    $table_name = "league_table_$code";
+    // STEP B: Fetch Current Table (Live View)
+    $live_data = json_decode(@file_get_contents("{$BASE_URL}lookuptable.php?l=$id"), true);
+    if ($live_data && isset($live_data['table'])) {
+        $current_season = $live_data['table'][0]['strSeason'] ?? '';
+        $current_mw = max(array_column($live_data['table'], 'intPlayed'));
+        $table_name = "league_table_$code";
 
-    $db->exec("DELETE FROM $table_name");
-    $stmt = $db->prepare("INSERT INTO $table_name VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    
-    foreach ($data['table'] as $t) {
-        $name = $t['strTeam'];
-        $badge = $t['strBadge'] ?? '';
+        $db->exec("DELETE FROM $table_name");
+        $l_stmt = $db->prepare("INSERT INTO $table_name VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
-        $crest_map[$name] = $badge;
-        $master_team_list[] = $name; // This ensures we have 24 for ELC or 20 for PL
+        foreach ($live_data['table'] as $t) {
+            $name = $t['strTeam'];
+            $badge = $t['strBadge'] ?? ($crest_map[$name] ?? '');
+            $crest_map[$name] = $badge; // Ensure map is up to date
 
-        $vals = [$badge, $name, $t['intRank'], $t['intPlayed'], $t['intWin'], $t['intDraw'], $t['intLoss'], $t['intGoalsFor'], $t['intGoalsAgainst'], $t['intGoalDifference'], $t['intPoints'], $timestamp];
-        foreach ($vals as $i => $v) $stmt->bindValue($i+1, $v);
-        $stmt->execute();
+            $vals = [$badge, $name, $t['intRank'], $t['intPlayed'], $t['intWin'], $t['intDraw'], $t['intLoss'], $t['intGoalsFor'], $t['intGoalsAgainst'], $t['intGoalDifference'], $t['intPoints'], $timestamp];
+            foreach ($vals as $i => $v) $l_stmt->bindValue($i+1, $v);
+            $l_stmt->execute();
+        }
+
+        $meta = $db->prepare("INSERT INTO live_table_metadata VALUES (?, ?, ?, ?, ?) ON CONFLICT(competition_code) DO UPDATE SET season_label=excluded.season_label, matchweek=excluded.matchweek, updated_at=excluded.updated_at");
+        $meta->bindValue(1, $code); $meta->bindValue(2, $table_name); $meta->bindValue(3, $current_season); $meta->bindValue(4, $current_mw); $meta->bindValue(5, $timestamp);
+        $meta->execute();
     }
-    
-    // Save metadata
-    $meta = $db->prepare("INSERT INTO live_table_metadata VALUES (?, ?, ?, ?, ?) ON CONFLICT(competition_code) DO UPDATE SET season_label=excluded.season_label, matchweek=excluded.matchweek, updated_at=excluded.updated_at");
-    $meta->bindValue(1, $code); $meta->bindValue(2, $table_name); $meta->bindValue(3, $season); $meta->bindValue(4, $current_mw); $meta->bindValue(5, $timestamp);
-    $meta->execute();
 
-    // STEP B: Rebuild Matches & Snapshots from Fixtures
-    $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=$season"), true);
-    if ($fixtures && !empty($fixtures['events'])) {
+    // STEP C: Get Season List
+    $seasons_json = json_decode(@file_get_contents("{$BASE_URL}search_all_seasons.php?id=$id"), true);
+    if (!$seasons_json || !isset($seasons_json['seasons'])) return;
+
+    // STEP D: Reconstruct/Inject Missing Snapshots
+    foreach ($seasons_json['seasons'] as $s_obj) {
+        $season = $s_obj['strSeason'];
+        if ((int)substr($season, 0, 4) < 2018) continue;
+
+        // Check if data exists AND if it has badges (we check one record)
+        $check = $db->prepare("SELECT team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? LIMIT 1");
+        $check->bindValue(1, $code);
+        $check->bindValue(2, $season);
+        $res = $check->execute()->fetchArray(SQLITE3_ASSOC);
+
+        // Logic: Skip if not current season AND badges exist. 
+        // If current season, we ALWAYS re-run to update latest scores.
+        if ($season !== $current_season && $res !== false && !empty($res['team_crest'])) {
+            echo "  -> Season $season: Fully cached with badges. Skipping.\n";
+            continue;
+        }
+
+        echo "  -> " . ($res === false ? "Reconstructing" : "Updating") . " Season: $season... ";
+
+        $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=" . urlencode($season)), true);
+        if (!$fixtures || empty($fixtures['events'])) { echo "No data.\n"; continue; }
+
         $db->exec("DELETE FROM matches WHERE competition_code = '$code' AND season_label = '$season'");
         $db->exec("DELETE FROM league_table_snapshots WHERE competition_code = '$code' AND season_label = '$season'");
-        
+
         $m_ins = $db->prepare("INSERT INTO matches (competition_code, season_label, matchweek, match_date, home_team, away_team, home_goals, away_goals, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
-        $mw_buckets = [];
-        $running_stats = [];
+        $mw_buckets = []; $running_stats = []; $season_teams = [];
 
-        // PRE-SEED: Initialize every team from our master list with 0 stats
-        foreach ($master_team_list as $name) {
+        foreach ($fixtures['events'] as $e) {
+            $season_teams[$e['strHomeTeam']] = true;
+            $season_teams[$e['strAwayTeam']] = true;
+        }
+
+        foreach (array_keys($season_teams) as $name) {
             $running_stats[$name] = ['p'=>0,'w'=>0,'d'=>0,'l'=>0,'gf'=>0,'ga'=>0,'pts'=>0];
         }
 
@@ -99,7 +126,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
             $m_ins->bindValue(1, $code); $m_ins->bindValue(2, $season); $m_ins->bindValue(3, $mw);
             $m_ins->bindValue(4, $e['dateEvent']); $m_ins->bindValue(5, $e['strHomeTeam']);
             $m_ins->bindValue(6, $e['strAwayTeam']); $m_ins->bindValue(7, $hg);
-            $m_ins->bindValue(8, $ag); $m_ins->bindValue(9, 'tsdb_master');
+            $m_ins->bindValue(8, $ag); $m_ins->bindValue(9, 'tsdb_injector');
             $m_ins->execute();
 
             if ($hg !== null && $ag !== null) {
@@ -117,57 +144,29 @@ function sync_league($db, $BASE_URL, $code, $id) {
                 else { $h['d']++; $a['d']++; $h['pts']+=1; $a['pts']+=1; }
             }
 
-            // Sort: Pts > GD > GF
             uasort($running_stats, function($x, $y) {
                 if ($x['pts'] != $y['pts']) return $y['pts'] - $x['pts'];
-                $gdx = $x['gf'] - $x['ga']; $gdy = $y['gf'] - $y['ga'];
-                if ($gdx != $gdy) return $gdy - $gdx;
-                return $y['gf'] - $x['gf'];
+                return ($y['gf'] - $y['ga']) - ($x['gf'] - $x['ga']);
             });
 
             $pos = 1;
             $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($running_stats as $name => $s) {
-                $badge = $crest_map[$name] ?? ''; 
+                $badge = $crest_map[$name] ?? ''; // The Injector part
                 $vals = [$code, $season, $mw, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp];
                 foreach ($vals as $i => $v) $s_ins->bindValue($i+1, $v);
                 $s_ins->execute();
             }
         }
-        echo "  ✓ All Matchweeks synced with full team count and badges.\n";
+        echo "Done.\n";
     }
 }
 
-// --- 3. World Cup Processing ---
+// --- 3. Execution ---
+sync_league($db, $BASE_URL, 'PL', '4328');
+sync_league($db, $BASE_URL, 'ELC', '4329');
+sync_league($db, $BASE_URL, 'L1', '4396');
+sync_league($db, $BASE_URL, 'L2', '4397');
+sync_league($db, $BASE_URL, 'NL', '4590');
 
-function sync_world_cup($db, $BASE_URL) {
-    echo "\n[Syncing World Cup]\n";
-    $timestamp = round(microtime(true) * 1000);
-    $data = json_decode(@file_get_contents("{$BASE_URL}lookuptable.php?l=4429"), true);
-    
-    if ($data && isset($data['table'])) {
-        $db->exec("DELETE FROM wc_groups");
-        $db->exec("DELETE FROM wc_third_place");
-        foreach ($data['table'] as $t) {
-            $group = !empty($t['strGroup']) ? $t['strGroup'] : 'Finals';
-            $stmt = $db->prepare("INSERT INTO wc_groups VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bindValue(1, $group); $stmt->bindValue(2, $t['strTeam']); $stmt->bindValue(3, $t['intRank']);
-            $stmt->bindValue(4, $t['intPlayed']); $stmt->bindValue(5, $t['intWin']); $stmt->bindValue(6, $t['intDraw']);
-            $stmt->bindValue(7, $t['intLoss']); $stmt->bindValue(8, $t['intGoalsFor']); $stmt->bindValue(9, $t['intGoalsAgainst']);
-            $stmt->bindValue(10, $t['intGoalDifference']); $stmt->bindValue(11, $t['intPoints']); $stmt->bindValue(12, $timestamp);
-            $stmt->execute();
-        }
-        echo "  ✓ World Cup Groups Synced.\n";
-    }
-}
-
-// --- 4. Execution ---
-
-sync_league($db, $BASE_URL, 'PL', '4328'); // Premier League
-sync_league($db, $BASE_URL, 'ELC', '4329'); // Championship
-sync_league($db, $BASE_URL, 'L1', '4396'); // League 1
-sync_league($db, $BASE_URL, 'L2', '4397'); // League 2s
-sync_league($db, $BASE_URL, 'NL', '4590'); // National League
-sync_world_cup($db, $BASE_URL);
-
-echo "\n🏁 Master Sync Complete. Your database is now fully populated and visually complete.\n";
+echo "\n🏁 Badge Injection & Smart Sync Complete.\n";

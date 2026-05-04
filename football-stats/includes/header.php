@@ -134,11 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <nav class="pill-nav main-pills">
             <a href="<?php echo htmlspecialchars(build_tab_url('2025-2026', 'premier-league', 'table'), ENT_QUOTES, 'UTF-8'); ?>"
                class="pill-tab <?php echo ($currentMainTab === '2025-2026') ? 'active' : ''; ?>">
-                🏴 2025/26
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url('2026-2027', 'premier-league', 'table'), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab <?php echo ($currentMainTab === '2026-2027') ? 'active' : ''; ?>">
-                🏴 2026/27
+                🏴 English Leagues
             </a>
             <a href="<?php echo htmlspecialchars(build_tab_url('world-cup', null, 'groups'), ENT_QUOTES, 'UTF-8'); ?>"
                class="pill-tab <?php echo ($currentMainTab === 'world-cup') ? 'active' : ''; ?>">

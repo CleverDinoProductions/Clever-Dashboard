@@ -86,6 +86,20 @@ $team_info = [
         'short' => 'FUL',
         'color' => '#000000',
     ],
+    'Ipswich Town' => [
+        'name' => 'Ipswich',
+        'common_name' => 'Ipswich',
+        'nickname' => 'The Tractor Boys',
+        'short' => 'IPS',
+        'color' => '#0033FF',
+    ],
+    'Leicester City' => [
+        'name' => 'Leicester',
+        'common_name' => 'Leicester',
+        'nickname' => 'The Foxes',
+        'short' => 'LEI',
+        'color' => '#003090',
+    ],
     'Leeds United' => [
         'name' => 'Leeds',
         'common_name' => 'Leeds',
@@ -99,6 +113,13 @@ $team_info = [
         'nickname' => 'The Reds',
         'short' => 'LIV',
         'color' => '#C8102E',
+    ],
+    'Luton' => [
+        'name' => 'Luton',
+        'common_name' => 'Luton',
+        'nickname' => 'The Hatters',
+        'short' => 'LUT',
+        'color' => '#FFCD00',
     ],
     'Manchester City' => [
         'name' => 'Manchester City',
@@ -128,6 +149,20 @@ $team_info = [
         'short' => 'NFO',
         'color' => '#DD0000',
     ],
+    'Sheffield United' => [
+        'name' => 'Sheffield United',
+        'common_name' => 'Sheffield',
+        'nickname' => 'The Blades',
+        'short' => 'SHU',
+        'color' => '#003399',
+    ],
+    'Southampton' => [
+        'name' => 'Southampton',
+        'common_name' => 'Southampton',
+        'nickname' => 'The Saints',
+        'short' => 'SOU',
+        'color' => '#6CABDD',
+    ],
     'Sunderland' => [
         'name' => 'Sunderland',
         'common_name' => 'Sunderland',
@@ -149,8 +184,15 @@ $team_info = [
         'short' => 'WHU',
         'color' => '#7A263A',
     ],
+    'Wolves' => [
+        'name' => 'Wolverhampton Wanderers',
+        'common_name' => 'Wolves',
+        'nickname' => 'Wolves',
+        'short' => 'WOL',
+        'color' => '#FDB913',
+    ],
     'Wolverhampton Wanderers' => [
-        'name' => 'Wolves',
+        'name' => 'Wolverhampton Wanderers',
         'common_name' => 'Wolves',
         'nickname' => 'Wolves',
         'short' => 'WOL',
@@ -160,25 +202,11 @@ $team_info = [
 
 // Helper function to get team info
 function getTeamInfo($team_name, $team_info) {
-    // Direct match
-    if (isset($team_info[$team_name])) {
-        return $team_info[$team_name];
-    }
-    
-    // Partial match (for variations like "Brighton" vs "Brighton & Hove Albion")
+    if (isset($team_info[$team_name])) return $team_info[$team_name];
     foreach ($team_info as $key => $info) {
-        if (stripos($team_name, $key) !== false || stripos($key, $team_name) !== false) {
-            return $info;
-        }
+        if (stripos($team_name, $key) !== false) return $info;
     }
-    
-    // Default if not found
-    return [
-        'common_name' => $team_name,
-        'nickname' => 'Unknown',
-        'short' => strtoupper(substr($team_name, 0, 3)),
-        'color' => '#888888',
-    ];
+    return ['name' => $team_name, 'common_name' => $team_name, 'nickname' => 'Unknown', 'short' => strtoupper(substr($team_name, 0, 3)), 'color' => '#888888'];
 }
 ?>
 

@@ -47,6 +47,7 @@ if (!function_exists('football_stats_tab_supports_table_view')) {
 
 /**
  * Helper to get current URL params safely
+ * This prevents the "Fatal error: Call to undefined function" in header.php
  */
 if (!function_exists('football_stats_get_current_table_view_params')) {
     function football_stats_get_current_table_view_params()
@@ -74,7 +75,7 @@ if (!function_exists('football_stats_get_current_table_view_params')) {
 if (!function_exists('football_stats_get_table_view')) {
     function football_stats_get_table_view(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
     {
-        // Get Live metadata
+        // 1. Get Live metadata
         $metadataStmt = $db->prepare('SELECT season_label, matchweek, updated_at FROM live_table_metadata WHERE competition_code = ?');
         $metadataStmt->execute([$competitionCode]);
         $metadata = $metadataStmt->fetch(PDO::FETCH_ASSOC) ?: null;
@@ -82,6 +83,7 @@ if (!function_exists('football_stats_get_table_view')) {
         $liveSeasonLabel = $metadata['season_label'] ?? $fallbackSeasonLabel;
         $liveMatchweek = isset($metadata['matchweek']) ? (int)$metadata['matchweek'] : null;
 
+        // 2. Determine requested season
         $requestedSeasonLabel = isset($_GET['snapshot_season'])
             ? preg_replace('/[^0-9\-]/', '', (string)$_GET['snapshot_season'])
             : $liveSeasonLabel;
@@ -90,13 +92,27 @@ if (!function_exists('football_stats_get_table_view')) {
             $requestedSeasonLabel = $liveSeasonLabel;
         }
 
-        // Get available weeks for this specific league
+        // 3. Get available seasons for this specific league
+        $snapshotSeasonsStmt = $db->prepare('SELECT DISTINCT season_label FROM league_table_snapshots WHERE competition_code = ? ORDER BY season_label DESC');
+        $snapshotSeasonsStmt->execute([$competitionCode]);
+        $availableSeasons = $snapshotSeasonsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!empty($availableSeasons) && !in_array($requestedSeasonLabel, $availableSeasons, true)) {
+            $requestedSeasonLabel = $liveSeasonLabel;
+        }
+
+        // 4. Get available weeks for the requested season
         $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? ORDER BY matchweek DESC');
         $snapshotWeeksStmt->execute([$competitionCode, $requestedSeasonLabel]);
         $availableMatchweeks = array_map('intval', $snapshotWeeksStmt->fetchAll(PDO::FETCH_COLUMN));
 
         $requestedView = (isset($_GET['table_view']) && $_GET['table_view'] === 'snapshot') ? 'snapshot' : 'live';
         $requestedMatchweek = isset($_GET['matchweek']) ? (int)$_GET['matchweek'] : null;
+
+        // Default to latest matchweek if season is picked but matchweek is missing
+        if ($requestedView === 'snapshot' && $requestedMatchweek === null && !empty($availableMatchweeks)) {
+            $requestedMatchweek = $availableMatchweeks[0];
+        }
 
         $isSnapshotView = $requestedView === 'snapshot'
             && $requestedMatchweek !== null
@@ -111,11 +127,11 @@ if (!function_exists('football_stats_get_table_view')) {
             $lastUpdateStmt->execute([$competitionCode, $requestedSeasonLabel, $requestedMatchweek]);
             $lastUpdateRow = $lastUpdateStmt->fetch(PDO::FETCH_ASSOC) ?: [];
             $lastUpdateTs = $lastUpdateRow['archived_ts'] ?? $lastUpdateRow['source_ts'] ?? null;
+            
             $activeSeasonLabel = $requestedSeasonLabel;
             $activeMatchweek = $requestedMatchweek;
             $updatedLabel = 'Snapshot captured';
         } else {
-            // Live View
             $standingsStmt = $db->query("SELECT * FROM $liveTableName ORDER BY position ASC");
             $standings = $standingsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -139,6 +155,7 @@ if (!function_exists('football_stats_get_table_view')) {
             'is_snapshot_view' => $isSnapshotView,
             'requested_view' => $requestedView,
             'requested_season_label' => $requestedSeasonLabel,
+            'available_seasons' => $availableSeasons,
             'available_matchweeks' => $availableMatchweeks,
             'active_season_label' => $activeSeasonLabel,
             'active_matchweek' => $activeMatchweek,
@@ -157,7 +174,6 @@ require_once __DIR__ . '/table-view-date-helper.php';
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {
-        // 1. Map all Leagues to Competition Codes dynamically
         $leagueMap = [
             'premier-league'  => 'PL',
             'championship'    => 'ELC',
@@ -171,7 +187,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         $seasonLabel = htmlspecialchars((string)($tableView['active_season_label'] ?? ''), ENT_QUOTES, 'UTF-8');
         $controlId = 'table-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
 
-        // Fetch display date for summary
         $summaryDate = '';
         if (!empty($tableView['active_matchweek']) && isset($GLOBALS['db']) && function_exists('football_stats_get_first_date_for_matchweek')) {
             $summaryDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $tableView['active_season_label'], $tableView['active_matchweek']);
@@ -182,15 +197,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .table-view-switcher { margin: 14px 0 16px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.03); }
             .table-view-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; color: #dcddde; font-size: 13px; }
             .table-view-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(88, 101, 242, 0.15); border: 1px solid rgba(88, 101, 242, 0.35); color: #c7d2fe; font-weight: 600; }
-            .table-view-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-            .table-view-select { min-width: 220px; padding: 10px 12px; border-radius: 8px; background: #2f3136; border: 1px solid rgba(255, 255, 255, 0.08); color: #dcddde; font-size: 12px; font-weight: 600; cursor: pointer; }
-            .table-view-current { color: #c7d2fe; font-size: 12px; font-weight: 600; }
-            .table-view-note { margin-top: 12px; color: #9ca3af; font-size: 11px; font-style: italic; }
+            .table-view-actions { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+            .table-view-group { display: flex; flex-direction: column; gap: 4px; }
+            .table-view-select { min-width: 200px; padding: 10px 12px; border-radius: 8px; background: #2f3136; border: 1px solid rgba(255, 255, 255, 0.08); color: #dcddde; font-size: 12px; font-weight: 600; cursor: pointer; }
+            .table-view-label { color: #8e9297; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         </style>
 
         <div class="table-view-switcher">
             <div class="table-view-summary">
-                <span class="table-view-pill"><?php echo $isSnapshot ? 'Snapshot view' : 'Live table'; ?></span>
+                <span class="table-view-pill"><?php echo $isSnapshot ? 'Archive View' : 'Live Table'; ?></span>
                 <span>Season <?php echo $seasonLabel; ?></span>
                 <?php if (!empty($tableView['active_matchweek'])): ?>
                     <span>Matchweek <?php echo (int) $tableView['active_matchweek']; ?></span>
@@ -201,33 +216,47 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             </div>
 
             <div class="table-view-actions">
-                <label for="<?php echo htmlspecialchars($controlId); ?>" class="table-view-current">Choose view</label>
-                <select id="<?php echo htmlspecialchars($controlId); ?>" class="table-view-select" onchange="if (this.value) { window.location.href = this.value; }">
-                    <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live'])); ?>" <?php echo !$isSnapshot ? 'selected' : ''; ?>>
-                        Live table
-                    </option>
-                    <?php 
-                    foreach ($tableView['available_matchweeks'] as $mw): 
-                        $snapshotUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
-                            'table_view' => 'snapshot',
-                            'matchweek' => $mw,
-                            'snapshot_season' => $tableView['requested_season_label'],
-                        ]);
-                        
-                        $mwDate = '';
-                        if (isset($GLOBALS['db']) && function_exists('football_stats_get_first_date_for_matchweek')) {
-                            $mwDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $tableView['requested_season_label'], $mw);
-                        }
-                    ?>
-                        <option value="<?php echo htmlspecialchars($snapshotUrl); ?>" <?php echo ($isSnapshot && (int)$tableView['active_matchweek'] === (int)$mw) ? 'selected' : ''; ?>>
-                            Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' (' . htmlspecialchars($mwDate) . ')'; ?>
+                <!-- Dropdown 1: Season Selection -->
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
+                    <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live'])); ?>" <?php echo (!$isSnapshot && $tableView['requested_season_label'] === $tableView['live_season_label']) ? 'selected' : ''; ?>>
+                            Current Season (Live)
                         </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+                        <?php foreach ($tableView['available_seasons'] as $season): ?>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'snapshot', 'snapshot_season' => $season])); ?>" <?php echo ($tableView['requested_season_label'] === $season) ? 'selected' : ''; ?>>
+                                Season <?php echo htmlspecialchars($season); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-            <div class="table-view-note">
-                Viewing archives for **<?php echo htmlspecialchars(ucwords(str_replace('-', ' ', $league))); ?>**.
+                <!-- Dropdown 2: Matchweek Selection (Filtered by Season) -->
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-mw">Select Matchweek</label>
+                    <select id="<?php echo $controlId; ?>-mw" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live'])); ?>" <?php echo !$isSnapshot ? 'selected' : ''; ?>>
+                            Latest Live Table
+                        </option>
+                        <?php 
+                        foreach ($tableView['available_matchweeks'] as $mw): 
+                            $mwUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
+                                'table_view' => 'snapshot',
+                                'matchweek' => $mw,
+                                'snapshot_season' => $tableView['requested_season_label'],
+                            ]);
+                            
+                            $mwDate = '';
+                            if (isset($GLOBALS['db']) && function_exists('football_stats_get_first_date_for_matchweek')) {
+                                $mwDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $tableView['requested_season_label'], $mw);
+                            }
+                        ?>
+                            <option value="<?php echo htmlspecialchars($mwUrl); ?>" <?php echo ($isSnapshot && (int)$tableView['active_matchweek'] === (int)$mw) ? 'selected' : ''; ?>>
+                                Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' (' . htmlspecialchars($mwDate) . ')'; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
         </div>
         <?php

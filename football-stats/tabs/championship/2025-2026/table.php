@@ -19,6 +19,7 @@ $team_info = [
     'Derby County' => ['name' => 'Derby County', 'common_name' => 'Derby', 'nickname' => 'The Rams', 'short' => 'DER', 'color' => '#000000'],
     'Hull City' => ['name' => 'Hull City', 'common_name' => 'Hull', 'nickname' => 'The Tigers', 'short' => 'HUL', 'color' => '#F5A100'],
     'Ipswich Town' => ['name' => 'Ipswich Town', 'common_name' => 'Ipswich', 'nickname' => 'The Tractor Boys', 'short' => 'IPS', 'color' => '#0033FF'],
+    'Leeds United' => ['name' => 'Leeds United', 'common_name' => 'Leeds', 'nickname' => 'The whites', 'short' => 'LEE', 'color' => '#FFFFFF'],
     'Leicester City' => ['name' => 'Leicester City', 'common_name' => 'Leicester', 'nickname' => 'The Foxes', 'short' => 'LEI', 'color' => '#003090'],
     'Middlesbrough' => ['name' => 'Middlesbrough', 'common_name' => 'Boro', 'nickname' => 'The Smoggies', 'short' => 'MID', 'color' => '#E21B23'],
     'Millwall' => ['name' => 'Millwall', 'common_name' => 'Millwall', 'nickname' => 'The Lions', 'short' => 'MIL', 'color' => '#00254B'],

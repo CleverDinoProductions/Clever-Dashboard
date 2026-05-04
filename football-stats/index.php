@@ -79,28 +79,6 @@ $seasonLeagueConfigs = [
             ],
         ],
     ],
-    '2026-2027' => [
-        'premier-league' => [
-            'label' => 'Premier League',
-            'defaultSubTab' => 'table',
-            'tabs' => [
-                'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/premier-league/2026-2027/table.php'],
-                'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/premier-league/2026-2027/table2.php'],
-                'blocks-overview' => ['label' => 'Blocks of 4', 'icon' => '🧱', 'file' => 'tabs/premier-league/2026-2027/blocks-overview.php'],
-                'relegation' => ['label' => 'Relegation Battle', 'icon' => '🚨', 'file' => 'tabs/premier-league/2026-2027/relegation.php'],
-                'leeds' => ['label' => 'Leeds Tracker', 'icon' => '💛', 'file' => 'tabs/premier-league/2026-2027/leeds.php'],
-            ],
-        ],
-        'championship' => [
-            'label' => 'Championship',
-            'defaultSubTab' => 'table',
-            'tabs' => [
-                'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/championship/2026-2027/table.php'],
-                'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/championship/2026-2027/table2.php'],
-                // Add matches tab for future season if/when file exists
-            ],
-        ],
-    ],
 ];
 
 $worldCupTabs = [
