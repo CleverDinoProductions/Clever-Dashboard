@@ -39,7 +39,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
             the Premier League title and automatic Champions League qualification.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
-            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
+            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
             <?php if ($currentMatchday < 19): ?>
                 First half of season
             <?php elseif ($currentMatchday == 19): ?>
@@ -80,7 +80,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <tbody>
                     <?php foreach ($teams as $team): 
                         $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
-                        $projectedPoints = round($ppg * 38, 1);
+                        $projectedPoints = round($ppg * 46, 1);
                         $halfwayTarget = round($ppg * 19, 1);
                     ?>
                     <tr>
@@ -147,7 +147,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                     </div>
                     <?php endif; ?>
                     <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-                        <span class="proj-label">🏁 Season End (MD38):</span>
+                        <span class="proj-label">🏁 Season End (MD46):</span>
                         <span class="proj-value" style="font-size: 1.2em; color: <?php echo $blockInfo['color']; ?>;">
                             <strong><?php echo $projectedPoints; ?> pts</strong>
                         </span>
@@ -185,8 +185,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>🏆 Title Challenge</h4>
                 <ul>
                     <li><strong>Target PPG:</strong> 2.3-2.5</li>
-                    <li><strong>Halfway (MD19):</strong> 44-48 points</li>
-                    <li><strong>Season End (MD38):</strong> 88-95 points</li>
+                    <li><strong>Halfway (MD23):</strong> 44-48 points</li>
+                    <li><strong>Season End (MD46):</strong> 88-95 points</li>
                     <li><strong>Win Rate:</strong> 70%+</li>
                 </ul>
             </div>
@@ -194,8 +194,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>🥈 2nd-3rd Place</h4>
                 <ul>
                     <li><strong>Target PPG:</strong> 2.0-2.2</li>
-                    <li><strong>Halfway (MD19):</strong> 38-42 points</li>
-                    <li><strong>Season End (MD38):</strong> 76-84 points</li>
+                    <li><strong>Halfway (MD23):</strong> 38-42 points</li>
+                    <li><strong>Season End (MD46):</strong> 76-84 points</li>
                     <li><strong>Win Rate:</strong> 60-65%</li>
                 </ul>
             </div>
@@ -203,8 +203,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>⚽ 4th Place (Last CL Spot)</h4>
                 <ul>
                     <li><strong>Target PPG:</strong> 1.8-2.0</li>
-                    <li><strong>Halfway (MD19):</strong> 34-38 points</li>
-                    <li><strong>Season End (MD38):</strong> 68-76 points</li>
+                    <li><strong>Halfway (MD23):</strong> 34-38 points</li>
+                    <li><strong>Season End (MD46):</strong> 68-76 points</li>
                     <li><strong>Win Rate:</strong> 55%+</li>
                 </ul>
             </div>

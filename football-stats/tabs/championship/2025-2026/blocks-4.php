@@ -38,7 +38,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
             <?php echo $blockInfo['description']; ?> - Teams in serious danger, just above the relegation zone. Every match is crucial for survival.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
-            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
+            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
             <?php if ($currentMatchday < 19): ?>
                 First half of season
             <?php elseif ($currentMatchday == 19): ?>
@@ -125,7 +125,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         <span class="proj-value"><strong><?php echo $team['points']; ?></strong></span>
                     </div>
                     <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-                        <span class="proj-label">🏁 Season End (MD38):</span>
+                        <span class="proj-label">🏁 Season End (MD46):</span>
                         <span class="proj-value" style="font-size: 1.2em; color: <?php echo $projectedPoints >= 40 ? '#4CAF50' : '#F44336'; ?>;">
                             <strong><?php echo $projectedPoints; ?> pts</strong>
                         </span>
@@ -170,8 +170,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>⚠️ Survival Requirements</h4>
                 <ul>
                     <li><strong>Target PPG:</strong>0.9-1.2</li>
-                    <li><strong>Halfway (MD19):</strong> 19-22 points</li>
-                    <li><strong>Season End (MD38):</strong> 38-44 points</li>
+                    <li><strong>Halfway (MD23):</strong> 19-22 points</li>
+                    <li><strong>Season End (MD46):</strong> 38-44 points</li>
                     <li><strong>Win Rate:</strong> 30-35%</li>
                 </ul>
             </div>

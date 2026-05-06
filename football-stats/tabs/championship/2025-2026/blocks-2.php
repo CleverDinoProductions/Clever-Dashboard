@@ -38,7 +38,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
             <?php echo $blockInfo['description']; ?> - Teams competing for Champions League (1st-4th), Europa League (5th-6th) and Conference League (7th) spots, bringing European football and valuable revenue.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
-            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
+            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
             <?php if ($currentMatchday < 19): ?>
                 First half of season
             <?php elseif ($currentMatchday == 19): ?>
@@ -126,7 +126,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         <span class="proj-value"><strong><?php echo $team['points']; ?></strong></span>
                     </div>
                     <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-                        <span class="proj-label">🏁 Season End (MD38):</span>
+                        <span class="proj-label">🏁 Season End (MD46):</span>
                         <span class="proj-value" style="font-size: 1.2em; color: <?php echo $blockInfo['color']; ?>;">
                             <strong><?php echo $projectedPoints; ?> pts</strong>
                         </span>
@@ -164,8 +164,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>🌍 5th-6th Place (Europa League)</h4>
                 <ul>
                     <li><strong>Target PPG:</strong> 1.6-1.8</li>
-                    <li><strong>Halfway (MD19):</strong> 30-34 points</li>
-                    <li><strong>Season End (MD38):</strong> 60-68 points</li>
+                    <li><strong>Halfway (MD23):</strong> 30-34 points</li>
+                    <li><strong>Season End (MD46):</strong> 60-68 points</li>
                     <li><strong>Win Rate:</strong> 45-50%</li>
                 </ul>
             </div>
@@ -173,8 +173,8 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>⚽ 7th Place (Conference League)</h4>
                 <ul>
                     <li><strong>Target PPG:</strong> 1.5-1.7</li>
-                    <li><strong>Halfway (MD19):</strong> 28-32 points</li>
-                    <li><strong>Season End (MD38):</strong> 57-65 points</li>
+                    <li><strong>Halfway (MD23):</strong> 28-32 points</li>
+                    <li><strong>Season End (MD46):</strong> 57-65 points</li>
                     <li><strong>Win Rate:</strong> 42-48%</li>
                 </ul>
             </div>

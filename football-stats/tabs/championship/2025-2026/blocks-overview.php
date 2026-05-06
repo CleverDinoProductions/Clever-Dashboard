@@ -53,14 +53,14 @@ foreach ($allTeams as $team) {
             with unique targets, challenges, and psychological boundaries.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
-            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
-            <?php if ($currentMatchday < 19): ?>
+            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
+            <?php if ($currentMatchday < 23): ?>
                 First half of season
-            <?php elseif ($currentMatchday == 19): ?>
+            <?php elseif ($currentMatchday == 23): ?>
                 🎯 Halfway point!
-            <?php elseif ($currentMatchday > 19 && $currentMatchday <= 29): ?>
+            <?php elseif ($currentMatchday > 23 && $currentMatchday <= 29): ?>
                 Mid-season phase
-            <?php elseif ($currentMatchday > 29 && $currentMatchday < 38): ?>
+            <?php elseif ($currentMatchday > 29 && $currentMatchday < 46): ?>
                 Final stretch
             <?php endif; ?>
             <?php if ($last_update && isset($last_update['ts'])): ?>
@@ -118,7 +118,7 @@ foreach ($allTeams as $team) {
                 <tbody>
                     <?php foreach ($block['teams'] as $team): 
                         $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
-                        $projectedPoints = round($ppg * 38, 0);
+                        $projectedPoints = round($ppg *46, 0);
                     ?>
                     <tr>
                         <td style="color: <?php echo $block['color']; ?>; font-weight: bold;"><?php echo $team['position']; ?></td>
@@ -215,7 +215,7 @@ foreach ($allTeams as $team) {
                 <h4>📊 Points Per Game (PPG)</h4>
                 <ul>
                     <li>Key metric: Points ÷ Games Played</li>
-                    <li>Multiply by 38 for season projection</li>
+                    <li>Multiply by46 for season projection</li>
                     <li>More reliable than current points</li>
                     <li>Shows true performance level</li>
                 </ul>

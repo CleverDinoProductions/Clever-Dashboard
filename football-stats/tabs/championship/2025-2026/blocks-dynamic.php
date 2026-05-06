@@ -198,9 +198,9 @@ table {
             current form. Updated after every matchday.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
-            📅 Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
-            Games Remaining: <strong><?php echo 38 - $currentMatchday; ?></strong> • 
-            Season Progress: <strong><?php echo round(($currentMatchday / 38) * 100, 1); ?>%</strong>
+            📅 Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
+            Games Remaining: <strong><?php echo 46 - $currentMatchday; ?></strong> • 
+            Season Progress: <strong><?php echo round(($currentMatchday / 46) * 100, 1); ?>%</strong>
             <?php if ($last_update && isset($last_update['ts'])): ?>
             <span style="margin-left: 15px;">
                 Last updated: <?= date('Y-m-d H:i:s', $last_update['ts'] / 1000) ?>
@@ -220,8 +220,8 @@ table {
             </div>
             <div class="method-card">
                 <h4>2️⃣ Project Season End</h4>
-                <p><strong>PPG × 38 Games</strong></p>
-                <p class="note">Extrapolates current form across entire 38-game season</p>
+                <p><strong>PPG × 46 Games</strong></p>
+                <p class="note">Extrapolates current form across entire 46-game season</p>
             </div>
             <div class="method-card">
                 <h4>3️⃣ Assign Predicted Block</h4>

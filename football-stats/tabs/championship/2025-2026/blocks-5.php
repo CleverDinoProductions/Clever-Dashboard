@@ -41,7 +41,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
             <?php echo $blockInfo['description']; ?> - Teams in the relegation zone facing the harsh reality of dropping to the Championship with massive financial consequences.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
-            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 38 • 
+            📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
             <?php if ($currentMatchday < 19): ?>
                 First half of season
             <?php elseif ($currentMatchday == 19): ?>
@@ -144,7 +144,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         </span>
                     </div>
                     <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-                        <span class="proj-label">🏁 Season End (MD38):</span>
+                        <span class="proj-label">🏁 Season End (MD46):</span>
                         <span class="proj-value" style="font-size: 1.2em; color: <?php echo $projectedPoints >= 40 ? '#FFA500' : '#F44336'; ?>;">
                             <strong><?php echo $projectedPoints; ?> pts</strong>
                         </span>
@@ -182,7 +182,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 <h4>🔴 Relegation Reality</h4>
                 <ul>
                     <li><strong>Current PPG:</strong> < 1.0 (danger)</li>
-                    <li><strong>Typical at MD19:</strong> < 18 points</li>
+                    <li><strong>Typical at MD23:</strong> < 18 points</li>
                     <li><strong>Typical Season End:</strong> < 35 points</li>
                     <li><strong>Win Rate:</strong> < 30%</li>
                 </ul>
