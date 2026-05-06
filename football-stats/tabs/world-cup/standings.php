@@ -1,9 +1,9 @@
 <?php
 // Fetch overall World Cup standings
-$stmt = $db->query("SELECT * FROM wc_standings ORDER BY points DESC, gd DESC, gf DESC LIMIT 48");
+$stmt = $world_cup_db->query("SELECT * FROM wc_standings ORDER BY points DESC, gd DESC, gf DESC LIMIT 48");
 $standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$last_update = $db->query("SELECT MAX(updated_at) as ts FROM wc_standings")->fetch();
+$last_update = $world_cup_db->query("SELECT MAX(updated_at) as ts FROM wc_standings")->fetch();
 ?>
 
 <style>

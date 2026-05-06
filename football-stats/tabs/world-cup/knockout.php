@@ -3,7 +3,7 @@
 // 1. DATABASE CONNECTION & LOGIC
 // ============================================
 // 1. Fetch Knockout Matches
-$knockout_stmt = $db->query("SELECT * FROM wc_knockout");
+$knockout_stmt = $world_cup_db->query("SELECT * FROM wc_knockout");
 $knockout_rows = $knockout_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 3. Index matches by Match Number for easy lookup

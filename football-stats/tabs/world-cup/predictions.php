@@ -1,6 +1,6 @@
 <?php
 // Fetch current group data with rankings
-$groups = $db->query("
+$groups = $world_cup_db->query("
     SELECT group_name, team_name, position, points, gf, ga, gd, played
     FROM wc_groups 
     ORDER BY group_name, position
