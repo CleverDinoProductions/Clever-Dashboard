@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Run the fetch script in the background
-$cmd = 'php fetch-worldfootball.php > /dev/null 2>&1 &';
+$cmd = 'php fetch-englishfootball.php > /dev/null 2>&1 &';
 exec($cmd, $output, $resultCode);
 
 if ($resultCode === 0) {
