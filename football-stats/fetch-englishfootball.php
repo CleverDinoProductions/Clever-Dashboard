@@ -80,7 +80,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
     foreach (array_reverse($seasons_json['seasons']) as $s_obj) {
         $season = $s_obj['strSeason'];
-        if ((int)substr($season, 0, 4) < 2018) continue;
+        if ((int)substr($season, 0, 4) < 1987) continue;
 
         // Optimization: Only skip if badges exist AND it's not the current season
         $check = $db->prepare("SELECT team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? LIMIT 1");
