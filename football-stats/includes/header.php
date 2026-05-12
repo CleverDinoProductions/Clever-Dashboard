@@ -89,7 +89,8 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
                 <h1 class="site-title">⚽ Football Stats Tracker</h1>
                 <p class="site-subtitle">FA Premier League, EFL, National Leagues & World Cup Analytics</p>
                 <p class="site-subtitle">Entire Football Pyramid Past & Present</p>
-                <p class="site-subtitle">Data provided by SportsDB - <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer">Link</a></p>
+                <p class="site-subtitle">English League Data provided by <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer">SportsDB API</a></p>
+                <p class="site-subtitle">World Cup Data provided by <a href="https://www.football-data.org/" target="_blank" rel="noopener noreferrer">Football-Data API</a></p>
             </div>
         </header>
         
