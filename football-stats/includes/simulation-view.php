@@ -40,7 +40,7 @@ $sim_from = isset($_GET['sim_from']) && is_numeric($_GET['sim_from'])
     ? max(1, (int) $_GET['sim_from'])
     : (int) $default_mw;
 
-$n_sims_allowed = [500, 1000, 2000];
+$n_sims_allowed = [500, 1000, 10000, 100000];
 $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allowed, true)
     ? (int) $_GET['n_sims']
     : 1000;
