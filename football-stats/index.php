@@ -29,6 +29,7 @@ $seasonLeagueConfigs = [
                 'leeds-2' => ['label' => 'Leeds Dashboard', 'icon' => '💙', 'file' => 'tabs/premier-league/2025-2026/leeds2.php'],
                 'leeds-3' => ['label' => 'Leeds Classic', 'icon' => '🤍', 'file' => 'tabs/premier-league/2025-2026/leeds3.php'],
                 'whatifs' => ['label' => 'What-Ifs', 'icon' => '❓', 'file' => 'tabs/premier-league/2025-2026/whatifs.php'],
+                'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/premier-league/2025-2026/simulation.php'],
             ],
         ],
         'championship' => [
@@ -49,6 +50,7 @@ $seasonLeagueConfigs = [
                 'leeds' => ['label' => 'Leeds Tracker', 'icon' => '💛', 'file' => 'tabs/championship/2025-2026/leeds.php'],
                 'leeds-2'   => ['label' => 'Leeds Dashboard', 'icon' => '💙', 'file' => 'tabs/championship/2025-2026/leeds2.php'],
                 'leeds-3'   => ['label' => 'Leeds Classic', 'icon' => '🤍', 'file' => 'tabs/championship/2025-2026/leeds3.php'],
+                'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/championship/2025-2026/simulation.php'],
             ],
         ],
         'league-one' => [
@@ -58,6 +60,7 @@ $seasonLeagueConfigs = [
                 'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/league-one/2025-2026/table.php'],
                 'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/league-one/2025-2026/table2.php'],
                 'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/league-one/2025-2026/matches.php'],
+                'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/league-one/2025-2026/simulation.php'],
             ],
         ],
         'league-two' => [
@@ -67,6 +70,7 @@ $seasonLeagueConfigs = [
                 'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/league-two/2025-2026/table.php'],
                 'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/league-two/2025-2026/table2.php'],
                 'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/league-two/2025-2026/matches.php'],
+                'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/league-two/2025-2026/simulation.php'],
             ],
         ],
         'national-league' => [
@@ -76,6 +80,7 @@ $seasonLeagueConfigs = [
                 'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/national-league/2025-2026/table.php'],
                 'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/national-league/2025-2026/table2.php'],
                 'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/national-league/2025-2026/matches.php'],
+                'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/national-league/2025-2026/simulation.php'],
             ],
         ],
     ],
