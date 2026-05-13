@@ -29,26 +29,136 @@ foreach ($groups_raw as $row) {
     if ((int)$row['played'] > 0) $has_played = true;
 }
 
+// ── FIFA rankings (November 2025 seedings) ────────────────────────────────────
+// Maps team name → approximate FIFA rank at the time of the WC 2026 draw.
+// Used to seed pre-tournament strength when no match data is available, and
+// blended with actual performance as group-stage matches are played.
+// Consistent with the pot-1 tiers already defined across the other WC tabs.
+$wc_fifa_rankings = [
+    // Pot 1 elite (ranks 1–12 per project convention)
+    'Spain'               => 1,
+    'Argentina'           => 2,
+    'France'              => 3,
+    'England'             => 4,
+    'Brazil'              => 5,
+    'Portugal'            => 6,
+    'Netherlands'         => 7,
+    'Belgium'             => 8,
+    'Germany'             => 9,
+    'Croatia'             => 10,
+    'Morocco'             => 11,
+    'Colombia'            => 12,
+    // Ranks 13–24
+    'Uruguay'             => 13,
+    'Japan'               => 14,
+    'United States'       => 15,
+    'USA'                 => 15,
+    'Senegal'             => 16,
+    'Switzerland'         => 17,
+    'Denmark'             => 18,
+    'South Korea'         => 19,
+    'Korea Republic'      => 19,
+    'Austria'             => 20,
+    'Mexico'              => 21,
+    'Ecuador'             => 22,
+    'Serbia'              => 23,
+    'Australia'           => 24,
+    // Ranks 25–36
+    'Canada'              => 25,
+    'Poland'              => 26,
+    'Turkey'              => 27,
+    'Ivory Coast'         => 28,
+    "Côte d'Ivoire"       => 28,
+    'Czech Republic'      => 29,
+    'Czechia'             => 29,
+    'Egypt'               => 30,
+    'Ukraine'             => 31,
+    'Venezuela'           => 32,
+    'Nigeria'             => 33,
+    'Paraguay'            => 34,
+    'Cameroon'            => 35,
+    'Iran'                => 36,
+    // Ranks 37–48
+    'Saudi Arabia'        => 37,
+    'Hungary'             => 38,
+    'Tunisia'             => 39,
+    'Algeria'             => 40,
+    'Costa Rica'          => 41,
+    'Panama'              => 42,
+    'Honduras'            => 43,
+    'Guatemala'           => 44,
+    'Jamaica'             => 45,
+    'Bolivia'             => 46,
+    'New Zealand'         => 47,
+    'Qatar'               => 48,
+    'Iraq'                => 48,
+    'Indonesia'           => 48,
+];
+
 // ── Simulation helpers ────────────────────────────────────────────────────────
+
+if (!function_exists('wc_fifa_strength')) {
+    /**
+     * Convert a FIFA rank (1 = best, 48 = weakest qualifier) into
+     * attack/defense ratings for the Poisson model.
+     *
+     * At rank 1:  attack = 1.75, defense = 0.50 (dominant)
+     * At rank 48: attack = 0.50, defense = 1.75 (weak)
+     * Mid-table team is roughly attack ≈ defense ≈ 1.12
+     */
+    function wc_fifa_strength(int $rank): array {
+        $rank    = max(1, min(48, $rank));
+        $t       = ($rank - 1) / 47;          // 0.0 (rank 1) → 1.0 (rank 48)
+        $attack  = 1.75 - $t * 1.25;          // 1.75 → 0.50
+        $defense = 0.50 + $t * 1.25;          // 0.50 → 1.75
+        return [
+            'attack'  => round($attack,  4),
+            'defense' => round($defense, 4),
+        ];
+    }
+}
 
 if (!function_exists('wc_sim_strengths')) {
     /**
      * Build attack/defense strength map for all teams.
-     * attack > 1 = scores more than average; defense > 1 = concedes more than average.
+     *
+     * When played = 0  → 100% FIFA prior.
+     * When played = 1  → 1/3 actual + 2/3 FIFA.
+     * When played = 2  → 2/3 actual + 1/3 FIFA.
+     * When played ≥ 3  → 100% actual performance (FIFA prior discarded).
+     *
+     * attack > 1 = scores more than average
+     * defense > 1 = concedes more than average (i.e. weak defence)
      */
-    function wc_sim_strengths(array $groups_raw, float $avg_goals): array {
+    function wc_sim_strengths(array $groups_raw, float $avg_goals, array $fifa_rankings): array {
         $s = [];
         foreach ($groups_raw as $t) {
-            $p = (int)$t['played'];
+            $p    = (int)$t['played'];
+            $name = $t['team_name'];
+
+            // Actual-performance rating (only meaningful when p >= 1)
             if ($p >= 1) {
-                $atk = ($t['gf'] / $p) / max($avg_goals, 0.1);
-                $def = ($t['ga'] / $p) / max($avg_goals, 0.1);
+                $act_atk = ($t['gf'] / $p) / max($avg_goals, 0.1);
+                $act_def = ($t['ga'] / $p) / max($avg_goals, 0.1);
             } else {
-                $atk = $def = 1.0;
+                $act_atk = $act_def = 1.0;
             }
-            $s[$t['team_name']] = [
-                'attack'  => max(0.2, min(5.0, $atk)),
-                'defense' => max(0.2, min(5.0, $def)),
+
+            // FIFA-prior rating
+            $rank     = $fifa_rankings[$name] ?? 36; // default: low-mid tier
+            $prior    = wc_fifa_strength($rank);
+
+            // Blend: weight actual linearly over the first 3 matches
+            $w_actual = min($p / 3.0, 1.0);
+            $w_prior  = 1.0 - $w_actual;
+
+            $atk = $w_actual * $act_atk + $w_prior * $prior['attack'];
+            $def = $w_actual * $act_def + $w_prior * $prior['defense'];
+
+            $s[$name] = [
+                'attack'   => max(0.2, min(5.0, $atk)),
+                'defense'  => max(0.2, min(5.0, $def)),
+                'fifa_rank' => $rank,
             ];
         }
         return $s;
@@ -219,7 +329,7 @@ foreach ($groups_raw as $r) {
 // total_gf / total_played = avg goals scored per team per match
 $avg_goals = $total_played > 0 ? ($total_gf / $total_played) : 1.20;
 
-$strengths = wc_sim_strengths($groups_raw, $avg_goals);
+$strengths = wc_sim_strengths($groups_raw, $avg_goals, $wc_fifa_rankings);
 
 // ── Run simulations ───────────────────────────────────────────────────────────
 ini_set('max_execution_time', 90);
@@ -227,7 +337,13 @@ ini_set('max_execution_time', 90);
 // round_counts[team][0..6] = count of simulations where team's deepest round = that value
 $all_team_meta = [];
 foreach ($groups_raw as $r) {
-    $all_team_meta[$r['team_name']] = ['group' => $r['group_name'], 'pos' => (int)$r['position'], 'played' => (int)$r['played']];
+    $name = $r['team_name'];
+    $all_team_meta[$name] = [
+        'group'      => $r['group_name'],
+        'pos'        => (int)$r['position'],
+        'played'     => (int)$r['played'],
+        'fifa_rank'  => $strengths[$name]['fifa_rank'] ?? ($wc_fifa_rankings[$name] ?? 36),
+    ];
 }
 
 $round_counts = [];
@@ -250,10 +366,11 @@ foreach ($all_team_meta as $team => $meta) {
     $c = $round_counts[$team];
     $tot = $n_sims;
     $team_display[$team] = [
-        'team'    => $team,
-        'group'   => $meta['group'],
-        'pos'     => $meta['pos'],
-        'played'  => $meta['played'],
+        'team'       => $team,
+        'group'      => $meta['group'],
+        'pos'        => $meta['pos'],
+        'played'     => $meta['played'],
+        'fifa_rank'  => $meta['fifa_rank'],
         'p_win'   => $tot > 0 ? $c[6] / $tot : 0,
         'p_final' => $tot > 0 ? ($c[5]+$c[6]) / $tot : 0,
         'p_sf'    => $tot > 0 ? ($c[4]+$c[5]+$c[6]) / $tot : 0,
@@ -381,7 +498,9 @@ $round_labels = [
         <span>Avg goals/team/match: <strong><?= number_format($avg_goals, 2) ?></strong></span>
         <span>48 teams · 12 groups · R32 → R16 → QF → SF → Final</span>
         <?php if (!$has_played): ?>
-            <span style="color:#faa61a;">⚠️ No matches played yet — all teams rated equally</span>
+            <span style="color:#faa61a;">⚡ Pre-tournament: strengths derived entirely from FIFA rankings</span>
+        <?php else: ?>
+            <span style="color:#43b581;">📊 Strengths blend FIFA rankings + actual group-stage results</span>
         <?php endif; ?>
         <?php if (!$has_data): ?>
             <span style="color:#f04747;">⚠️ No group data loaded — update World Cup data first</span>
@@ -404,6 +523,7 @@ $round_labels = [
                 <th style="text-align:center;">#</th>
                 <th style="text-align:left;">Team</th>
                 <th style="text-align:center;" title="Current group position">Grp</th>
+                <th style="text-align:center; color:#99aab5;" title="FIFA ranking used as pre-tournament prior">FIFA</th>
                 <th style="text-align:center; color:#43b581;" title="Probability of advancing from group stage">P(Qualify)</th>
                 <th style="text-align:center; color:#faa61a;" title="Probability of reaching Round of 16 or further">P(R16+)</th>
                 <th style="text-align:center; color:#5865F2;" title="Probability of reaching quarter-final or further">P(QF+)</th>
@@ -432,6 +552,10 @@ $round_labels = [
                 <span class="wc-group-badge" title="<?= htmlspecialchars($t['group']) ?>">
                     <?= htmlspecialchars(str_replace('Group ', '', $t['group'])) ?>#<?= $t['pos'] ?>
                 </span>
+            </td>
+            <td style="text-align:center; color:#99aab5; font-size:12px;"
+                title="FIFA rank <?= (int)$t['fifa_rank'] ?>">
+                #<?= (int)$t['fifa_rank'] ?>
             </td>
 
             <?php foreach ([
@@ -501,14 +625,18 @@ $round_labels = [
     <div style="margin-top:20px; padding:14px 16px; background:#40444b; border-radius:8px; border-left:4px solid #5865F2;">
         <strong style="color:#FFCD00;">Methodology:</strong>
         <span style="color:#dcddde; font-size:13px;">
-            Each simulation runs the full tournament: remaining group-stage matches are simulated using a
-            Poisson goal model (expected goals = team attack × opponent defense × league average).
+            Each simulation runs the full tournament using a Poisson goal model
+            (expected goals = team attack × opponent defence × league average).
             The best 8 third-place teams advance alongside the 24 group qualifiers (top 2 per group).
-            Knockout ties are resolved by a weighted coin flip representing penalty shootouts.
-            Team strength ratings are derived entirely from current group-stage goals scored and conceded.
+            Knockout ties are resolved by a weighted penalty coin-flip.
             <?php if (!$has_played): ?>
-                <strong style="color:#faa61a;"> Pre-tournament: all teams are equal, so probabilities reflect
-                only the bracket structure (group difficulty, knockout path length).</strong>
+                <strong style="color:#faa61a;">Pre-tournament mode:</strong>
+                team strengths are derived entirely from the November 2025 FIFA rankings
+                (rank 1 Spain → attack 1.75 / defence 0.50; rank 48 → attack 0.50 / defence 1.75).
+            <?php else: ?>
+                Team strengths are a <strong>blended rating</strong>: FIFA rankings seed the prior,
+                then actual group-stage goals scored/conceded progressively take over
+                (0 games = 100% FIFA; 1 game = ⅓ actual; 2 games = ⅔ actual; 3 games = 100% actual).
             <?php endif; ?>
         </span>
     </div>
