@@ -1,6 +1,5 @@
 <?php
-// Championship 2025/26 Matches Tab
-// This page will display all matches for the season, both from the text import and from the API
+// League Two Matches Tab
 
 require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';
@@ -8,49 +7,42 @@ require_once __DIR__ . '/../../../config.php';
 $db = new PDO('sqlite:' . __DIR__ . '/../../../football-stats.sqlite3');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Fetch all matches for this season (imported and API)
-// Get all matchweeks for dropdown
+// Get available seasons for this competition
+$seasons_stmt = $db->prepare("SELECT DISTINCT season_label FROM matches WHERE competition_code = ? ORDER BY season_label DESC");
+$seasons_stmt->execute(['L2']);
+$availableSeasons = $seasons_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Determine selected season (default to most recent)
+$defaultSeason = !empty($availableSeasons) ? $availableSeasons[0] : '2025-2026';
+$selectedSeason = isset($_GET['snapshot_season']) && $_GET['snapshot_season'] !== ''
+    ? preg_replace('/[^0-9\-]/', '', (string)$_GET['snapshot_season'])
+    : $defaultSeason;
+if (!in_array($selectedSeason, $availableSeasons, true)) {
+    $selectedSeason = $defaultSeason;
+}
+
+// Get matchweeks for the selected season
 $mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY matchweek ASC");
-$mw_stmt->execute(['L2', '2025-2026']);
+$mw_stmt->execute(['L2', $selectedSeason]);
 $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 $selected_mw = isset($_GET['matchweek']) && $_GET['matchweek'] !== '' ? (int)$_GET['matchweek'] : '';
 
 if ($selected_mw !== '') {
     $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY match_date, id");
-    $stmt->execute(['L2', '2025-2026', $selected_mw]);
+    $stmt->execute(['L2', $selectedSeason, $selected_mw]);
 } else {
     $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY matchweek, match_date, id");
-    $stmt->execute(['L2', '2025-2026']);
+    $stmt->execute(['L2', $selectedSeason]);
 }
 $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
-?>
-<?php
-// Find the first date for the selected matchweek (or first matchweek if none selected)
-$first_date = '';
-if (!empty($matches)) {
-    $first_date = $matches[0]['match_date'];
-}
+
+$first_date = !empty($matches) ? $matches[0]['match_date'] : '';
+$seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
 ?>
 <div class="panel">
-    <h2>League Two 2025/26 – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?><?php if ($first_date): ?> <span style="font-size:14px; color:#00ff88;">(<?= htmlspecialchars($first_date) ?>)</span><?php endif; ?></h2>
-    <form method="get" style="margin-bottom: 18px;">
-        <?php
-        // Preserve tab/league/subtab params
-        foreach (["tab", "league", "subtab"] as $param) {
-            if (isset($_GET[$param])) {
-                echo '<input type="hidden" name="' . htmlspecialchars($param) . '" value="' . htmlspecialchars($_GET[$param]) . '">';
-            }
-        }
-        ?>
-        <label for="matchweek-select" style="font-weight:600; color:#00ff88;">Matchweek:</label>
-        <select id="matchweek-select" name="matchweek" onchange="this.form.submit()" style="margin-left:8px; padding:4px 10px; border-radius:6px;">
-            <option value="">All</option>
-            <?php foreach ($matchweeks as $mw): ?>
-                <option value="<?= $mw ?>" <?= ($selected_mw == $mw) ? 'selected' : '' ?>>MW<?= $mw ?></option>
-            <?php endforeach; ?>
-        </select>
-    </form>
+    <h2>League Two <?= htmlspecialchars($seasonDisplay) ?> – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?><?php if ($first_date): ?> <span style="font-size:14px; color:#00ff88;">(<?= htmlspecialchars($first_date) ?>)</span><?php endif; ?></h2>
+    <?php football_stats_render_matches_controls($availableSeasons, $matchweeks, $selectedSeason, $selected_mw, $currentMainTab, $currentLeague, $currentSubTab); ?>
     <table class="matches-table" style="width:100%; font-size:13px;">
         <thead>
             <tr style="background:#222; color:#00ff88;">
