@@ -91,6 +91,7 @@ $worldCupTabs = [
     'knockout' => ['label' => 'Knockout Stage', 'icon' => '⚔️', 'file' => 'tabs/world-cup/knockout.php'],
     'predictions' => ['label' => 'Predictions', 'icon' => '🔮', 'file' => 'tabs/world-cup/predictions.php'],
     'standings' => ['label' => 'Overall Rankings', 'icon' => '🏆', 'file' => 'tabs/world-cup/standings.php'],
+    'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/world-cup/simulation.php'],
 ];
 
 $currentMainTab = isset($_GET['tab']) ? $_GET['tab'] : '2025-2026';
