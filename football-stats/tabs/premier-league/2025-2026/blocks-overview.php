@@ -4,7 +4,8 @@
  * Comprehensive overview showing all 5 blocks with live data
  */
 
-$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $allTeams = $tableView['standings'];
 $currentMatchday = $tableView['active_matchweek'] ?? (!empty($allTeams) ? max(array_map('intval', array_column($allTeams, 'played'))) : 1);
 $last_update = $tableView['last_update'];
@@ -47,7 +48,7 @@ foreach ($allTeams as $team) {
             <h2>📊 Blocks of 4 Framework Overview</h2>
             <span class="season-badge">2025/26 Season</span>
         </div>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-overview'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-overview'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
             The Premier League divided into 5 strategic blocks, each representing distinct competitive zones 
             with unique targets, challenges, and psychological boundaries.

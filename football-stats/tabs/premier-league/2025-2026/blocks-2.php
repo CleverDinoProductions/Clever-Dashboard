@@ -13,7 +13,8 @@ $blockInfo = [
     'description' => 'Champions League, Europa League & Conference League Qualification Zone'
 ];
 
-$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $teams = array_values(array_filter($tableView['standings'], function ($team) {
     return $team['position'] >= 1 && $team['position'] <= 7;
 }));
@@ -33,7 +34,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 Positions <?php echo $blockInfo['positions']; ?>
             </span>
         </div>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-2'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-2'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
             <?php echo $blockInfo['description']; ?> - Teams competing for Champions League (1st-4th), Europa League (5th-6th) and Conference League (7th) spots, bringing European football and valuable revenue.
         </p>

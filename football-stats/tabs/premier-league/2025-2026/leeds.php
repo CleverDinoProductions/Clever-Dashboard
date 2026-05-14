@@ -1,7 +1,8 @@
 <?php
 // LEEDS UNITED SURVIVAL TRACKER - Data queries
 
-$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $leeds = null;
 foreach ($standings as $teamRow) {
@@ -198,7 +199,7 @@ if ($leeds['position'] <= 17 && $leeds['points'] >= $safety_target) {
                 📊 Survival Probability: <strong style="color: #FFCD00;"><?php echo $survival_chance; ?></strong>
             </span>
         </div>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds'); ?>
     </div>
 </div>
 

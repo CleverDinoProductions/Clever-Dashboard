@@ -1,11 +1,9 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 // LEEDS UNITED - COMPREHENSIVE SURVIVAL TRACKER
 // Includes: Position, Points, Dual Halfway Targets, Form, Fixtures, Stats
 
-$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $leeds = null;
 foreach ($standings as $teamRow) {
@@ -153,7 +151,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 15px;">
             Marching On Together - Season Survival Tracker
         </p>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds-2'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds-2'); ?>
     </div>
 </div>
 
