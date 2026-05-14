@@ -11,9 +11,20 @@
  */
 
 require_once __DIR__ . '/simulation-engine.php';
+require_once __DIR__ . '/table-view.php';
 
 $comp_code    = $league_config['comp_code'];
 $season_label = $league_config['season_label'];
+
+// ── Table-view: fetch standings for season selector ──────────────────────────
+$live_table_name = 'league_table_' . $comp_code;
+$tableView = football_stats_get_table_view_combined($db, $comp_code, $live_table_name, $season_label);
+
+// Allow snapshot_season to override the simulation season
+$sim_season_label = $season_label;
+if (!empty($tableView['requested_season_label']) && $tableView['requested_season_label'] !== '') {
+    $sim_season_label = $tableView['requested_season_label'];
+}
 
 // ── Read URL parameters ──────────────────────────────────────────────────────
 
@@ -23,7 +34,7 @@ $mw_stmt = $db->prepare(
      WHERE competition_code = ? AND season_label = ?
      ORDER BY matchweek ASC'
 );
-$mw_stmt->execute([$comp_code, $season_label]);
+$mw_stmt->execute([$comp_code, $sim_season_label]);
 $all_mws = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 // Default to the first unplayed matchweek
@@ -32,7 +43,7 @@ $nu_stmt = $db->prepare(
      WHERE competition_code = ? AND season_label = ?
        AND (home_goals IS NULL OR away_goals IS NULL)"
 );
-$nu_stmt->execute([$comp_code, $season_label]);
+$nu_stmt->execute([$comp_code, $sim_season_label]);
 $nu_row     = $nu_stmt->fetch(PDO::FETCH_ASSOC);
 $default_mw = $nu_row['min_mw'] ?? (empty($all_mws) ? 1 : (int) max($all_mws));
 
@@ -47,7 +58,7 @@ $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allo
 
 // ── Run simulation ───────────────────────────────────────────────────────────
 ini_set('max_execution_time', 60);
-$sim = sim_run_monte_carlo($db, $comp_code, $season_label, $sim_from, $n_sims);
+$sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims);
 $teams = $sim['teams'];
 
 // ── Helper: build URL preserving tab context ─────────────────────────────────
@@ -133,15 +144,79 @@ $n_teams      = $league_config['n_teams'];
 </style>
 
 <div class="panel">
-    <h2>🎲 <?= htmlspecialchars($league_config['league_name'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($league_config['season_label'], ENT_QUOTES, 'UTF-8') ?> – Season Simulation</h2>
+    <h2>🎲 <?= htmlspecialchars($league_config['league_name'], ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($sim_season_label, ENT_QUOTES, 'UTF-8') ?> – Season Simulation</h2>
     <p class="update-info" style="margin-top:6px;">
         Monte Carlo simulation using a Poisson goal model based on each team's attack and defensive strength.
+        Use the season selector below to run simulations for previous seasons.
     </p>
 
-    <!-- Controls -->
+    <!-- Season / matchweek selector -->
+    <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'simulation'); ?>
+
+    <!-- Compact league table for selected season/matchweek -->
+    <?php if (!empty($tableView['standings'])): ?>
+    <details open style="margin-bottom:20px;">
+        <summary style="cursor:pointer; padding:8px 0; font-weight:700; color:#dcddde; font-size:13px; user-select:none;">
+            📋 <?= htmlspecialchars($sim_season_label, ENT_QUOTES, 'UTF-8') ?> Table
+            <?php if (!empty($tableView['active_matchweek'])): ?>
+                – MW<?= (int)$tableView['active_matchweek'] ?>
+            <?php elseif (!empty($tableView['active_date'])): ?>
+                – <?= htmlspecialchars($tableView['active_date'], ENT_QUOTES, 'UTF-8') ?>
+            <?php endif; ?>
+            <span style="color:#888; font-size:11px; font-weight:normal; margin-left:8px;">(click to collapse)</span>
+        </summary>
+        <div class="table-container" style="margin-top:8px;">
+        <table class="sim-table" style="font-size:12px;">
+            <thead>
+                <tr>
+                    <th style="text-align:center;" title="Position">Pos</th>
+                    <th style="text-align:left;">Team</th>
+                    <th title="Played">P</th>
+                    <th title="Won">W</th>
+                    <th title="Drawn">D</th>
+                    <th title="Lost">L</th>
+                    <th title="Goals For">GF</th>
+                    <th title="Goals Against">GA</th>
+                    <th title="Goal Difference">GD</th>
+                    <th title="Points">Pts</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($tableView['standings'] as $row):
+                $tpos  = (int)($row['position'] ?? 0);
+                $tzone = sim_zone_for_pos($tpos, $zones);
+                $tgd   = (int)($row['gd'] ?? ($row['gf'] - $row['ga']));
+            ?>
+            <tr style="<?= $tzone['bg'] !== 'transparent' ? "background:{$tzone['bg']};" : '' ?>">
+                <td style="text-align:center; font-weight:700; color:<?= htmlspecialchars($tzone['color']) ?>;"><?= $tpos ?></td>
+                <td style="text-align:left;"><?= htmlspecialchars($row['team_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                <td style="text-align:center;"><?= (int)($row['played'] ?? 0) ?></td>
+                <td style="text-align:center;"><?= (int)($row['won'] ?? 0) ?></td>
+                <td style="text-align:center;"><?= (int)($row['drawn'] ?? 0) ?></td>
+                <td style="text-align:center;"><?= (int)($row['lost'] ?? 0) ?></td>
+                <td style="text-align:center;"><?= (int)($row['gf'] ?? 0) ?></td>
+                <td style="text-align:center;"><?= (int)($row['ga'] ?? 0) ?></td>
+                <td style="text-align:center; color:<?= $tgd >= 0 ? '#43b581' : '#f04747' ?>;"><?= ($tgd >= 0 ? '+' : '') . $tgd ?></td>
+                <td style="text-align:center; font-weight:700;"><?= (int)($row['points'] ?? 0) ?></td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        </div>
+    </details>
+    <?php endif; ?>
+
+    <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:4px 0 20px;">
+
+    <!-- Simulation Controls -->
     <form method="get" style="margin-top:16px;">
         <?php foreach (['tab','league','subtab'] as $p): ?>
             <?php if (isset($_GET[$p])): ?>
+                <input type="hidden" name="<?= htmlspecialchars($p) ?>" value="<?= htmlspecialchars($_GET[$p]) ?>">
+            <?php endif; ?>
+        <?php endforeach; ?>
+        <?php foreach (['snapshot_season','table_view','matchweek','calc_mode','snapshot_date'] as $p): ?>
+            <?php if (isset($_GET[$p]) && $_GET[$p] !== ''): ?>
                 <input type="hidden" name="<?= htmlspecialchars($p) ?>" value="<?= htmlspecialchars($_GET[$p]) ?>">
             <?php endif; ?>
         <?php endforeach; ?>
