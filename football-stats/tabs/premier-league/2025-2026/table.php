@@ -1,7 +1,12 @@
 <?php
 require_once __DIR__ . '/../../../includes/table-view.php';
 
-$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$calcMode = (($_GET['calc_mode'] ?? '') === 'by_date') ? 'by_date' : 'by_matchweek';
+if ($calcMode === 'by_date') {
+    $tableView = football_stats_get_table_view_by_date($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+} else {
+    $tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+}
 $standings = $tableView['standings'];
 $last_update = $tableView['last_update'];
 
@@ -231,7 +236,11 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>
-    <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table'); ?>
+    <?php if ($calcMode === 'by_date'): ?>
+        <?php football_stats_render_date_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table'); ?>
+    <?php else: ?>
+        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table'); ?>
+    <?php endif; ?>
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label'], ENT_QUOTES, 'UTF-8') ?>:
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>

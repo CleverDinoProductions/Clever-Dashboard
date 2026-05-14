@@ -167,6 +167,81 @@ if (!function_exists('football_stats_get_table_view')) {
 }
 
 /**
+ * Fetch standings calculated in order of match date (handles postponed matches correctly)
+ */
+if (!function_exists('football_stats_get_table_view_by_date')) {
+    function football_stats_get_table_view_by_date(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
+    {
+        $metadataStmt = $db->prepare('SELECT season_label, matchweek, updated_at FROM live_table_metadata WHERE competition_code = ?');
+        $metadataStmt->execute([$competitionCode]);
+        $metadata = $metadataStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        $liveSeasonLabel = $metadata['season_label'] ?? $fallbackSeasonLabel;
+
+        $requestedSeasonLabel = isset($_GET['snapshot_season'])
+            ? preg_replace('/[^0-9\-]/', '', (string)$_GET['snapshot_season'])
+            : $liveSeasonLabel;
+        if ($requestedSeasonLabel === '') $requestedSeasonLabel = $liveSeasonLabel;
+
+        $availableSeasonsStmt = $db->prepare('SELECT DISTINCT season_label FROM league_table_snapshots_by_date WHERE competition_code = ? ORDER BY season_label DESC');
+        $availableSeasonsStmt->execute([$competitionCode]);
+        $availableSeasons = $availableSeasonsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!empty($availableSeasons) && !in_array($requestedSeasonLabel, $availableSeasons, true)) {
+            $requestedSeasonLabel = $liveSeasonLabel;
+        }
+
+        $availableDatesStmt = $db->prepare('SELECT DISTINCT snapshot_date FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? ORDER BY snapshot_date DESC');
+        $availableDatesStmt->execute([$competitionCode, $requestedSeasonLabel]);
+        $availableDates = $availableDatesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $requestedDate = isset($_GET['snapshot_date'])
+            ? preg_replace('/[^0-9\-]/', '', (string)$_GET['snapshot_date'])
+            : null;
+
+        $isSnapshotView = $requestedDate !== null && in_array($requestedDate, $availableDates, true);
+        $activeDate = $isSnapshotView ? $requestedDate : ($availableDates[0] ?? null);
+
+        if ($isSnapshotView) {
+            $stmt = $db->prepare('SELECT * FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? AND snapshot_date = ? ORDER BY position ASC');
+            $stmt->execute([$competitionCode, $requestedSeasonLabel, $requestedDate]);
+            $standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $tsStmt = $db->prepare('SELECT MAX(archived_at) AS ts FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? AND snapshot_date = ?');
+            $tsStmt->execute([$competitionCode, $requestedSeasonLabel, $requestedDate]);
+            $lastUpdateTs = ($tsStmt->fetch(PDO::FETCH_ASSOC) ?: [])['ts'] ?? null;
+            $updatedLabel = 'Snapshot captured';
+        } else {
+            // Default to latest available date snapshot
+            if ($activeDate !== null) {
+                $stmt = $db->prepare('SELECT * FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? AND snapshot_date = ? ORDER BY position ASC');
+                $stmt->execute([$competitionCode, $requestedSeasonLabel, $activeDate]);
+                $standings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $standings = [];
+            }
+            $tsStmt = $db->query("SELECT MAX(updated_at) AS ts FROM $liveTableName");
+            $lastUpdateTs = ($tsStmt->fetch(PDO::FETCH_ASSOC) ?: [])['ts'] ?? null;
+            $updatedLabel = 'Last updated';
+        }
+
+        return [
+            'standings'              => $standings,
+            'last_update'            => ['ts' => $lastUpdateTs],
+            'updated_label'          => $updatedLabel,
+            'is_snapshot_view'       => $isSnapshotView,
+            'requested_season_label' => $requestedSeasonLabel,
+            'available_seasons'      => $availableSeasons,
+            'available_dates'        => $availableDates,
+            'active_season_label'    => $requestedSeasonLabel,
+            'active_date'            => $activeDate,
+            'live_season_label'      => $liveSeasonLabel,
+            'snapshot_count'         => count($availableDates),
+        ];
+    }
+}
+
+/**
  * Render the UI Controls
  */
 require_once __DIR__ . '/table-view-date-helper.php';
@@ -235,6 +310,77 @@ if (!function_exists('football_stats_render_matches_controls')) {
     }
 }
 
+/**
+ * Render controls for the date-ordered table view
+ */
+if (!function_exists('football_stats_render_date_view_controls')) {
+    function football_stats_render_date_view_controls(array $tableView, $tab, $league, $subtab)
+    {
+        $availableSeasons = $tableView['available_seasons'];
+        $availableDates   = $tableView['available_dates'];
+        $selectedSeason   = $tableView['active_season_label'];
+        $activeDate       = $tableView['active_date'];
+        $controlId = 'date-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
+        ?>
+        <div class="table-view-switcher">
+            <div class="table-view-summary">
+                <span class="table-view-pill" style="background:rgba(0,200,100,0.15);border-color:rgba(0,200,100,0.4);color:#6effc2;">By Date (postponed-aware)</span>
+                <span>Season <?php echo htmlspecialchars((string)$selectedSeason); ?></span>
+                <?php if ($activeDate): ?>
+                    <span>After <?php echo htmlspecialchars($activeDate); ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="table-view-actions">
+                <!-- Mode switcher -->
+                <div class="table-view-group">
+                    <label class="table-view-label">Calculation Mode</label>
+                    <select class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $selectedSeason])); ?>">
+                            By Matchweek (original)
+                        </option>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $selectedSeason])); ?>" selected>
+                            By Date (postponed-aware)
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Season -->
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
+                    <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
+                        <?php foreach ($availableSeasons as $season):
+                            $url = football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $season]);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($url); ?>" <?php echo ($selectedSeason === (string)$season) ? 'selected' : ''; ?>>
+                                Season <?php echo htmlspecialchars((string)$season); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <!-- Date snapshot -->
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-date">Select Date</label>
+                    <select id="<?php echo $controlId; ?>-date" class="table-view-select" onchange="window.location.href=this.value;">
+                        <?php foreach ($availableDates as $d):
+                            $dUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
+                                'calc_mode'      => 'by_date',
+                                'snapshot_season' => $selectedSeason,
+                                'snapshot_date'   => $d,
+                            ]);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($dUrl); ?>" <?php echo ($activeDate === $d) ? 'selected' : ''; ?>>
+                                After <?php echo htmlspecialchars($d); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+}
+
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {
@@ -280,6 +426,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             </div>
 
             <div class="table-view-actions">
+                <!-- Dropdown 0: Calculation Mode -->
+                <div class="table-view-group">
+                    <label class="table-view-label">Calculation Mode</label>
+                    <select class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => $isSnapshot ? 'snapshot' : 'live', 'snapshot_season' => $tableView['requested_season_label'], 'matchweek' => $isSnapshot ? $tableView['active_matchweek'] : null])); ?>" selected>
+                            By Matchweek (original)
+                        </option>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $tableView['requested_season_label']])); ?>">
+                            By Date (postponed-aware)
+                        </option>
+                    </select>
+                </div>
+
                 <!-- Dropdown 1: Season Selection -->
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>

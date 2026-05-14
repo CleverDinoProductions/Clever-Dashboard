@@ -26,6 +26,7 @@ $tables = [
     "league_table_NL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, source TEXT",
     "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
+    "league_table_snapshots_by_date" => "competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
 ];
 
@@ -129,6 +130,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
         }
 
         ksort($mw_buckets);
+        $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         foreach ($mw_buckets as $mw => $m_list) {
             foreach ($m_list as $m) {
                 $h = &$running_stats[$m['h']]; $a = &$running_stats[$m['a']];
@@ -146,7 +148,6 @@ function sync_league($db, $BASE_URL, $code, $id) {
             });
 
             $pos = 1;
-            $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             foreach ($temp_table as $name => $s) {
                 $badge = $crest_map[$name] ?? '';
                 $vals = [$code, $season, $mw, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp];
@@ -154,6 +155,53 @@ function sync_league($db, $BASE_URL, $code, $id) {
                 $s_ins->execute();
             }
         }
+
+        // --- Date-ordered snapshots (accounts for postponed matches played later) ---
+        $db->exec("DELETE FROM league_table_snapshots_by_date WHERE competition_code = '$code' AND season_label = '$season'");
+
+        $date_fixtures = [];
+        foreach ($fixtures['events'] as $e) {
+            $hg = ($e['intHomeScore'] !== null) ? (int)$e['intHomeScore'] : null;
+            $ag = ($e['intAwayScore'] !== null) ? (int)$e['intAwayScore'] : null;
+            if ($hg !== null && $ag !== null && !empty($e['dateEvent'])) {
+                $date_fixtures[] = ['date' => $e['dateEvent'], 'h' => $e['strHomeTeam'], 'a' => $e['strAwayTeam'], 'hg' => $hg, 'ag' => $ag];
+            }
+        }
+        usort($date_fixtures, fn($a, $b) => strcmp($a['date'], $b['date']));
+
+        $date_buckets = [];
+        foreach ($date_fixtures as $m) {
+            $date_buckets[$m['date']][] = $m;
+        }
+
+        $date_running_stats = [];
+        $ds_ins = $db->prepare("INSERT INTO league_table_snapshots_by_date VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        foreach ($date_buckets as $snap_date => $matches) {
+            foreach ($matches as $m) {
+                if (!isset($date_running_stats[$m['h']])) $date_running_stats[$m['h']] = ['p'=>0,'w'=>0,'d'=>0,'l'=>0,'gf'=>0,'ga'=>0,'pts'=>0];
+                if (!isset($date_running_stats[$m['a']])) $date_running_stats[$m['a']] = ['p'=>0,'w'=>0,'d'=>0,'l'=>0,'gf'=>0,'ga'=>0,'pts'=>0];
+                $h = &$date_running_stats[$m['h']]; $a = &$date_running_stats[$m['a']];
+                $h['p']++; $a['p']++; $h['gf']+=$m['hg']; $h['ga']+=$m['ag']; $a['gf']+=$m['ag']; $a['ga']+=$m['hg'];
+                if ($m['hg'] > $m['ag']) { $h['w']++; $a['l']++; $h['pts']+=3; }
+                elseif ($m['hg'] < $m['ag']) { $a['w']++; $h['l']++; $a['pts']+=3; }
+                else { $h['d']++; $a['d']++; $h['pts']+=1; $a['pts']+=1; }
+            }
+
+            $temp_date = $date_running_stats;
+            uasort($temp_date, function($x, $y) {
+                if ($x['pts'] != $y['pts']) return $y['pts'] - $x['pts'];
+                return ($y['gf'] - $y['ga']) - ($x['gf'] - $x['ga']);
+            });
+
+            $pos = 1;
+            foreach ($temp_date as $name => $s) {
+                $badge = $crest_map[$name] ?? '';
+                $vals = [$code, $season, $snap_date, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp];
+                foreach ($vals as $i => $v) $ds_ins->bindValue($i+1, $v);
+                $ds_ins->execute();
+            }
+        }
+
         $db->exec("COMMIT");
         echo "Done.\n";
     }
