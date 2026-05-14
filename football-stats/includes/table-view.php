@@ -188,7 +188,9 @@ if (!function_exists('football_stats_get_table_view_by_date')) {
         $availableSeasons = $availableSeasonsStmt->fetchAll(PDO::FETCH_COLUMN);
 
         if (!empty($availableSeasons) && !in_array($requestedSeasonLabel, $availableSeasons, true)) {
-            $requestedSeasonLabel = $liveSeasonLabel;
+            $requestedSeasonLabel = in_array($liveSeasonLabel, $availableSeasons, true)
+                ? $liveSeasonLabel
+                : $availableSeasons[0];
         }
 
         $availableDatesStmt = $db->prepare('SELECT DISTINCT snapshot_date FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? ORDER BY snapshot_date DESC');
@@ -362,13 +364,10 @@ if (!function_exists('football_stats_render_date_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
                     <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date'])); ?>" <?php echo ($isCurrentSeason && !$isSnapshotView) ? 'selected' : ''; ?>>
-                            Current Season (Latest)
-                        </option>
                         <?php foreach ($availableSeasons as $season):
                             $url = football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $season]);
                         ?>
-                            <option value="<?php echo htmlspecialchars($url); ?>" <?php echo (($selectedSeason === (string)$season) && ($isSnapshotView || !$isCurrentSeason)) ? 'selected' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars($url); ?>" <?php echo ($selectedSeason === (string)$season) ? 'selected' : ''; ?>>
                                 Season <?php echo htmlspecialchars((string)$season); ?>
                             </option>
                         <?php endforeach; ?>
