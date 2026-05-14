@@ -320,14 +320,28 @@ if (!function_exists('football_stats_render_date_view_controls')) {
         $availableDates   = $tableView['available_dates'];
         $selectedSeason   = $tableView['active_season_label'];
         $activeDate       = $tableView['active_date'];
+        $liveSeasonLabel  = $tableView['live_season_label'] ?? $selectedSeason;
+        $isSnapshotView   = !empty($tableView['is_snapshot_view']);
         $controlId = 'date-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
+
+        $isCurrentSeason = $selectedSeason === $liveSeasonLabel;
         ?>
+        <style>
+            .table-view-switcher { margin: 14px 0 16px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.03); }
+            .table-view-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; color: #dcddde; font-size: 13px; }
+            .table-view-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(88, 101, 242, 0.15); border: 1px solid rgba(88, 101, 242, 0.35); color: #c7d2fe; font-weight: 600; }
+            .table-view-actions { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+            .table-view-group { display: flex; flex-direction: column; gap: 4px; }
+            .table-view-select { min-width: 200px; padding: 10px 12px; border-radius: 8px; background: #2f3136; border: 1px solid rgba(255, 255, 255, 0.08); color: #dcddde; font-size: 12px; font-weight: 600; cursor: pointer; }
+            .table-view-label { color: #8e9297; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        </style>
+
         <div class="table-view-switcher">
             <div class="table-view-summary">
                 <span class="table-view-pill" style="background:rgba(0,200,100,0.15);border-color:rgba(0,200,100,0.4);color:#6effc2;">By Date (postponed-aware)</span>
                 <span>Season <?php echo htmlspecialchars((string)$selectedSeason); ?></span>
                 <?php if ($activeDate): ?>
-                    <span>After <?php echo htmlspecialchars($activeDate); ?></span>
+                    <span><?php echo $isSnapshotView ? 'After ' . htmlspecialchars($activeDate) : 'Latest (' . htmlspecialchars($activeDate) . ')'; ?></span>
                 <?php endif; ?>
             </div>
             <div class="table-view-actions">
@@ -348,10 +362,13 @@ if (!function_exists('football_stats_render_date_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
                     <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date'])); ?>" <?php echo ($isCurrentSeason && !$isSnapshotView) ? 'selected' : ''; ?>>
+                            Current Season (Latest)
+                        </option>
                         <?php foreach ($availableSeasons as $season):
                             $url = football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $season]);
                         ?>
-                            <option value="<?php echo htmlspecialchars($url); ?>" <?php echo ($selectedSeason === (string)$season) ? 'selected' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars($url); ?>" <?php echo (($selectedSeason === (string)$season) && ($isSnapshotView || !$isCurrentSeason)) ? 'selected' : ''; ?>>
                                 Season <?php echo htmlspecialchars((string)$season); ?>
                             </option>
                         <?php endforeach; ?>
@@ -362,14 +379,17 @@ if (!function_exists('football_stats_render_date_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-date">Select Date</label>
                     <select id="<?php echo $controlId; ?>-date" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $selectedSeason])); ?>" <?php echo !$isSnapshotView ? 'selected' : ''; ?>>
+                            Latest Available
+                        </option>
                         <?php foreach ($availableDates as $d):
                             $dUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
-                                'calc_mode'      => 'by_date',
+                                'calc_mode'       => 'by_date',
                                 'snapshot_season' => $selectedSeason,
                                 'snapshot_date'   => $d,
                             ]);
                         ?>
-                            <option value="<?php echo htmlspecialchars($dUrl); ?>" <?php echo ($activeDate === $d) ? 'selected' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars($dUrl); ?>" <?php echo ($isSnapshotView && $activeDate === $d) ? 'selected' : ''; ?>>
                                 After <?php echo htmlspecialchars($d); ?>
                             </option>
                         <?php endforeach; ?>
