@@ -30,6 +30,23 @@ if (!function_exists('sim_get_all_matches')) {
 
 if (!function_exists('sim_build_standings_and_stats')) {
     function sim_build_standings_and_stats(array $all_matches, $sim_from_mw) {
+        return sim_build_standings_and_stats_impl($all_matches, function ($m) use ($sim_from_mw) {
+            return (int) $m['matchweek'] < (int) $sim_from_mw;
+        });
+    }
+}
+
+if (!function_exists('sim_build_standings_and_stats_by_date')) {
+    function sim_build_standings_and_stats_by_date(array $all_matches, $sim_from_date) {
+        return sim_build_standings_and_stats_impl($all_matches, function ($m) use ($sim_from_date) {
+            if (empty($m['match_date'])) return false;
+            return strcmp((string) $m['match_date'], (string) $sim_from_date) < 0;
+        });
+    }
+}
+
+if (!function_exists('sim_build_standings_and_stats_impl')) {
+    function sim_build_standings_and_stats_impl(array $all_matches, callable $is_completed) {
         $standings = [];
         $home_goals_total = 0;
         $away_goals_total = 0;
@@ -48,9 +65,9 @@ if (!function_exists('sim_build_standings_and_stats')) {
             }
         }
 
-        // Second pass: accumulate results for completed matches before sim_from_mw
+        // Second pass: accumulate results for matches identified as completed
         foreach ($all_matches as $m) {
-            if ((int) $m['matchweek'] >= (int) $sim_from_mw) continue;
+            if (!$is_completed($m)) continue;
             if (!is_numeric($m['home_goals']) || !is_numeric($m['away_goals'])) continue;
 
             $home = $m['home_team'];
@@ -217,6 +234,124 @@ if (!function_exists('sim_run_single')) {
         }
 
         return $result;
+    }
+}
+
+if (!function_exists('sim_run_monte_carlo_by_date')) {
+    /**
+     * Monte Carlo run that uses a calendar date as the threshold between
+     * completed and to-be-simulated matches (matches with match_date < $sim_from_date
+     * are treated as completed; the rest are simulated).
+     */
+    function sim_run_monte_carlo_by_date(
+        PDO   $db,
+        $comp_code,
+        $season_label,
+        $sim_from_date,
+        $n_sims = 1000
+    ) {
+        $all_matches = sim_get_all_matches($db, $comp_code, $season_label);
+
+        $built       = sim_build_standings_and_stats_by_date($all_matches, $sim_from_date);
+        $standings   = $built['standings'];
+        $avg_home    = $built['avg_home_goals'];
+        $avg_away    = $built['avg_away_goals'];
+        $n_completed = $built['n_completed'];
+
+        $strengths = sim_calculate_strengths($standings, $avg_home, $avg_away);
+
+        // All matches on or after sim_from_date are (re-)simulated
+        $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_date) {
+            return !empty($m['match_date']) && strcmp((string) $m['match_date'], (string) $sim_from_date) >= 0;
+        }));
+
+        $n_teams    = count($standings);
+        $team_names = array_keys($standings);
+
+        $position_counts = [];
+        $points_sums     = [];
+        foreach ($team_names as $team) {
+            $position_counts[$team] = array_fill(1, $n_teams, 0);
+            $points_sums[$team]     = [];
+        }
+
+        for ($i = 0; $i < $n_sims; $i++) {
+            $result = sim_run_single($standings, $remaining, $strengths, $avg_home, $avg_away);
+            foreach ($result as $team => $r) {
+                if (!isset($position_counts[$team])) continue;
+                $pos = $r['position'];
+                if (isset($position_counts[$team][$pos])) {
+                    $position_counts[$team][$pos]++;
+                }
+                $points_sums[$team][] = $r['points'];
+            }
+        }
+
+        $aggregated = [];
+        foreach ($team_names as $team) {
+            $pts_list = $points_sums[$team] ?? [];
+            sort($pts_list);
+            $n = count($pts_list);
+
+            $avg_pos   = 0;
+            $total_pos = array_sum($position_counts[$team] ?? []);
+            if ($total_pos > 0) {
+                foreach ($position_counts[$team] as $pos => $count) {
+                    $avg_pos += $pos * $count;
+                }
+                $avg_pos /= $total_pos;
+            }
+
+            $aggregated[$team] = [
+                'team'                => $team,
+                'current_points'      => $standings[$team]['points'],
+                'current_position'    => $standings[$team]['position'],
+                'current_played'      => $standings[$team]['played'],
+                'avg_final_position'  => round($avg_pos, 2),
+                'avg_final_points'    => $n > 0 ? round(array_sum($pts_list) / $n, 1) : 0,
+                'min_final_points'    => $n > 0 ? $pts_list[0] : 0,
+                'max_final_points'    => $n > 0 ? $pts_list[$n - 1] : 0,
+                'p10_final_points'    => $n > 0 ? $pts_list[max(0, (int) ($n * 0.10))] : 0,
+                'p90_final_points'    => $n > 0 ? $pts_list[min($n - 1, (int) ($n * 0.90))] : 0,
+                'pos_dist'            => $position_counts[$team] ?? [],
+                'n_teams'             => $n_teams,
+            ];
+        }
+
+        uasort($aggregated, function ($a, $b) {
+            return $a['avg_final_position'] <=> $b['avg_final_position'];
+        });
+
+        // First unplayed date in the season (for default selection / UI hint)
+        $next_unplayed_date = null;
+        foreach ($all_matches as $m) {
+            if (!is_numeric($m['home_goals']) || !is_numeric($m['away_goals'])) {
+                $d = (string) ($m['match_date'] ?? '');
+                if ($d === '') continue;
+                if ($next_unplayed_date === null || strcmp($d, $next_unplayed_date) < 0) {
+                    $next_unplayed_date = $d;
+                }
+            }
+        }
+
+        // All distinct match dates in the season (for UI dropdown)
+        $dates = array_values(array_unique(array_filter(array_map(function ($m) {
+            return (string) ($m['match_date'] ?? '');
+        }, $all_matches))));
+        sort($dates);
+
+        return [
+            'teams'              => $aggregated,
+            'standings'          => $standings,
+            'sim_from_date'      => (string) $sim_from_date,
+            'n_sims'             => $n_sims,
+            'n_remaining'        => count($remaining),
+            'avg_home_goals'     => $avg_home,
+            'avg_away_goals'     => $avg_away,
+            'n_completed'        => $n_completed,
+            'match_dates'        => $dates,
+            'next_unplayed_date' => $next_unplayed_date,
+        ];
     }
 }
 
