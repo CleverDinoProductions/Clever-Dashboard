@@ -28,6 +28,8 @@ if (!empty($tableView['requested_season_label']) && $tableView['requested_season
 
 // ── Read URL parameters ──────────────────────────────────────────────────────
 
+$calc_mode = (($tableView['calc_mode'] ?? 'by_matchweek') === 'by_date') ? 'by_date' : 'by_matchweek';
+
 // Get matchweeks available for this season
 $mw_stmt = $db->prepare(
     'SELECT DISTINCT matchweek FROM matches
@@ -36,6 +38,15 @@ $mw_stmt = $db->prepare(
 );
 $mw_stmt->execute([$comp_code, $sim_season_label]);
 $all_mws = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Get distinct match dates for this season
+$date_stmt = $db->prepare(
+    'SELECT DISTINCT match_date FROM matches
+     WHERE competition_code = ? AND season_label = ? AND match_date IS NOT NULL
+     ORDER BY match_date ASC'
+);
+$date_stmt->execute([$comp_code, $sim_season_label]);
+$all_dates = $date_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 // Default to the first unplayed matchweek
 $nu_stmt = $db->prepare(
@@ -47,9 +58,22 @@ $nu_stmt->execute([$comp_code, $sim_season_label]);
 $nu_row     = $nu_stmt->fetch(PDO::FETCH_ASSOC);
 $default_mw = $nu_row['min_mw'] ?? (empty($all_mws) ? 1 : (int) max($all_mws));
 
+// Default to the first unplayed match date
+$nud_stmt = $db->prepare(
+    "SELECT MIN(match_date) AS min_d FROM matches
+     WHERE competition_code = ? AND season_label = ?
+       AND (home_goals IS NULL OR away_goals IS NULL)"
+);
+$nud_stmt->execute([$comp_code, $sim_season_label]);
+$nud_row      = $nud_stmt->fetch(PDO::FETCH_ASSOC);
+$default_date = $nud_row['min_d'] ?? (empty($all_dates) ? null : end($all_dates));
+
 $sim_from = isset($_GET['sim_from']) && is_numeric($_GET['sim_from'])
     ? max(1, (int) $_GET['sim_from'])
     : (int) $default_mw;
+
+$sim_from_date_raw = isset($_GET['sim_from_date']) ? (string) $_GET['sim_from_date'] : '';
+$sim_from_date = preg_match('/^\d{4}-\d{2}-\d{2}/', $sim_from_date_raw) ? substr($sim_from_date_raw, 0, 10) : $default_date;
 
 $n_sims_allowed = [500, 1000, 10000, 100000];
 $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allowed, true)
@@ -58,7 +82,11 @@ $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allo
 
 // ── Run simulation ───────────────────────────────────────────────────────────
 ini_set('max_execution_time', 60);
-$sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims);
+if ($calc_mode === 'by_date' && $sim_from_date) {
+    $sim = sim_run_monte_carlo_by_date($db, $comp_code, $sim_season_label, $sim_from_date, $n_sims);
+} else {
+    $sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims);
+}
 $teams = $sim['teams'];
 
 // ── Helper: build URL preserving tab context ─────────────────────────────────
@@ -222,13 +250,34 @@ $n_teams      = $league_config['n_teams'];
         <?php endforeach; ?>
 
         <div class="sim-controls">
+            <?php if ($calc_mode === 'by_date'): ?>
+            <div class="sim-control-group">
+                <label class="sim-label" for="sim-from-date-select">Simulate from date</label>
+                <select id="sim-from-date-select" name="sim_from_date" class="sim-select" onchange="this.form.submit()">
+                    <?php
+                    $next_unplayed_date = $sim['next_unplayed_date'] ?? null;
+                    $nu_date_short = $next_unplayed_date ? substr((string) $next_unplayed_date, 0, 10) : null;
+                    foreach ($all_dates as $d):
+                        $d_short = substr((string) $d, 0, 10);
+                    ?>
+                        <option value="<?= htmlspecialchars($d_short) ?>" <?= ($sim_from_date === $d_short) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($d_short) ?>
+                            <?php if ($nu_date_short && $d_short === $nu_date_short): ?> (next unplayed)<?php endif; ?>
+                        </option>
+                    <?php endforeach; ?>
+                    <?php if (empty($all_dates)): ?>
+                        <option value="" selected>No dates available</option>
+                    <?php endif; ?>
+                </select>
+            </div>
+            <?php else: ?>
             <div class="sim-control-group">
                 <label class="sim-label" for="sim-from-select">Simulate from matchweek</label>
                 <select id="sim-from-select" name="sim_from" class="sim-select" onchange="this.form.submit()">
                     <?php foreach ($all_mws as $mw): ?>
                         <option value="<?= (int)$mw ?>" <?= ($sim_from == $mw) ? 'selected' : '' ?>>
                             MW<?= (int)$mw ?>
-                            <?php if ($mw == $sim['next_unplayed_mw']): ?> (next unplayed)<?php endif; ?>
+                            <?php if ($mw == ($sim['next_unplayed_mw'] ?? null)): ?> (next unplayed)<?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                     <?php if (empty($all_mws)): ?>
@@ -236,6 +285,7 @@ $n_teams      = $league_config['n_teams'];
                     <?php endif; ?>
                 </select>
             </div>
+            <?php endif; ?>
 
             <div class="sim-control-group">
                 <label class="sim-label" for="sim-nsims-select">Simulations</label>
@@ -251,7 +301,11 @@ $n_teams      = $league_config['n_teams'];
     <!-- Simulation metadata -->
     <div class="sim-meta">
         <span class="sim-meta-badge">🎲 Monte Carlo</span>
-        <span>Simulating from <strong>MW<?= $sim['sim_from_mw'] ?></strong></span>
+        <?php if ($calc_mode === 'by_date'): ?>
+            <span>Simulating from <strong><?= htmlspecialchars(substr((string)($sim['sim_from_date'] ?? ''), 0, 10)) ?></strong></span>
+        <?php else: ?>
+            <span>Simulating from <strong>MW<?= $sim['sim_from_mw'] ?></strong></span>
+        <?php endif; ?>
         <span><strong><?= $sim['n_remaining'] ?></strong> matches to simulate</span>
         <span><strong><?= number_format($sim['n_sims']) ?></strong> iterations</span>
         <span>League avg: <strong><?= number_format($sim['avg_home_goals'], 2) ?></strong> home goals,
@@ -268,7 +322,7 @@ $n_teams      = $league_config['n_teams'];
             <tr>
                 <th title="Average simulated final position">Avg Pos</th>
                 <th style="text-align:left;">Team</th>
-                <th title="Points at simulation start matchweek">Pts Now</th>
+                <th title="Points at simulation start point">Pts Now</th>
                 <th title="Average simulated final points">Avg Pts</th>
                 <th title="10th–90th percentile points range">Pts Range</th>
                 <?php foreach ($prob_columns as $col): ?>
