@@ -381,6 +381,38 @@ if (!function_exists('football_stats_render_date_view_controls')) {
     }
 }
 
+/**
+ * Fetch standings for either calc mode based on $_GET['calc_mode']
+ * Returns tableView array with an added 'calc_mode' key.
+ */
+if (!function_exists('football_stats_get_table_view_combined')) {
+    function football_stats_get_table_view_combined(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
+    {
+        $calcMode = (($_GET['calc_mode'] ?? '') === 'by_date') ? 'by_date' : 'by_matchweek';
+        if ($calcMode === 'by_date') {
+            $tableView = football_stats_get_table_view_by_date($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
+        } else {
+            $tableView = football_stats_get_table_view($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
+        }
+        $tableView['calc_mode'] = $calcMode;
+        return $tableView;
+    }
+}
+
+/**
+ * Render the appropriate controls based on tableView['calc_mode']
+ */
+if (!function_exists('football_stats_render_combined_table_controls')) {
+    function football_stats_render_combined_table_controls(array $tableView, $tab, $league, $subtab)
+    {
+        if (($tableView['calc_mode'] ?? 'by_matchweek') === 'by_date') {
+            football_stats_render_date_view_controls($tableView, $tab, $league, $subtab);
+        } else {
+            football_stats_render_table_view_controls($tableView, $tab, $league, $subtab);
+        }
+    }
+}
+
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {
