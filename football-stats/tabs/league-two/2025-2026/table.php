@@ -1,13 +1,8 @@
 <?php
 require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 
-// Fetch data - Ensure the 'ELC' code matches your DB sync script
-$calcMode = (($_GET['calc_mode'] ?? '') === 'by_date') ? 'by_date' : 'by_matchweek';
-if ($calcMode === 'by_date') {
-    $tableView = football_stats_get_table_view_by_date($db, 'L2', 'league_table_L2', $currentMainTab ?? '2025-2026');
-} else {
-    $tableView = football_stats_get_table_view($db, 'L2', 'league_table_L2', $currentMainTab ?? '2025-2026');
-}
+$tableView = football_stats_get_table_view_combined($db, 'L2', 'league_table_L2', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $last_update = $tableView['last_update'];
 
@@ -72,11 +67,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 
 <div class="panel">
     <h2>League Two Table 2025/26</h2>
-    <?php if ($calcMode === 'by_date'): ?>
-        <?php football_stats_render_date_view_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'table'); ?>
-    <?php else: ?>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'table'); ?>
-    <?php endif; ?>
+    <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'table'); ?>
     
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label']) ?>: 
