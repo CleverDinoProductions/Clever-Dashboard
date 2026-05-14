@@ -272,6 +272,60 @@ if (!function_exists('football_stats_render_combined_table_controls')) {
     }
 }
 
+if (!function_exists('football_stats_render_matches_controls')) {
+    function football_stats_render_matches_controls(array $availableSeasons, array $availableMatchweeks, $selectedSeason, $selectedMatchweek, $tab, $league, $subtab)
+    {
+        $controlId = 'matches-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
+        ?>
+        <div class="table-view-switcher">
+            <div class="table-view-summary">
+                <span class="table-view-pill">Matches</span>
+                <span>Season <?php echo htmlspecialchars((string)$selectedSeason); ?></span>
+                <?php if ($selectedMatchweek !== ''): ?>
+                    <span>Matchweek <?php echo (int)$selectedMatchweek; ?></span>
+                <?php else: ?>
+                    <span>All Matchweeks</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="table-view-actions">
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
+                    <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
+                        <?php foreach ($availableSeasons as $season):
+                            $seasonUrl = football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season]);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($seasonUrl); ?>" <?php echo ($selectedSeason === (string)$season) ? 'selected' : ''; ?>>
+                                Season <?php echo htmlspecialchars((string)$season); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-mw">Select Matchweek</label>
+                    <select id="<?php echo $controlId; ?>-mw" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $selectedSeason])); ?>" <?php echo ($selectedMatchweek === '') ? 'selected' : ''; ?>>
+                            All Matchweeks
+                        </option>
+                        <?php foreach ($availableMatchweeks as $mw):
+                            $mwUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
+                                'snapshot_season' => $selectedSeason,
+                                'matchweek' => $mw,
+                            ]);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($mwUrl); ?>" <?php echo ($selectedMatchweek !== '' && (int)$selectedMatchweek === (int)$mw) ? 'selected' : ''; ?>>
+                                Matchweek <?php echo (int)$mw; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+}
+
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {
