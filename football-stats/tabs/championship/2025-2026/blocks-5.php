@@ -16,7 +16,8 @@ $blockInfo = [
     'description' => 'The Drop Zone - League One Bound'
 ];
 
-$tableView = football_stats_get_table_view($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $teams = array_values(array_filter($tableView['standings'], function ($team) {
     return $team['position'] >= 22 && $team['position'] <= 24;
 }));
@@ -36,9 +37,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 Positions <?php echo $blockInfo['positions']; ?>
             </span>
         </div>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-5'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'blocks-5'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
-            <?php echo $blockInfo['description']; ?> - Teams in the relegation zone facing the harsh reality of dropping to the Championship with massive financial consequences.
+            <?php echo $blockInfo['description']; ?> - Teams in the relegation zone facing the harsh reality of dropping to League One with massive financial consequences.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
             📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 

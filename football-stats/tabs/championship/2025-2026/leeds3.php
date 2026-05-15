@@ -7,7 +7,8 @@ error_reporting(E_ALL);
 // Ensure $db exists from your main app (adjust path/filename as needed)
 // require_once '../C-stats.php';  // uncomment and point to your DB bootstrap if needed
 
-$tableView = football_stats_get_table_view($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $leeds = null;
 foreach ($standings as $teamRow) {
@@ -93,7 +94,7 @@ if ($leedsPosition < 17 && $leedsPoints >= $safetyTarget) {
         <h2 style="color:#FFCD00;font-size:32px;margin:10px 0">
             Survival Tracker 2025/26
         </h2>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds-3'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'leeds-3'); ?>
         <div style="background:<?= $statusColor ?>;
                     display:inline-block;
                     padding:15px 40px;

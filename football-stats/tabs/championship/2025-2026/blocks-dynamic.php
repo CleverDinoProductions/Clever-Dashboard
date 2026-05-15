@@ -4,7 +4,8 @@
  * Real-time analysis with PPG-based season projections
  */
 
-$tableView = football_stats_get_table_view($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $allTeams = $tableView['standings'];
 $currentMatchday = $tableView['active_matchweek'] ?? (!empty($allTeams) ? max(array_map('intval', array_column($allTeams, 'played'))) : 1);
 $last_update = $tableView['last_update'];
@@ -192,7 +193,7 @@ table {
             <h2>🔥 Dynamic Blocks - Live Predictions</h2>
             <span class="live-badge">LIVE DATA</span>
         </div>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-dynamic'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'blocks-dynamic'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
             Real-time PPG (Points Per Game) projections showing where teams are likely to finish based on 
             current form. Updated after every matchday.

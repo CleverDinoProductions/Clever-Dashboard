@@ -4,7 +4,8 @@
  * Comprehensive overview showing all 5 blocks with live data
  */
 
-$tableView = football_stats_get_table_view($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $allTeams = $tableView['standings'];
 $currentMatchday = $tableView['active_matchweek'] ?? (!empty($allTeams) ? max(array_map('intval', array_column($allTeams, 'played'))) : 1);
 $last_update = $tableView['last_update'];
@@ -12,9 +13,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
 
 // Organize teams into blocks
 $blocks = [
-    1 => ['teams' => [], 'range' => '1-2', 'title' => 'Title Contenders', 'emoji' => '🏆', 'color' => '#FFD700', 'desc' => 'Title'],
-    2 => ['teams' => [], 'range' => '1-5', 'title' => 'European Contenders', 'emoji' => '🌍', 'color' => '#5865F2', 'desc' => 'Champions League, Europa League and Conference League'],
-    3 => ['teams' => [], 'range' => '5-15', 'title' => 'Mid-Table Security', 'emoji' => '⚖️', 'color' => '#99AAB5', 'desc' => 'Safe & Stable'],
+    1 => ['teams' => [], 'range' => '1-2', 'title' => 'Auto Promoted', 'emoji' => '🏆', 'color' => '#FFD700', 'desc' => 'Auto Promoted to Premier League'],
+    2 => ['teams' => [], 'range' => '3-6', 'title' => 'Playoff Contenders', 'emoji' => '🌍', 'color' => '#5865F2', 'desc' => 'Playoff spots for promotion to the Premier League'],
+    3 => ['teams' => [], 'range' => '6-15', 'title' => 'Mid-Table Security', 'emoji' => '⚖️', 'color' => '#99AAB5', 'desc' => 'Safe & Stable'],
     4 => ['teams' => [], 'range' => '15-18', 'title' => 'Relegation Battle', 'emoji' => '⚠️', 'color' => '#FFA500', 'desc' => 'Danger Zone'],
     5 => ['teams' => [], 'range' => '18-20', 'title' => 'Relegation Zone', 'emoji' => '🔴', 'color' => '#F44336', 'desc' => 'Drop Zone']
 ];
@@ -47,9 +48,9 @@ foreach ($allTeams as $team) {
             <h2>📊 Blocks of 4 Framework Overview</h2>
             <span class="season-badge">2025/26 Season</span>
         </div>
-        <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'blocks-overview'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'blocks-overview'); ?>
         <p style="margin-top: 15px; font-size: 1.1em; color: #ddd;">
-            The Premier League divided into 5 strategic blocks, each representing distinct competitive zones 
+            The Championship is divided into 5 strategic blocks, each representing distinct competitive zones 
             with unique targets, challenges, and psychological boundaries.
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">

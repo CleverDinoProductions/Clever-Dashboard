@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/../../../includes/table-view.php';
 
-$tableView = football_stats_get_table_view($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $last_update = $tableView['last_update'];
 
@@ -79,8 +80,8 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 </style>*
 
 <div class="panel">
-    <h2>Premier League Table 2025/26</h2>
-    <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table-2'); ?>
+    <h2>Championship Table/h2>
+    <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'table-2'); ?>
     <div class="table-view-custom-nav" style="margin: 18px 0 18px 0;">
         <a href="?tab=2025-2026&league=premier-league&subtab=table-2" style="margin-right: 12px; color:#c7d2fe; text-decoration:underline;">Table 2</a>
         <a href="?tab=2025-2026&league=premier-league&subtab=whatifs" style="margin-right: 12px; color:#FFCD00; text-decoration:underline; font-weight:bold;">What-Ifs</a>
