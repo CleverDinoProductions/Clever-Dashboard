@@ -8,7 +8,7 @@ $league_config = [
     'zones'        => [
         ['name' => 'Automatic Promotion', 'emoji' => '⬆️', 'from' => 1,  'to' => 2,  'color' => '#43b581', 'bg' => 'rgba(67,181,129,0.12)'],
         ['name' => 'Playoff Zone',        'emoji' => '🎯', 'from' => 3,  'to' => 6,  'color' => '#5865F2', 'bg' => 'rgba(88,101,242,0.10)'],
-        ['name' => 'Safe',                'emoji' => '✅', 'from' => 7,  'to' => 21, 'color' => '#555',    'bg' => 'transparent'],
+        ['name' => 'Safe',                'emoji' => '✅', 'from' => 1,  'to' => 21, 'color' => '#555',    'bg' => 'transparent'],
         ['name' => 'Relegated',           'emoji' => '⬇️', 'from' => 22, 'to' => 24, 'color' => '#f04747', 'bg' => 'rgba(240,71,71,0.12)'],
     ],
     'prob_columns' => [
