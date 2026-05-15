@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/table-view-date-helper.php';
+
 /**
  * Build URL for table view navigation
  */
