@@ -100,8 +100,12 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 // FIXED ROW HIGHLIGHTING (Works regardless of row count)
                 $row_style = '';
                 $pos_color = '#dcddde'; // Default color for position number
+                $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
                 
-                if ($pos <= 2) {
+                if ($is_leeds) {
+                    $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
+                    $pos_color = '#FFCD00'; // Yellow for Leeds United
+                } elseif ($pos <= 2) {
                     $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
                     $pos_color = '#43b581';
                 } elseif ($pos <= 6) {

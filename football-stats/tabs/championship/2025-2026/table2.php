@@ -338,15 +338,13 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             $row_style = '';
             if ($is_leeds) {
                 $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
-            } elseif ($team['position'] >= 18) {
+            } elseif ($team['position'] >= 22) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
-            } elseif ($team['position'] <= 5) {
+            } elseif ($team['position'] <= 2) {
                 $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
             } elseif ($team['position'] <= 6) {
                 $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-            } elseif ($team['position'] == 7) {
-                $row_style = 'background: rgba(255, 205, 0, 0.1); border-left: 4px solid #FFCD00;';
-            }
+            } 
             
             // Check if official name differs from common name
             $show_common = ($team['team_name'] !== $info['common_name']);
