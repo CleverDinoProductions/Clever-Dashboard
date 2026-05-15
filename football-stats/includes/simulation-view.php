@@ -169,6 +169,9 @@ $n_teams      = $league_config['n_teams'];
 .prob-medium { color:#faa61a; font-weight:600; }
 .prob-low    { color:#f04747; font-weight:600; }
 .prob-zero   { color:#555; }
+
+/* Prevent sticky headers in the compact standings table from floating over the main sim table */
+details .sim-table th { position:static; z-index:auto; }
 </style>
 
 <div class="panel">
