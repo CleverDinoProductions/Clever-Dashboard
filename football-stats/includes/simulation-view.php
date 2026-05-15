@@ -331,6 +331,7 @@ $n_teams      = $league_config['n_teams'];
                     </th>
                 <?php endforeach; ?>
                 <th title="Probability distribution across all positions">Distribution</th>
+                <th title="Probability distribution across all positions">Distribution Text</th>
             </tr>
         </thead>
         <tbody>
@@ -399,6 +400,18 @@ $n_teams      = $league_config['n_teams'];
                      title="<?= htmlspecialchars($z['name']) ?>: <?= $z_label_pct ?>%"></div>
                 <?php endforeach; ?>
                 </div>
+            </td>
+            <td style="text-align:center;">
+                <?php foreach ($zones as $z): ?>
+                <?php
+                    $z_count = sim_zone_prob($t['pos_dist'], $z['from'], $z['to'], $n_sims);
+                    $z_pct   = $n_sims > 0 ? $z_count / $n_sims * 100 : 0;
+                    if ($z_pct < 0.5) continue;
+                    $z_label_pct = number_format($z_pct, 1);
+                ?>
+                <!-- Show each zone text with zone label next to it -->
+                <span class="pos-dist-text" style="color:<?= htmlspecialchars($z['color']) ?>;"><?= htmlspecialchars($z['name']) ?>: <?= $z_label_pct ?>%</span>
+                <?php endforeach; ?>
             </td>
         </tr>
         <?php $rank++; endforeach; ?>
