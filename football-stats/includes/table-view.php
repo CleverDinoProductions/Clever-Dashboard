@@ -348,6 +348,11 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             $summaryDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $tableView['active_season_label'], $tableView['active_matchweek']);
         }
 
+        $summaryMW = '';
+        if ($isByDate && !empty($tableView['active_date']) && isset($GLOBALS['db']) && function_exists('football_stats_get_matchweek_for_date')) {
+            $summaryMW = football_stats_get_matchweek_for_date($GLOBALS['db'], $competitionCode, $tableView['active_season_label'], $tableView['active_date']);
+        }
+
         ?>
         <style>
             .table-view-switcher { margin: 14px 0 16px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.03); }
@@ -364,13 +369,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <span class="table-view-pill"><?php echo $isByDate ? 'By Date' : ($isSnapshot ? 'Archive View' : 'Live Table'); ?></span>
                 <span>Season <?php echo $seasonLabel; ?></span>
                 <?php if (!$isByDate && !empty($tableView['active_matchweek'])): ?>
-                    <span>Matchweek <?php echo (int) $tableView['active_matchweek']; ?></span>
+                    <span>Matchweek <?php echo (int) $tableView['active_matchweek']; ?><?php if ($summaryDate): ?> <strong style="color:#00ff88; font-size:12px;">[<?php echo htmlspecialchars($summaryDate); ?>]</strong><?php endif; ?></span>
                 <?php endif; ?>
                 <?php if ($isByDate && !empty($tableView['active_date'])): ?>
-                    <span><?php echo htmlspecialchars($tableView['active_date']); ?></span>
-                <?php endif; ?>
-                <?php if ($summaryDate): ?>
-                    <span style="color:#00ff88;">(<?php echo htmlspecialchars($summaryDate); ?>)</span>
+                    <span><?php echo htmlspecialchars($tableView['active_date']); ?><?php if ($summaryMW): ?> <strong style="color:#00ff88; font-size:12px;">[<?php echo htmlspecialchars($summaryMW); ?>]</strong><?php endif; ?></span>
                 <?php endif; ?>
             </div>
 
@@ -416,9 +418,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-date">Select Date</label>
                     <select id="<?php echo $controlId; ?>-date" class="table-view-select" onchange="window.location.href=this.value;">
-                        <?php foreach ($tableView['available_dates'] as $date): ?>
+                        <?php foreach ($tableView['available_dates'] as $date):
+                            $dateMW = '';
+                            if (isset($GLOBALS['db']) && function_exists('football_stats_get_matchweek_for_date')) {
+                                $dateMW = football_stats_get_matchweek_for_date($GLOBALS['db'], $competitionCode, $tableView['requested_season_label'], $date);
+                            }
+                        ?>
                             <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_date', 'snapshot_season' => $tableView['requested_season_label'], 'snapshot_date' => $date])); ?>" <?php echo ($tableView['active_date'] === $date) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($date); ?>
+                                <?php echo htmlspecialchars($date); ?><?php if ($dateMW) echo ' [' . htmlspecialchars($dateMW) . ']'; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -445,7 +452,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             }
                         ?>
                             <option value="<?php echo htmlspecialchars($mwUrl); ?>" <?php echo ($isSnapshot && (int)$tableView['active_matchweek'] === (int)$mw) ? 'selected' : ''; ?>>
-                                Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' (' . htmlspecialchars($mwDate) . ')'; ?>
+                                    Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' [' . htmlspecialchars($mwDate) . ']'; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
