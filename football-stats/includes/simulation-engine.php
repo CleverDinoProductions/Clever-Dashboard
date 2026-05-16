@@ -31,6 +31,8 @@ if (!function_exists('sim_get_all_matches')) {
 if (!function_exists('sim_build_standings_and_stats')) {
     function sim_build_standings_and_stats(array $all_matches, $sim_from_mw) {
         return sim_build_standings_and_stats_impl($all_matches, function ($m) use ($sim_from_mw) {
+            // sim_from_mw=0 (Pre-Season) → no matches are pre-completed
+            if ((int) $sim_from_mw === 0) return false;
             return (int) $m['matchweek'] < (int) $sim_from_mw;
         });
     }
@@ -248,7 +250,8 @@ if (!function_exists('sim_run_monte_carlo_by_date')) {
         $comp_code,
         $season_label,
         $sim_from_date,
-        $n_sims = 1000
+        $n_sims = 1000,
+        $sim_to_date = null
     ) {
         $all_matches = sim_get_all_matches($db, $comp_code, $season_label);
 
@@ -260,9 +263,13 @@ if (!function_exists('sim_run_monte_carlo_by_date')) {
 
         $strengths = sim_calculate_strengths($standings, $avg_home, $avg_away);
 
-        // All matches on or after sim_from_date are (re-)simulated
-        $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_date) {
-            return !empty($m['match_date']) && strcmp((string) $m['match_date'], (string) $sim_from_date) >= 0;
+        // Simulate matches in [sim_from_date, sim_to_date]; sim_to_date=null means season end
+        $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_date, $sim_to_date) {
+            if (empty($m['match_date'])) return false;
+            $d = (string) $m['match_date'];
+            if (strcmp($d, (string) $sim_from_date) < 0) return false;
+            if ($sim_to_date !== null && strcmp($d, (string) $sim_to_date) > 0) return false;
+            return true;
         }));
 
         $n_teams    = count($standings);
@@ -344,6 +351,7 @@ if (!function_exists('sim_run_monte_carlo_by_date')) {
             'teams'              => $aggregated,
             'standings'          => $standings,
             'sim_from_date'      => (string) $sim_from_date,
+            'sim_to_date'        => $sim_to_date !== null ? (string) $sim_to_date : null,
             'n_sims'             => $n_sims,
             'n_remaining'        => count($remaining),
             'avg_home_goals'     => $avg_home,
@@ -376,7 +384,8 @@ if (!function_exists('sim_run_monte_carlo')) {
         $comp_code,
         $season_label,
         $sim_from_mw,
-        $n_sims = 1000
+        $n_sims = 1000,
+        $sim_to_mw = null
     ) {
         $all_matches = sim_get_all_matches($db, $comp_code, $season_label);
 
@@ -388,9 +397,12 @@ if (!function_exists('sim_run_monte_carlo')) {
 
         $strengths = sim_calculate_strengths($standings, $avg_home, $avg_away);
 
-        // All matches from sim_from_mw onwards are (re-)simulated
-        $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_mw) {
-            return (int) $m['matchweek'] >= (int) $sim_from_mw;
+        // Simulate matches within [sim_from_mw, sim_to_mw]; sim_to_mw=null means season end
+        $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_mw, $sim_to_mw) {
+            $mw = (int) $m['matchweek'];
+            if ($mw < (int) $sim_from_mw) return false;
+            if ($sim_to_mw !== null && $mw > (int) $sim_to_mw) return false;
+            return true;
         }));
 
         $n_teams    = count($standings);
@@ -471,6 +483,7 @@ if (!function_exists('sim_run_monte_carlo')) {
             'teams'            => $aggregated,
             'standings'        => $standings,
             'sim_from_mw'      => (int) $sim_from_mw,
+            'sim_to_mw'        => $sim_to_mw !== null ? (int) $sim_to_mw : null,
             'n_sims'           => $n_sims,
             'n_remaining'      => count($remaining),
             'avg_home_goals'   => $avg_home,
