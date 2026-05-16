@@ -126,9 +126,10 @@ function sim_view_url($sim_from, $n_sims) {
 }
 
 // ── Helper: label a matchweek number for display ─────────────────────────────
-function sim_mw_label($mw, $total_games) {
+function sim_mw_label($mw, $total_games, $max_mw = null) {
     $mw = (int) $mw;
     if ($mw === 0) return 'Pre-Season';
+    if ($max_mw !== null && $mw > (int) $max_mw) return 'End of Season';
     if ($total_games !== null && $mw > (int) $total_games) return "MW{$mw} (Post-Season)";
     return "MW{$mw}";
 }
@@ -296,6 +297,8 @@ details .sim-table th { position:static; z-index:auto; }
                     <?php
                     $next_unplayed_date = $sim['next_unplayed_date'] ?? null;
                     $nu_date_short = $next_unplayed_date ? substr((string) $next_unplayed_date, 0, 10) : null;
+                    $last_season_date = !empty($all_dates) ? substr((string) end($all_dates), 0, 10) : null;
+                    $eos_from_date = $last_season_date ? date('Y-m-d', strtotime($last_season_date . ' +1 day')) : null;
                     foreach ($all_dates as $d):
                         $d_short = substr((string) $d, 0, 10);
                     ?>
@@ -306,6 +309,9 @@ details .sim-table th { position:static; z-index:auto; }
                     <?php endforeach; ?>
                     <?php if (empty($all_dates)): ?>
                         <option value="" selected>No dates available</option>
+                    <?php endif; ?>
+                    <?php if ($eos_from_date): ?>
+                        <option value="<?= htmlspecialchars($eos_from_date) ?>" <?= ($last_season_date && $sim_from_date > $last_season_date) ? 'selected' : '' ?>>End of Season</option>
                     <?php endif; ?>
                 </select>
             </div>
@@ -340,6 +346,7 @@ details .sim-table th { position:static; z-index:auto; }
                     <?php if (empty($all_mws)): ?>
                         <option value="1" selected>MW1</option>
                     <?php endif; ?>
+                    <option value="<?= $max_mw + 1 ?>" <?= ($sim_from > $max_mw) ? 'selected' : '' ?>>End of Season</option>
                 </select>
             </div>
             <div class="sim-control-group">
@@ -372,7 +379,12 @@ details .sim-table th { position:static; z-index:auto; }
     <div class="sim-meta">
         <span class="sim-meta-badge">🎲 Monte Carlo</span>
         <?php if ($calc_mode === 'by_date'): ?>
-            <span>Simulating from <strong><?= htmlspecialchars(substr((string)($sim['sim_from_date'] ?? ''), 0, 10)) ?></strong>
+            <?php
+            $meta_from_date = substr((string)($sim['sim_from_date'] ?? ''), 0, 10);
+            $meta_last_date = !empty($all_dates) ? substr((string) end($all_dates), 0, 10) : null;
+            $meta_from_label = ($meta_last_date && $meta_from_date > $meta_last_date) ? 'End of Season' : $meta_from_date;
+            ?>
+            <span>Simulating from <strong><?= htmlspecialchars($meta_from_label) ?></strong>
             <?php if (!empty($sim['sim_to_date'])): ?>
                 to <strong><?= htmlspecialchars(substr((string)$sim['sim_to_date'], 0, 10)) ?></strong>
             <?php else: ?>
@@ -380,9 +392,9 @@ details .sim-table th { position:static; z-index:auto; }
             <?php endif; ?>
             </span>
         <?php else: ?>
-            <span>Simulating from <strong><?= htmlspecialchars(sim_mw_label($sim['sim_from_mw'], $total_games)) ?></strong>
+            <span>Simulating from <strong><?= htmlspecialchars(sim_mw_label($sim['sim_from_mw'], $total_games, $max_mw)) ?></strong>
             <?php if ($sim['sim_to_mw'] !== null): ?>
-                to <strong><?= htmlspecialchars(sim_mw_label($sim['sim_to_mw'], $total_games)) ?></strong>
+                to <strong><?= htmlspecialchars(sim_mw_label($sim['sim_to_mw'], $total_games, $max_mw)) ?></strong>
             <?php else: ?>
                 to <strong>End of Season</strong>
             <?php endif; ?>
