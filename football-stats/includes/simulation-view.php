@@ -68,12 +68,36 @@ $nud_stmt->execute([$comp_code, $sim_season_label]);
 $nud_row      = $nud_stmt->fetch(PDO::FETCH_ASSOC);
 $default_date = $nud_row['min_d'] ?? (empty($all_dates) ? null : end($all_dates));
 
+// sim_from: allow 0 for Pre-Season (no max(1,...) clamp)
 $sim_from = isset($_GET['sim_from']) && is_numeric($_GET['sim_from'])
-    ? max(1, (int) $_GET['sim_from'])
+    ? max(0, (int) $_GET['sim_from'])
     : (int) $default_mw;
 
 $sim_from_date_raw = isset($_GET['sim_from_date']) ? (string) $_GET['sim_from_date'] : '';
 $sim_from_date = preg_match('/^\d{4}-\d{2}-\d{2}/', $sim_from_date_raw) ? substr($sim_from_date_raw, 0, 10) : $default_date;
+
+// sim_to / sim_to_date: null means simulate through end of season
+$total_games = $league_config['total_games'] ?? null;
+$max_mw = !empty($all_mws) ? (int) max($all_mws) : $total_games;
+
+$sim_to = null;
+if (isset($_GET['sim_to']) && is_numeric($_GET['sim_to'])) {
+    $sim_to_val = (int) $_GET['sim_to'];
+    // Only apply if it's actually a restriction (less than max available)
+    if ($sim_to_val < $max_mw) {
+        $sim_to = $sim_to_val;
+    }
+}
+
+$sim_to_date = null;
+$sim_to_date_raw = isset($_GET['sim_to_date']) ? (string) $_GET['sim_to_date'] : '';
+if (preg_match('/^\d{4}-\d{2}-\d{2}/', $sim_to_date_raw)) {
+    $sim_to_date_val = substr($sim_to_date_raw, 0, 10);
+    $last_date = !empty($all_dates) ? end($all_dates) : null;
+    if ($last_date === null || $sim_to_date_val < $last_date) {
+        $sim_to_date = $sim_to_date_val;
+    }
+}
 
 $n_sims_allowed = [500, 1000, 10000, 100000];
 $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allowed, true)
@@ -83,9 +107,9 @@ $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allo
 // ── Run simulation ───────────────────────────────────────────────────────────
 ini_set('max_execution_time', 60);
 if ($calc_mode === 'by_date' && $sim_from_date) {
-    $sim = sim_run_monte_carlo_by_date($db, $comp_code, $sim_season_label, $sim_from_date, $n_sims);
+    $sim = sim_run_monte_carlo_by_date($db, $comp_code, $sim_season_label, $sim_from_date, $n_sims, $sim_to_date);
 } else {
-    $sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims);
+    $sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims, $sim_to);
 }
 $teams = $sim['teams'];
 
@@ -99,6 +123,14 @@ function sim_view_url($sim_from, $n_sims) {
         'sim_from' => $sim_from,
         'n_sims'   => $n_sims,
     ]);
+}
+
+// ── Helper: label a matchweek number for display ─────────────────────────────
+function sim_mw_label($mw, $total_games) {
+    $mw = (int) $mw;
+    if ($mw === 0) return 'Pre-Season';
+    if ($total_games !== null && $mw > (int) $total_games) return "MW{$mw} (Post-Season)";
+    return "MW{$mw}";
 }
 
 // ── Helper: probability formatted as percentage string ───────────────────────
@@ -251,6 +283,10 @@ details .sim-table th { position:static; z-index:auto; }
                 <input type="hidden" name="<?= htmlspecialchars($p) ?>" value="<?= htmlspecialchars($_GET[$p]) ?>">
             <?php endif; ?>
         <?php endforeach; ?>
+        <?php
+        // Preserve sim_to/sim_to_date only when not being changed by the dropdowns themselves
+        // (they're rendered as selects below, so no hidden input needed for them)
+        ?>
 
         <div class="sim-controls">
             <?php if ($calc_mode === 'by_date'): ?>
@@ -273,19 +309,50 @@ details .sim-table th { position:static; z-index:auto; }
                     <?php endif; ?>
                 </select>
             </div>
+            <div class="sim-control-group">
+                <label class="sim-label" for="sim-to-date-select">Simulate to date</label>
+                <select id="sim-to-date-select" name="sim_to_date" class="sim-select" onchange="this.form.submit()">
+                    <option value="" <?= ($sim_to_date === null) ? 'selected' : '' ?>>End of Season</option>
+                    <?php foreach ($all_dates as $d):
+                        $d_short = substr((string) $d, 0, 10);
+                    ?>
+                        <option value="<?= htmlspecialchars($d_short) ?>" <?= ($sim_to_date === $d_short) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($d_short) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
             <?php else: ?>
             <div class="sim-control-group">
-                <label class="sim-label" for="sim-from-select">Simulate from matchweek</label>
+                <label class="sim-label" for="sim-from-select">Simulate from</label>
                 <select id="sim-from-select" name="sim_from" class="sim-select" onchange="this.form.submit()">
-                    <?php foreach ($all_mws as $mw): ?>
-                        <option value="<?= (int)$mw ?>" <?= ($sim_from == $mw) ? 'selected' : '' ?>>
-                            MW<?= (int)$mw ?>
-                            <?php if ($mw == ($sim['next_unplayed_mw'] ?? null)): ?> (next unplayed)<?php endif; ?>
+                    <?php
+                    // Prepend Pre-Season (MW0) if not already in list
+                    $from_mws = in_array(0, array_map('intval', $all_mws)) ? $all_mws : array_merge([0], $all_mws);
+                    foreach ($from_mws as $mw):
+                        $mw_int = (int) $mw;
+                    ?>
+                        <option value="<?= $mw_int ?>" <?= ($sim_from === $mw_int) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(sim_mw_label($mw_int, $total_games)) ?>
+                            <?php if ($mw_int === ($sim['next_unplayed_mw'] ?? null)): ?> (next unplayed)<?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                     <?php if (empty($all_mws)): ?>
                         <option value="1" selected>MW1</option>
                     <?php endif; ?>
+                </select>
+            </div>
+            <div class="sim-control-group">
+                <label class="sim-label" for="sim-to-select">Simulate to</label>
+                <select id="sim-to-select" name="sim_to" class="sim-select" onchange="this.form.submit()">
+                    <option value="<?= $max_mw ?>" <?= ($sim_to === null) ? 'selected' : '' ?>>End of Season</option>
+                    <?php foreach ($all_mws as $mw):
+                        $mw_int = (int) $mw;
+                    ?>
+                        <option value="<?= $mw_int ?>" <?= ($sim_to === $mw_int) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(sim_mw_label($mw_int, $total_games)) ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <?php endif; ?>
@@ -305,9 +372,21 @@ details .sim-table th { position:static; z-index:auto; }
     <div class="sim-meta">
         <span class="sim-meta-badge">🎲 Monte Carlo</span>
         <?php if ($calc_mode === 'by_date'): ?>
-            <span>Simulating from <strong><?= htmlspecialchars(substr((string)($sim['sim_from_date'] ?? ''), 0, 10)) ?></strong></span>
+            <span>Simulating from <strong><?= htmlspecialchars(substr((string)($sim['sim_from_date'] ?? ''), 0, 10)) ?></strong>
+            <?php if (!empty($sim['sim_to_date'])): ?>
+                to <strong><?= htmlspecialchars(substr((string)$sim['sim_to_date'], 0, 10)) ?></strong>
+            <?php else: ?>
+                to <strong>End of Season</strong>
+            <?php endif; ?>
+            </span>
         <?php else: ?>
-            <span>Simulating from <strong>MW<?= $sim['sim_from_mw'] ?></strong></span>
+            <span>Simulating from <strong><?= htmlspecialchars(sim_mw_label($sim['sim_from_mw'], $total_games)) ?></strong>
+            <?php if ($sim['sim_to_mw'] !== null): ?>
+                to <strong><?= htmlspecialchars(sim_mw_label($sim['sim_to_mw'], $total_games)) ?></strong>
+            <?php else: ?>
+                to <strong>End of Season</strong>
+            <?php endif; ?>
+            </span>
         <?php endif; ?>
         <span><strong><?= $sim['n_remaining'] ?></strong> matches to simulate</span>
         <span><strong><?= number_format($sim['n_sims']) ?></strong> iterations</span>
