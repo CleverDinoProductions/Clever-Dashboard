@@ -483,6 +483,88 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
     }
 }
 
+/**
+ * Render side-by-side Home Record and Away Record tables.
+ */
+if (!function_exists('football_stats_render_home_away_split')) {
+    function football_stats_render_home_away_split(array $homeStandings, array $awayStandings, array $team_info)
+    {
+        if (empty($homeStandings) && empty($awayStandings)) {
+            echo '<p style="color:#888;font-size:13px;margin-top:20px;">No match data available yet for home/away split.</p>';
+            return;
+        }
+
+        $getInfo = function ($name) use ($team_info) {
+            if (isset($team_info[$name])) return $team_info[$name];
+            foreach ($team_info as $key => $info) {
+                if (stripos($name, $key) !== false) return $info;
+            }
+            return ['name' => $name, 'common_name' => $name, 'short' => strtoupper(substr($name, 0, 3)), 'color' => '#888888'];
+        };
+
+        $renderHalf = function (array $standings, string $title, string $accentColor) use ($getInfo) {
+            ?>
+            <div style="min-width:0;">
+                <h4 style="color:<?= $accentColor ?>;margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid <?= $accentColor ?>;padding-bottom:6px;"><?= htmlspecialchars($title) ?></h4>
+                <?php if (empty($standings)): ?>
+                    <p style="color:#888;font-size:12px;">No data</p>
+                <?php else: ?>
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead>
+                        <tr>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;">Pos</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:left;border-bottom:1px solid #3a3c40;font-size:11px;">Team</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Played">P</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Won">W</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Drawn">D</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Lost">L</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Goals For">GF</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Goals Against">GA</th>
+                            <th style="background:#1e2023;color:#72767d;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Goal Difference">GD</th>
+                            <th style="background:#1e2023;color:<?= $accentColor ?>;padding:6px 5px;text-align:center;border-bottom:1px solid #3a3c40;font-size:11px;" title="Points">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($standings as $team):
+                            $info    = $getInfo($team['team_name']);
+                            $gdColor = $team['gd'] > 0 ? '#43b581' : ($team['gd'] < 0 ? '#f04747' : '#888');
+                        ?>
+                        <tr>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;color:#72767d;text-align:center;"><?= $team['position'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;">
+                                <div style="display:flex;align-items:center;gap:5px;">
+                                    <img src="<?= htmlspecialchars($team['team_crest']) ?>" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;" onerror="this.style.display='none'">
+                                    <span style="color:#dcddde;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= htmlspecialchars($info['common_name'] ?? $info['name']) ?></span>
+                                </div>
+                            </td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;color:#b9bbbe;"><?= $team['played'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;color:#b9bbbe;"><?= $team['won'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;color:#b9bbbe;"><?= $team['drawn'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;color:#b9bbbe;"><?= $team['lost'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;color:#b9bbbe;"><?= $team['gf'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;color:#b9bbbe;"><?= $team['ga'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;font-weight:bold;color:<?= $gdColor ?>;"><?= $team['gd'] > 0 ? '+' . $team['gd'] : $team['gd'] ?></td>
+                            <td style="padding:5px;border-bottom:1px solid #2a2c2e;text-align:center;font-weight:bold;color:<?= $accentColor ?>;"><?= $team['points'] ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+            </div>
+            <?php
+        };
+        ?>
+        <div style="margin-top:30px;border-top:1px solid #333;padding-top:20px;">
+            <h3 style="color:#dcddde;margin:0 0 16px;font-size:15px;font-weight:700;">Home &amp; Away Records</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                <?php $renderHalf($homeStandings, 'Home Record', '#43b581'); ?>
+                <?php $renderHalf($awayStandings, 'Away Record', '#5865F2'); ?>
+            </div>
+        </div>
+        <?php
+    }
+}
+
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {

@@ -3,6 +3,7 @@ $league_config = [
     'comp_code'    => 'PL',
     'season_label' => $currentMainTab ?? '2025-2026',
     'total_games'  => 38,
+    'halfway_games' => 19,
     'n_teams'      => 20,
     'league_name'  => 'Premier League',
     'zones'        => [

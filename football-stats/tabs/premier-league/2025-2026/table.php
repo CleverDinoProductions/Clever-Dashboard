@@ -13,13 +13,16 @@ $total_games = 38; // Total games in season
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+$_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026'), $table_filter, $halfway_games, 'league_table_PL');
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL');
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
     $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
+$homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL');
+$awayStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'away', $halfway_games, 'league_table_PL');
 $safety_target_magic = 40; // Magic number for safety
 $safety_target_average = 36; // Average Points needed by end of season to stay safe
 $safety_target_low = 34; // Low safety target
@@ -374,4 +377,5 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             Based on 75% rule: Teams hitting this target have 85-90% survival rate
         </span>
     </div>
+    <?php football_stats_render_home_away_split($homeStandings, $awayStandings, $team_info); ?>
 </div>

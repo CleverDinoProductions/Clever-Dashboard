@@ -166,6 +166,94 @@ if (!function_exists('sim_calculate_strengths')) {
     }
 }
 
+/**
+ * Build team attack/defense strengths from filtered match data.
+ * Used when a table_filter (first_half, second_half, home, away) is active
+ * so the simulation reflects form during that period.
+ * Returns ['strengths' => [...], 'avg_home_goals' => ..., 'avg_away_goals' => ...] or null.
+ */
+if (!function_exists('sim_calculate_strengths_from_filtered_matches')) {
+    function sim_calculate_strengths_from_filtered_matches(PDO $db, $comp_code, $season_label, $filter, $halfway_mw)
+    {
+        if ($filter === 'first_half') {
+            $stmt = $db->prepare(
+                'SELECT home_team, away_team, home_goals, away_goals FROM matches
+                 WHERE competition_code = ? AND season_label = ? AND matchweek <= ?
+                   AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
+            );
+            $stmt->execute([$comp_code, $season_label, $halfway_mw]);
+        } elseif ($filter === 'second_half') {
+            $stmt = $db->prepare(
+                'SELECT home_team, away_team, home_goals, away_goals FROM matches
+                 WHERE competition_code = ? AND season_label = ? AND matchweek > ?
+                   AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
+            );
+            $stmt->execute([$comp_code, $season_label, $halfway_mw]);
+        } else {
+            $stmt = $db->prepare(
+                'SELECT home_team, away_team, home_goals, away_goals FROM matches
+                 WHERE competition_code = ? AND season_label = ?
+                   AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
+            );
+            $stmt->execute([$comp_code, $season_label]);
+        }
+        $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matches)) return null;
+
+        $stats = [];
+        $total_hg = 0;
+        $total_ag = 0;
+        $n = 0;
+
+        foreach ($matches as $m) {
+            $hg   = (int) $m['home_goals'];
+            $ag   = (int) $m['away_goals'];
+            $home = $m['home_team'];
+            $away = $m['away_team'];
+
+            if (!isset($stats[$home])) $stats[$home] = ['gf' => 0, 'ga' => 0, 'p' => 0, 'hgf' => 0, 'hga' => 0, 'hp' => 0, 'agf' => 0, 'aga' => 0, 'ap' => 0];
+            if (!isset($stats[$away])) $stats[$away] = ['gf' => 0, 'ga' => 0, 'p' => 0, 'hgf' => 0, 'hga' => 0, 'hp' => 0, 'agf' => 0, 'aga' => 0, 'ap' => 0];
+
+            $stats[$home]['gf'] += $hg; $stats[$home]['ga'] += $ag; $stats[$home]['p']++;
+            $stats[$away]['gf'] += $ag; $stats[$away]['ga'] += $hg; $stats[$away]['p']++;
+            $stats[$home]['hgf'] += $hg; $stats[$home]['hga'] += $ag; $stats[$home]['hp']++;
+            $stats[$away]['agf'] += $ag; $stats[$away]['aga'] += $hg; $stats[$away]['ap']++;
+
+            $total_hg += $hg;
+            $total_ag += $ag;
+            $n++;
+        }
+
+        $avg_home  = $n >= 10 ? $total_hg / $n : 1.50;
+        $avg_away  = $n >= 10 ? $total_ag / $n : 1.15;
+        $avg_goals = ($avg_home + $avg_away) / 2;
+
+        $strengths = [];
+        foreach ($stats as $team => $s) {
+            if ($filter === 'home' && $s['hp'] >= 3) {
+                $attack  = ($s['hgf'] / $s['hp']) / $avg_home;
+                $defense = ($s['hga'] / $s['hp']) / $avg_away;
+            } elseif ($filter === 'away' && $s['ap'] >= 3) {
+                $attack  = ($s['agf'] / $s['ap']) / $avg_away;
+                $defense = ($s['aga'] / $s['ap']) / $avg_home;
+            } elseif ($s['p'] >= 3) {
+                $attack  = ($s['gf'] / $s['p']) / $avg_goals;
+                $defense = ($s['ga'] / $s['p']) / $avg_goals;
+            } else {
+                $attack  = 1.0;
+                $defense = 1.0;
+            }
+            $strengths[$team] = [
+                'attack'  => max(0.2, min(4.0, $attack)),
+                'defense' => max(0.2, min(4.0, $defense)),
+            ];
+        }
+
+        return ['strengths' => $strengths, 'avg_home_goals' => $avg_home, 'avg_away_goals' => $avg_away];
+    }
+}
+
 if (!function_exists('sim_run_single')) {
     /**
      * Simulate one full season outcome from the current standings.
@@ -251,17 +339,18 @@ if (!function_exists('sim_run_monte_carlo_by_date')) {
         $season_label,
         $sim_from_date,
         $n_sims = 1000,
-        $sim_to_date = null
+        $sim_to_date = null,
+        $strength_override = null
     ) {
         $all_matches = sim_get_all_matches($db, $comp_code, $season_label);
 
         $built       = sim_build_standings_and_stats_by_date($all_matches, $sim_from_date);
         $standings   = $built['standings'];
-        $avg_home    = $built['avg_home_goals'];
-        $avg_away    = $built['avg_away_goals'];
+        $avg_home    = $strength_override['avg_home_goals'] ?? $built['avg_home_goals'];
+        $avg_away    = $strength_override['avg_away_goals'] ?? $built['avg_away_goals'];
         $n_completed = $built['n_completed'];
 
-        $strengths = sim_calculate_strengths($standings, $avg_home, $avg_away);
+        $strengths = $strength_override['strengths'] ?? sim_calculate_strengths($standings, $avg_home, $avg_away);
 
         // Simulate matches in [sim_from_date, sim_to_date]; sim_to_date=null means season end
         $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_date, $sim_to_date) {
@@ -385,17 +474,18 @@ if (!function_exists('sim_run_monte_carlo')) {
         $season_label,
         $sim_from_mw,
         $n_sims = 1000,
-        $sim_to_mw = null
+        $sim_to_mw = null,
+        $strength_override = null
     ) {
         $all_matches = sim_get_all_matches($db, $comp_code, $season_label);
 
         $built      = sim_build_standings_and_stats($all_matches, $sim_from_mw);
         $standings  = $built['standings'];
-        $avg_home   = $built['avg_home_goals'];
-        $avg_away   = $built['avg_away_goals'];
+        $avg_home   = $strength_override['avg_home_goals'] ?? $built['avg_home_goals'];
+        $avg_away   = $strength_override['avg_away_goals'] ?? $built['avg_away_goals'];
         $n_completed = $built['n_completed'];
 
-        $strengths = sim_calculate_strengths($standings, $avg_home, $avg_away);
+        $strengths = $strength_override['strengths'] ?? sim_calculate_strengths($standings, $avg_home, $avg_away);
 
         // Simulate matches within [sim_from_mw, sim_to_mw]; sim_to_mw=null means season end
         $remaining = array_values(array_filter($all_matches, function ($m) use ($sim_from_mw, $sim_to_mw) {

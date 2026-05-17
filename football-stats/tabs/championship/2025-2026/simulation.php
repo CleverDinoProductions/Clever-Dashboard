@@ -3,6 +3,7 @@ $league_config = [
     'comp_code'    => 'ELC',
     'season_label' => $currentMainTab ?? '2025-2026',
     'total_games'  => 46,
+    'halfway_games' => 23,
     'n_teams'      => 24,
     'league_name'  => 'Championship',
     'zones'        => [

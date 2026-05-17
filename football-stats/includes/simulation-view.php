@@ -13,8 +13,12 @@
 require_once __DIR__ . '/simulation-engine.php';
 require_once __DIR__ . '/table-view.php';
 
-$comp_code    = $league_config['comp_code'];
-$season_label = $league_config['season_label'];
+$comp_code     = $league_config['comp_code'];
+$season_label  = $league_config['season_label'];
+$halfway_games = $league_config['halfway_games'] ?? (int) ($league_config['total_games'] / 2);
+
+// Table filter (affects which matches are used for team strength calculation)
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
 
 // ── Table-view: fetch standings for season selector ──────────────────────────
 $live_table_name = 'league_table_' . $comp_code;
@@ -104,12 +108,18 @@ $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allo
     ? (int) $_GET['n_sims']
     : 1000;
 
+// ── Compute filter-based strength override ───────────────────────────────────
+$strength_override = null;
+if ($table_filter !== 'all') {
+    $strength_override = sim_calculate_strengths_from_filtered_matches($db, $comp_code, $sim_season_label, $table_filter, $halfway_games);
+}
+
 // ── Run simulation ───────────────────────────────────────────────────────────
 ini_set('max_execution_time', 60);
 if ($calc_mode === 'by_date' && $sim_from_date) {
-    $sim = sim_run_monte_carlo_by_date($db, $comp_code, $sim_season_label, $sim_from_date, $n_sims, $sim_to_date);
+    $sim = sim_run_monte_carlo_by_date($db, $comp_code, $sim_season_label, $sim_from_date, $n_sims, $sim_to_date, $strength_override);
 } else {
-    $sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims, $sim_to);
+    $sim = sim_run_monte_carlo($db, $comp_code, $sim_season_label, $sim_from, $n_sims, $sim_to, $strength_override);
 }
 $teams = $sim['teams'];
 
@@ -217,6 +227,17 @@ details .sim-table th { position:static; z-index:auto; }
     <!-- Season / matchweek selector -->
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'simulation'); ?>
 
+    <!-- Team-strength filter -->
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'simulation'); ?>
+    <?php if ($table_filter !== 'all'): ?>
+    <div style="padding:10px 14px;background:rgba(250,166,26,0.1);border:1px solid rgba(250,166,26,0.3);border-radius:8px;font-size:12px;color:#faa61a;margin-bottom:14px;">
+        <strong>Filter active:</strong>
+        <?php $filter_labels = ['first_half' => '1st Half (MW 1–' . $halfway_games . ')', 'second_half' => '2nd Half (MW ' . ($halfway_games + 1) . '+)', 'home' => 'Home matches only', 'away' => 'Away matches only']; ?>
+        Team strengths are calculated using <strong><?= htmlspecialchars($filter_labels[$table_filter] ?? $table_filter) ?></strong> results.
+        Simulation projections reflect form during that period.
+    </div>
+    <?php endif; ?>
+
     <!-- Compact league table for selected season/matchweek -->
     <?php if (!empty($tableView['standings'])): ?>
     <details open style="margin-bottom:20px;">
@@ -279,7 +300,7 @@ details .sim-table th { position:static; z-index:auto; }
                 <input type="hidden" name="<?= htmlspecialchars($p) ?>" value="<?= htmlspecialchars($_GET[$p]) ?>">
             <?php endif; ?>
         <?php endforeach; ?>
-        <?php foreach (['snapshot_season','table_view','matchweek','calc_mode','snapshot_date'] as $p): ?>
+        <?php foreach (['snapshot_season','table_view','matchweek','calc_mode','snapshot_date','table_filter'] as $p): ?>
             <?php if (isset($_GET[$p]) && $_GET[$p] !== ''): ?>
                 <input type="hidden" name="<?= htmlspecialchars($p) ?>" value="<?= htmlspecialchars($_GET[$p]) ?>">
             <?php endif; ?>
@@ -378,6 +399,11 @@ details .sim-table th { position:static; z-index:auto; }
     <!-- Simulation metadata -->
     <div class="sim-meta">
         <span class="sim-meta-badge">🎲 Monte Carlo</span>
+        <?php if ($table_filter !== 'all'): ?>
+        <span class="sim-meta-badge" style="background:rgba(250,166,26,0.15);border-color:rgba(250,166,26,0.4);color:#faa61a;">
+            📊 <?= htmlspecialchars($filter_labels[$table_filter] ?? $table_filter) ?> Form
+        </span>
+        <?php endif; ?>
         <?php if ($calc_mode === 'by_date'): ?>
             <?php
             $meta_from_date = substr((string)($sim['sim_from_date'] ?? ''), 0, 10);
