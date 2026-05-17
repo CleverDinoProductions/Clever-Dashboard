@@ -303,7 +303,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             }
 
             //remaining games
-            $games_remaining = $total_games - $team['played'];
+            $games_remaining = max(0, $total_games - $team['played']);
             if ($games_remaining == 0) {
                 $games_color = '#808080'; // Grey for 0 games remaining meaning the season is over and the team has no more chances to change their fate as their fate is sealed i.e. Survival, Relegation, etc.
             } elseif ($games_remaining <= 3) {

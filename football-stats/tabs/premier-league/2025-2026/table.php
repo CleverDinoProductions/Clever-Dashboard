@@ -272,7 +272,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             $info = getTeamInfo($team['team_name'], $team_info);
 
             //remaining games
-            $games_remaining = $total_games - $team['played'];
+            $games_remaining = max(0, $total_games - $team['played']);
             if ($games_remaining <= 5) {
                 $games_color = '#f04747'; // Red for 5 or fewer games remaining
             } elseif ($games_remaining <= 10) {
