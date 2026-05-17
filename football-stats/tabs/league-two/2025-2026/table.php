@@ -12,13 +12,16 @@ $total_games = 46;
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+$_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'L2', $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026'), $table_filter, $halfway_games, 'league_table_L2');
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, $table_filter, $halfway_games, 'league_table_L2');
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
     $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
+$homeStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'home', $halfway_games, 'league_table_L2');
+$awayStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'away', $halfway_games, 'league_table_L2');
 
 $team_info = [
     'Accrington Stanley' => ['name' => 'Accrington Stanley', 'common_name' => 'Accrington', 'nickname' => 'Stanley', 'short' => 'ACC', 'color' => '#D11241'],
@@ -173,4 +176,5 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <div><span style="color: #f04747;">■</span> Relegation (22nd-24th)</div>
         <div style="margin-left: auto; color: #888;">💡 Hover team names for details</div>
     </div>
+    <?php football_stats_render_home_away_split($homeStandings, $awayStandings, $team_info); ?>
 </div>
