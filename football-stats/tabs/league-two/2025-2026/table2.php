@@ -119,7 +119,7 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
                 
                 // Logic Calculations
                 $ppg = ($team['played'] > 0) ? round($team['points'] / $team['played'], 2) : 0;
-                $games_remaining = $total_games - $team['played'];
+                $games_remaining = max(0, $total_games - $team['played']);
                 $buffer = $team['points'] - $team['played'];
                 $performance = round($ppg * $games_remaining, 0);
                 $max_points_possible = (int)($team['points'] + $performance);

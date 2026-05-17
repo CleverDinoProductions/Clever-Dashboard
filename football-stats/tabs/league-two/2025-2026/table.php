@@ -126,7 +126,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                     $pos_color = '#f04747';
                 }
 
-                $games_remaining = $total_games - $team['played'];
+                $games_remaining = max(0, $total_games - $team['played']);
                 $show_common = ($team['team_name'] !== $info['common_name']);
             ?>
             <tr style="<?= $row_style ?>">
