@@ -7,7 +7,18 @@ $standings = $tableView['standings'];
 $last_update = $tableView['last_update'];
 
 // National League Settings
+$halfway_games = 23;
 $total_games = 46;
+
+// Table filter
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+if ($table_filter !== 'all') {
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'NL', $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026'), $table_filter, $halfway_games, 'league_table_NL');
+    if (!empty($filteredStandings)) {
+        $standings = $filteredStandings;
+    }
+    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
+}
 
 $team_info = [
     'Aldershot Town' => ['name' => 'Aldershot Town', 'common_name' => 'Aldershot', 'nickname' => 'The Shots', 'short' => 'ALD', 'color' => '#E30613'],
@@ -65,7 +76,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 <div class="panel">
     <h2>National League Table 2025/26</h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'table'); ?>
-    
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'table'); ?>
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label']) ?>: 
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>

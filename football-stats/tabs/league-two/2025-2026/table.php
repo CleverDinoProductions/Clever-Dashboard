@@ -6,8 +6,19 @@ $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $last_update = $tableView['last_update'];
 
-// Championship Settings
+// League Two Settings
+$halfway_games = 23;
 $total_games = 46;
+
+// Table filter
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+if ($table_filter !== 'all') {
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'L2', $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026'), $table_filter, $halfway_games, 'league_table_L2');
+    if (!empty($filteredStandings)) {
+        $standings = $filteredStandings;
+    }
+    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
+}
 
 $team_info = [
     'Accrington Stanley' => ['name' => 'Accrington Stanley', 'common_name' => 'Accrington', 'nickname' => 'Stanley', 'short' => 'ACC', 'color' => '#D11241'],
@@ -68,7 +79,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 <div class="panel">
     <h2>League Two Table 2025/26</h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'table'); ?>
-    
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'table'); ?>
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label']) ?>: 
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>
