@@ -9,19 +9,20 @@ $last_update = $tableView['last_update'];
 // League Two Settings
 $halfway_games = 23;
 $total_games = 46;
+$max_regular_mw = 46; // Playoff matches have matchweek > 46
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, $table_filter, $halfway_games, 'league_table_L2');
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, $table_filter, $halfway_games, 'league_table_L2', $max_regular_mw);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
     $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
-$homeStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'home', $halfway_games, 'league_table_L2');
-$awayStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'away', $halfway_games, 'league_table_L2');
+$homeStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'home', $halfway_games, 'league_table_L2', $max_regular_mw);
+$awayStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'away', $halfway_games, 'league_table_L2', $max_regular_mw);
 
 $team_info = [
     'Accrington Stanley' => ['name' => 'Accrington Stanley', 'common_name' => 'Accrington', 'nickname' => 'Stanley', 'short' => 'ACC', 'color' => '#D11241'],
