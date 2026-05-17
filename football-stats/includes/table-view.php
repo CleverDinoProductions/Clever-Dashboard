@@ -328,6 +328,161 @@ if (!function_exists('football_stats_render_matches_controls')) {
     }
 }
 
+/**
+ * Compute filtered standings from the matches table.
+ * Supports filters: first_half, second_half, home, away.
+ */
+if (!function_exists('football_stats_compute_filtered_standings')) {
+    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName)
+    {
+        // Build crest map from live table, fallback to snapshots
+        $crestMap = [];
+        try {
+            $stmt = $db->query("SELECT team_name, team_crest FROM $liveTableName");
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $crestMap[$row['team_name']] = $row['team_crest'];
+            }
+        } catch (Exception $e) {}
+        try {
+            $stmt = $db->prepare("SELECT team_name, MAX(team_crest) AS team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND team_crest != '' GROUP BY team_name");
+            $stmt->execute([$competitionCode, $seasonLabel]);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if (empty($crestMap[$row['team_name']])) {
+                    $crestMap[$row['team_name']] = $row['team_crest'];
+                }
+            }
+        } catch (Exception $e) {}
+
+        // Fetch relevant matches
+        if ($filter === 'first_half') {
+            $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
+            $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek]);
+        } elseif ($filter === 'second_half') {
+            $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek > ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
+            $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek]);
+        } else {
+            $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
+            $stmt->execute([$competitionCode, $seasonLabel]);
+        }
+        $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matches)) {
+            return [];
+        }
+
+        $stats = [];
+        foreach ($matches as $m) {
+            $hg   = (int)$m['home_goals'];
+            $ag   = (int)$m['away_goals'];
+            $home = $m['home_team'];
+            $away = $m['away_team'];
+
+            if (!isset($stats[$home])) $stats[$home] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
+            if (!isset($stats[$away])) $stats[$away] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
+
+            if ($filter === 'home') {
+                $stats[$home]['p']++;
+                $stats[$home]['gf'] += $hg;
+                $stats[$home]['ga'] += $ag;
+                if ($hg > $ag)      { $stats[$home]['w']++; $stats[$home]['pts'] += 3; }
+                elseif ($hg < $ag)  { $stats[$home]['l']++; }
+                else                { $stats[$home]['d']++; $stats[$home]['pts']++; }
+            } elseif ($filter === 'away') {
+                $stats[$away]['p']++;
+                $stats[$away]['gf'] += $ag;
+                $stats[$away]['ga'] += $hg;
+                if ($ag > $hg)      { $stats[$away]['w']++; $stats[$away]['pts'] += 3; }
+                elseif ($ag < $hg)  { $stats[$away]['l']++; }
+                else                { $stats[$away]['d']++; $stats[$away]['pts']++; }
+            } else {
+                // first_half or second_half — count both sides
+                $stats[$home]['p']++; $stats[$away]['p']++;
+                $stats[$home]['gf'] += $hg; $stats[$home]['ga'] += $ag;
+                $stats[$away]['gf'] += $ag; $stats[$away]['ga'] += $hg;
+                if ($hg > $ag)      { $stats[$home]['w']++; $stats[$home]['pts'] += 3; $stats[$away]['l']++; }
+                elseif ($hg < $ag)  { $stats[$away]['w']++; $stats[$away]['pts'] += 3; $stats[$home]['l']++; }
+                else                { $stats[$home]['d']++; $stats[$home]['pts']++; $stats[$away]['d']++; $stats[$away]['pts']++; }
+            }
+        }
+
+        uasort($stats, function ($a, $b) {
+            if ($a['pts'] !== $b['pts']) return $b['pts'] - $a['pts'];
+            $gdA = $a['gf'] - $a['ga'];
+            $gdB = $b['gf'] - $b['ga'];
+            if ($gdA !== $gdB) return $gdB - $gdA;
+            return $b['gf'] - $a['gf'];
+        });
+
+        $position = 1;
+        $result   = [];
+        foreach ($stats as $teamName => $s) {
+            $result[] = [
+                'team_name'  => $teamName,
+                'team_crest' => $crestMap[$teamName] ?? '',
+                'position'   => $position++,
+                'played'     => $s['p'],
+                'won'        => $s['w'],
+                'drawn'      => $s['d'],
+                'lost'       => $s['l'],
+                'gf'         => $s['gf'],
+                'ga'         => $s['ga'],
+                'gd'         => $s['gf'] - $s['ga'],
+                'points'     => $s['pts'],
+            ];
+        }
+        return $result;
+    }
+}
+
+/**
+ * Render filter buttons for first half / second half / home / away views.
+ */
+if (!function_exists('football_stats_render_table_filter_buttons')) {
+    function football_stats_render_table_filter_buttons($activeFilter, $tab, $league, $subtab)
+    {
+        $filters = [
+            'all'         => 'All',
+            'first_half'  => '1st Half',
+            'second_half' => '2nd Half',
+            'home'        => 'Home',
+            'away'        => 'Away',
+        ];
+        $filterLabels = [
+            'all'         => 'Full season standings',
+            'first_half'  => 'Standings based on matchweeks in the first half of the season',
+            'second_half' => 'Standings based on matchweeks in the second half of the season',
+            'home'        => 'Standings based on home matches only',
+            'away'        => 'Standings based on away matches only',
+        ];
+
+        $baseParams = $_GET;
+        unset($baseParams['table_filter']);
+        $baseUrl = '?' . http_build_query($baseParams);
+        ?>
+        <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap;">
+            <?php foreach ($filters as $key => $label):
+                $isActive = ($activeFilter === $key) || ($key === 'all' && $activeFilter === '');
+                $params   = $baseParams;
+                if ($key !== 'all') {
+                    $params['table_filter'] = $key;
+                }
+                $url = '?' . http_build_query($params);
+                $style = $isActive
+                    ? 'background:#5865F2;color:#fff;border:1px solid #5865F2;padding:7px 16px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:700;cursor:pointer;'
+                    : 'background:#2f3136;color:#b9bbbe;border:1px solid rgba(255,255,255,0.1);padding:7px 16px;border-radius:6px;text-decoration:none;font-size:13px;cursor:pointer;';
+            ?>
+                <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>" style="<?= $style ?>" title="<?= htmlspecialchars($filterLabels[$key], ENT_QUOTES, 'UTF-8') ?>"><?= $label ?></a>
+            <?php endforeach; ?>
+            <?php if ($activeFilter !== 'all' && $activeFilter !== ''): ?>
+                <span style="align-self:center;font-size:12px;color:#faa61a;margin-left:4px;">
+                    Filtered view &mdash; standings computed from match data
+                </span>
+            <?php endif; ?>
+        </div>
+        <?php
+    }
+}
+
 if (!function_exists('football_stats_render_table_view_controls')) {
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {

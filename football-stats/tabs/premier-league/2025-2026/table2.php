@@ -10,6 +10,16 @@ $last_update = $tableView['last_update'];
 $halfway_games = 19; // Halfway point in season
 $safety_target_halfway = 20; // Points needed by game 19 to stay safe
 $total_games = 38; // Total games in season
+
+// Table filter
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+if ($table_filter !== 'all') {
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026'), $table_filter, $halfway_games, 'league_table_PL');
+    if (!empty($filteredStandings)) {
+        $standings = $filteredStandings;
+    }
+    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
+}
 $safety_target_magic = 40; // Magic number for safety
 $safety_target_average = 36; // Average Points needed by end of season to stay safe
 $safety_target_low = 34; // Low safety target
@@ -239,6 +249,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table-2'); ?>
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table-2'); ?>
     <div class="table-view-custom-nav" style="margin: 18px 0 18px 0;">
         <a href="?tab=2025-2026&league=premier-league&subtab=table-2" style="margin-right: 12px; color:#c7d2fe; text-decoration:underline;">Table 2</a>
         <a href="?tab=2025-2026&league=premier-league&subtab=whatifs" style="margin-right: 12px; color:#FFCD00; text-decoration:underline; font-weight:bold;">What-Ifs</a>
