@@ -8,7 +8,11 @@ $last_update = $tableView['last_update'];
 
 // Safety calculation
 <<<<<<< HEAD
+<<<<<<< HEAD
 $halfway_games = 19; // First half ends at MW 18
+=======
+$halfway_games = 17; // First half ends at MW 17
+>>>>>>> parent of 1761fcc (fixed calculation)
 $second_half_start = 19; // Second half starts at MW 19 (MW 18 = winter break)
 =======
 $halfway_games = 19; // Halfway point in season
@@ -31,10 +35,14 @@ if ($table_filter !== 'all') {
         $standings = $filteredStandings;
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
     $_second_half_games = $max_regular_mw - $second_half_start; // MW 19-38 = 20 games
 =======
     $_second_half_games = $total_games - $halfway_games;
 >>>>>>> parent of ffe3d8b (Fix season half filters to use correct PL matchweek ranges)
+=======
+    $_second_half_games = $max_regular_mw - $second_half_start + 1; // MW 19-38 = 20 games
+>>>>>>> parent of 1761fcc (fixed calculation)
     if ($table_filter === 'first_half') {
         $total_games = $halfway_games;
     } elseif ($table_filter === 'second_half') {
