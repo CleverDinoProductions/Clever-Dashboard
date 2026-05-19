@@ -35,9 +35,9 @@ foreach ($tables as $name => $schema) {
 }
 
 // Add penalty columns to existing matches tables (no-op if already present)
-foreach (['home_pens', 'away_pens'] as $col) {
-    try { $db->exec("ALTER TABLE matches ADD COLUMN $col INTEGER"); } catch (Exception $e) {}
-}
+// foreach (['home_pens', 'away_pens'] as $col) {
+//    try { $db->exec("ALTER TABLE matches ADD COLUMN $col INTEGER"); } catch (Exception $e) {}
+//}
 
 // --- 2. Core League Processing ---
 
