@@ -333,7 +333,7 @@ if (!function_exists('football_stats_render_matches_controls')) {
  * Supports filters: first_half, second_half, home, away.
  */
 if (!function_exists('football_stats_compute_filtered_standings')) {
-    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null)
+    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null, $maxDate = null)
     {
         // Build crest map from live table, fallback to snapshots
         $crestMap = [];
@@ -353,25 +353,43 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
             }
         } catch (Exception $e) {}
 
+        // Optional date cap (for "By Date" mode — only count matches up to the selected date)
+        $dateCap = ($maxDate !== null && $maxDate !== '') ? $maxDate : null;
+
         // Fetch relevant matches (exclude playoff matches: mw=0 or mw>maxRegularMW)
         if ($filter === 'first_half' || $filter === 'first_half_home' || $filter === 'first_half_away') {
-            $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
-            $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek]);
+            $sql = "SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL";
+            $params = [$competitionCode, $seasonLabel, $halfwayMatchweek];
+            if ($dateCap !== null) { $sql .= " AND match_date <= ?"; $params[] = $dateCap; }
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
         } elseif ($filter === 'second_half' || $filter === 'second_half_home' || $filter === 'second_half_away') {
             if ($maxRegularMW !== null) {
-                $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek > ? AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
-                $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek, $maxRegularMW]);
+                $sql = "SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek > ? AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL";
+                $params = [$competitionCode, $seasonLabel, $halfwayMatchweek, $maxRegularMW];
+                if ($dateCap !== null) { $sql .= " AND match_date <= ?"; $params[] = $dateCap; }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
             } else {
-                $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek > ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
-                $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek]);
+                $sql = "SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek > ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL";
+                $params = [$competitionCode, $seasonLabel, $halfwayMatchweek];
+                if ($dateCap !== null) { $sql .= " AND match_date <= ?"; $params[] = $dateCap; }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
             }
         } else {
             if ($maxRegularMW !== null) {
-                $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
-                $stmt->execute([$competitionCode, $seasonLabel, $maxRegularMW]);
+                $sql = "SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL";
+                $params = [$competitionCode, $seasonLabel, $maxRegularMW];
+                if ($dateCap !== null) { $sql .= " AND match_date <= ?"; $params[] = $dateCap; }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
             } else {
-                $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
-                $stmt->execute([$competitionCode, $seasonLabel]);
+                $sql = "SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND home_goals IS NOT NULL AND away_goals IS NOT NULL";
+                $params = [$competitionCode, $seasonLabel];
+                if ($dateCap !== null) { $sql .= " AND match_date <= ?"; $params[] = $dateCap; }
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
             }
         }
         $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -414,6 +432,9 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
                 else                { $stats[$home]['d']++; $stats[$home]['pts']++; $stats[$away]['d']++; $stats[$away]['pts']++; }
             }
         }
+
+        // Drop teams that never appeared on the counted side (e.g. away teams when filter is home-only)
+        $stats = array_filter($stats, fn($s) => $s['p'] > 0);
 
         uasort($stats, function ($a, $b) {
             if ($a['pts'] !== $b['pts']) return $b['pts'] - $a['pts'];
