@@ -175,14 +175,14 @@ if (!function_exists('sim_calculate_strengths')) {
 if (!function_exists('sim_calculate_strengths_from_filtered_matches')) {
     function sim_calculate_strengths_from_filtered_matches(PDO $db, $comp_code, $season_label, $filter, $halfway_mw)
     {
-        if ($filter === 'first_half') {
+        if ($filter === 'first_half' || $filter === 'first_half_home' || $filter === 'first_half_away') {
             $stmt = $db->prepare(
                 'SELECT home_team, away_team, home_goals, away_goals FROM matches
                  WHERE competition_code = ? AND season_label = ? AND matchweek <= ?
                    AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
             );
             $stmt->execute([$comp_code, $season_label, $halfway_mw]);
-        } elseif ($filter === 'second_half') {
+        } elseif ($filter === 'second_half' || $filter === 'second_half_home' || $filter === 'second_half_away') {
             $stmt = $db->prepare(
                 'SELECT home_team, away_team, home_goals, away_goals FROM matches
                  WHERE competition_code = ? AND season_label = ? AND matchweek > ?
@@ -231,10 +231,12 @@ if (!function_exists('sim_calculate_strengths_from_filtered_matches')) {
 
         $strengths = [];
         foreach ($stats as $team => $s) {
-            if ($filter === 'home' && $s['hp'] >= 3) {
+            $is_home_filter = in_array($filter, ['home', 'first_half_home', 'second_half_home'], true);
+            $is_away_filter = in_array($filter, ['away', 'first_half_away', 'second_half_away'], true);
+            if ($is_home_filter && $s['hp'] >= 3) {
                 $attack  = ($s['hgf'] / $s['hp']) / $avg_home;
                 $defense = ($s['hga'] / $s['hp']) / $avg_away;
-            } elseif ($filter === 'away' && $s['ap'] >= 3) {
+            } elseif ($is_away_filter && $s['ap'] >= 3) {
                 $attack  = ($s['agf'] / $s['ap']) / $avg_away;
                 $defense = ($s['aga'] / $s['ap']) / $avg_home;
             } elseif ($s['p'] >= 3) {

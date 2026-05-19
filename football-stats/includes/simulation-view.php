@@ -18,7 +18,7 @@ $season_label  = $league_config['season_label'];
 $halfway_games = $league_config['halfway_games'] ?? (int) ($league_config['total_games'] / 2);
 
 // Table filter (affects which matches are used for team strength calculation)
-$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'first_half_home', 'first_half_away', 'second_half_home', 'second_half_away'], true) ? $_GET['table_filter'] : 'all';
 
 // ── Table-view: fetch standings for season selector ──────────────────────────
 $live_table_name = 'league_table_' . $comp_code;
@@ -232,7 +232,7 @@ details .sim-table th { position:static; z-index:auto; }
     <?php if ($table_filter !== 'all'): ?>
     <div style="padding:10px 14px;background:rgba(250,166,26,0.1);border:1px solid rgba(250,166,26,0.3);border-radius:8px;font-size:12px;color:#faa61a;margin-bottom:14px;">
         <strong>Filter active:</strong>
-        <?php $filter_labels = ['first_half' => '1st Half (MW 1–' . $halfway_games . ')', 'second_half' => '2nd Half (MW ' . ($halfway_games + 1) . '+)', 'home' => 'Home matches only', 'away' => 'Away matches only']; ?>
+        <?php $filter_labels = ['first_half' => '1st Half (MW 1–' . $halfway_games . ')', 'second_half' => '2nd Half (MW ' . ($halfway_games + 1) . '+)', 'home' => 'Home matches only', 'away' => 'Away matches only', 'first_half_home' => '1st Half Home (MW 1–' . $halfway_games . ')', 'first_half_away' => '1st Half Away (MW 1–' . $halfway_games . ')', 'second_half_home' => '2nd Half Home (MW ' . ($halfway_games + 1) . '+)', 'second_half_away' => '2nd Half Away (MW ' . ($halfway_games + 1) . '+)']; ?>
         Team strengths are calculated using <strong><?= htmlspecialchars($filter_labels[$table_filter] ?? $table_filter) ?></strong> results.
         Simulation projections reflect form during that period.
     </div>
