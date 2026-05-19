@@ -19,7 +19,7 @@ $_filter_max_mw = ($calcMode === 'by_matchweek' && !empty($tableView['active_mat
     ? min($max_regular_mw, (int)$tableView['active_matchweek'])
     : $max_regular_mw;
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, $table_filter, $halfway_games, 'league_table_L1', $_filter_max_mw, $_filter_max_date);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, $table_filter, $halfway_games, 'league_table_L1', $_filter_max_mw, $_filter_max_date, null, $max_regular_mw);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
@@ -136,7 +136,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                     $pos_color = '#f04747';
                 }
 
-                $games_remaining = max(0, $total_games - $team['played']);
+                $games_remaining = max(0, ($team['total_expected'] ?? $total_games) - $team['played']);
                 $show_common = ($team['team_name'] !== $info['common_name']);
             ?>
             <tr style="<?= $row_style ?>">

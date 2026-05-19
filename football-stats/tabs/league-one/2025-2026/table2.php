@@ -16,7 +16,7 @@ $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], 
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 $_filter_max_date = ($calcMode === 'by_date' && !empty($tableView['active_date'])) ? $tableView['active_date'] : null;
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, $table_filter, $halfway_games, 'league_table_L1', $max_regular_mw, $_filter_max_date);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, $table_filter, $halfway_games, 'league_table_L1', $max_regular_mw, $_filter_max_date, null, $max_regular_mw);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
@@ -127,7 +127,7 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
                 
                 // Logic Calculations
                 $ppg = ($team['played'] > 0) ? round($team['points'] / $team['played'], 2) : 0;
-                $games_remaining = max(0, $total_games - $team['played']);
+                $games_remaining = max(0, ($team['total_expected'] ?? $total_games) - $team['played']);
                 $buffer = $team['points'] - $team['played'];
                 $performance = round($ppg * $games_remaining, 0);
                 $max_points_possible = (int)($team['points'] + $performance);

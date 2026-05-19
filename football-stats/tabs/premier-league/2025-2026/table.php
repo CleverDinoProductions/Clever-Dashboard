@@ -22,7 +22,7 @@ $_filter_max_mw = ($calcMode === 'by_matchweek' && !empty($tableView['active_mat
     ? min($max_regular_mw, (int)$tableView['active_matchweek'])
     : $max_regular_mw;
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', $_filter_max_mw, $_filter_max_date, $second_half_start);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', $_filter_max_mw, $_filter_max_date, $second_half_start, $max_regular_mw);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
@@ -290,7 +290,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             $info = getTeamInfo($team['team_name'], $team_info);
 
             //remaining games
-            $games_remaining = max(0, $total_games - $team['played']);
+            $games_remaining = max(0, ($team['total_expected'] ?? $total_games) - $team['played']);
             if ($games_remaining <= 5) {
                 $games_color = '#f04747'; // Red for 5 or fewer games remaining
             } elseif ($games_remaining <= 10) {
