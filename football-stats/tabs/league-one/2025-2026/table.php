@@ -12,14 +12,14 @@ $total_games = 46;
 $max_regular_mw = 46; // Playoff matches have matchweek > 46
 
 // Table filter
-$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'first_half_home', 'first_half_away', 'second_half_home', 'second_half_away'], true) ? $_GET['table_filter'] : 'all';
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
     $filteredStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, $table_filter, $halfway_games, 'league_table_L1', $max_regular_mw);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
-    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
+    $_second_half_games = $total_games - $halfway_games; $total_games = in_array($table_filter, ['first_half', 'first_half_home', 'first_half_away'], true) ? $halfway_games : (in_array($table_filter, ['second_half', 'second_half_home', 'second_half_away'], true) ? $_second_half_games : (int)($total_games / 2));
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'home', $halfway_games, 'league_table_L1', $max_regular_mw);
 $awayStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'away', $halfway_games, 'league_table_L1', $max_regular_mw);

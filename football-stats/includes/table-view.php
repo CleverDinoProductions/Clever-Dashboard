@@ -354,10 +354,10 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
         } catch (Exception $e) {}
 
         // Fetch relevant matches (exclude playoff matches: mw=0 or mw>maxRegularMW)
-        if ($filter === 'first_half') {
+        if ($filter === 'first_half' || $filter === 'first_half_home' || $filter === 'first_half_away') {
             $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
             $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek]);
-        } elseif ($filter === 'second_half') {
+        } elseif ($filter === 'second_half' || $filter === 'second_half_home' || $filter === 'second_half_away') {
             if ($maxRegularMW !== null) {
                 $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek > ? AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
                 $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek, $maxRegularMW]);
@@ -390,14 +390,14 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
             if (!isset($stats[$home])) $stats[$home] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
             if (!isset($stats[$away])) $stats[$away] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
 
-            if ($filter === 'home') {
+            if ($filter === 'home' || $filter === 'first_half_home' || $filter === 'second_half_home') {
                 $stats[$home]['p']++;
                 $stats[$home]['gf'] += $hg;
                 $stats[$home]['ga'] += $ag;
                 if ($hg > $ag)      { $stats[$home]['w']++; $stats[$home]['pts'] += 3; }
                 elseif ($hg < $ag)  { $stats[$home]['l']++; }
                 else                { $stats[$home]['d']++; $stats[$home]['pts']++; }
-            } elseif ($filter === 'away') {
+            } elseif ($filter === 'away' || $filter === 'first_half_away' || $filter === 'second_half_away') {
                 $stats[$away]['p']++;
                 $stats[$away]['gf'] += $ag;
                 $stats[$away]['ga'] += $hg;
@@ -451,18 +451,26 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
     function football_stats_render_table_filter_buttons($activeFilter, $tab, $league, $subtab)
     {
         $filters = [
-            'all'         => 'All',
-            'first_half'  => '1st Half',
-            'second_half' => '2nd Half',
-            'home'        => 'Home',
-            'away'        => 'Away',
+            'all'              => 'All',
+            'first_half'       => '1st Half',
+            'second_half'      => '2nd Half',
+            'home'             => 'Home',
+            'away'             => 'Away',
+            'first_half_home'  => '1st Half Home',
+            'first_half_away'  => '1st Half Away',
+            'second_half_home' => '2nd Half Home',
+            'second_half_away' => '2nd Half Away',
         ];
         $filterLabels = [
-            'all'         => 'Full season standings',
-            'first_half'  => 'Standings based on matchweeks in the first half of the season',
-            'second_half' => 'Standings based on matchweeks in the second half of the season',
-            'home'        => 'Standings based on home matches only',
-            'away'        => 'Standings based on away matches only',
+            'all'              => 'Full season standings',
+            'first_half'       => 'Standings based on matchweeks in the first half of the season',
+            'second_half'      => 'Standings based on matchweeks in the second half of the season',
+            'home'             => 'Standings based on home matches only',
+            'away'             => 'Standings based on away matches only',
+            'first_half_home'  => 'Standings based on home matches in the first half of the season',
+            'first_half_away'  => 'Standings based on away matches in the first half of the season',
+            'second_half_home' => 'Standings based on home matches in the second half of the season',
+            'second_half_away' => 'Standings based on away matches in the second half of the season',
         ];
 
         $baseParams = $_GET;
