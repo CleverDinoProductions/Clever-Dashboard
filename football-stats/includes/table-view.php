@@ -358,8 +358,10 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
 
         // Fetch relevant matches (exclude playoff matches: mw=0 or mw>maxRegularMW)
         if ($filter === 'first_half' || $filter === 'first_half_home' || $filter === 'first_half_away') {
+            // Cap at both the halfway point and the archive matchweek (if provided)
+            $mwCap = ($maxRegularMW !== null) ? min($halfwayMatchweek, $maxRegularMW) : $halfwayMatchweek;
             $sql = "SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL";
-            $params = [$competitionCode, $seasonLabel, $halfwayMatchweek];
+            $params = [$competitionCode, $seasonLabel, $mwCap];
             if ($dateCap !== null) { $sql .= " AND match_date <= ?"; $params[] = $dateCap; }
             $stmt = $db->prepare($sql);
             $stmt->execute($params);

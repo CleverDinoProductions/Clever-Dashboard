@@ -10,13 +10,18 @@ $last_update = $tableView['last_update'];
 $halfway_games = 19; // Halfway point in season
 $safety_target_halfway = 20; // Points needed by game 19 to stay safe
 $total_games = 38; // Total games in season
+$max_regular_mw = 38; // PL has no playoffs; cap excludes any mw > 38
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'first_half_home', 'first_half_away', 'second_half_home', 'second_half_away'], true) ? $_GET['table_filter'] : 'all';
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 $_filter_max_date = ($calcMode === 'by_date' && !empty($tableView['active_date'])) ? $tableView['active_date'] : null;
+// In archive (by_matchweek) mode, cap filter queries at the selected matchweek
+$_filter_max_mw = ($calcMode === 'by_matchweek' && !empty($tableView['active_matchweek']))
+    ? min($max_regular_mw, (int)$tableView['active_matchweek'])
+    : $max_regular_mw;
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', null, $_filter_max_date);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', $_filter_max_mw, $_filter_max_date);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
@@ -33,8 +38,8 @@ if ($table_filter !== 'all') {
         $total_games = (int)ceil($_second_half_games / 2);
     }
 }
-$homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL', null, $_filter_max_date);
-$awayStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'away', $halfway_games, 'league_table_PL', null, $_filter_max_date);
+$homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL', $_filter_max_mw, $_filter_max_date);
+$awayStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'away', $halfway_games, 'league_table_PL', $_filter_max_mw, $_filter_max_date);
 $safety_target_magic = 40; // Magic number for safety
 $safety_target_average = 36; // Average Points needed by end of season to stay safe
 $safety_target_low = 34; // Low safety target
