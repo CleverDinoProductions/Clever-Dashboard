@@ -333,7 +333,7 @@ if (!function_exists('football_stats_render_matches_controls')) {
  * Supports filters: first_half, second_half, home, away.
  */
 if (!function_exists('football_stats_compute_filtered_standings')) {
-    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null, $maxDate = null, $secondHalfStart = null)
+    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null, $maxDate = null, $secondHalfStart = null, $naturalMaxMW = null)
     {
         // Build crest map from live table, fallback to snapshots
         $crestMap = [];
@@ -450,6 +450,38 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
             }
         }
 
+        // Compute per-team total expected fixtures in scope using natural MW bounds
+        // (not capped by archive matchweek), so GR ticks down to 0 correctly even
+        // when a team's 1st/2nd half home-or-away split is 9 rather than 10.
+        $totalExpected = [];
+        $_teStart = ($filter === 'second_half' || $filter === 'second_half_home' || $filter === 'second_half_away')
+            ? (($secondHalfStart !== null) ? (int)$secondHalfStart : ($halfwayMatchweek + 1))
+            : 1;
+        $_teEnd = ($filter === 'first_half' || $filter === 'first_half_home' || $filter === 'first_half_away')
+            ? $halfwayMatchweek
+            : ($naturalMaxMW ?? $maxRegularMW ?? 9999);
+        try {
+            if ($filter === 'home' || $filter === 'first_half_home' || $filter === 'second_half_home') {
+                $_teStmt = $db->prepare("SELECT home_team AS team, COUNT(*) AS cnt FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= ? AND matchweek <= ? GROUP BY home_team");
+                $_teStmt->execute([$competitionCode, $seasonLabel, $_teStart, $_teEnd]);
+            } elseif ($filter === 'away' || $filter === 'first_half_away' || $filter === 'second_half_away') {
+                $_teStmt = $db->prepare("SELECT away_team AS team, COUNT(*) AS cnt FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= ? AND matchweek <= ? GROUP BY away_team");
+                $_teStmt->execute([$competitionCode, $seasonLabel, $_teStart, $_teEnd]);
+            } else {
+                $_teStmt = $db->prepare(
+                    "SELECT team, SUM(cnt) AS cnt FROM (" .
+                    "SELECT home_team AS team, COUNT(*) AS cnt FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= ? AND matchweek <= ? GROUP BY home_team " .
+                    "UNION ALL " .
+                    "SELECT away_team AS team, COUNT(*) AS cnt FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= ? AND matchweek <= ? GROUP BY away_team" .
+                    ") AS te_combined GROUP BY team"
+                );
+                $_teStmt->execute([$competitionCode, $seasonLabel, $_teStart, $_teEnd, $competitionCode, $seasonLabel, $_teStart, $_teEnd]);
+            }
+            foreach ($_teStmt->fetchAll(PDO::FETCH_ASSOC) as $_teRow) {
+                $totalExpected[$_teRow['team']] = (int)$_teRow['cnt'];
+            }
+        } catch (Exception $e) {}
+
         uasort($stats, function ($a, $b) {
             if ($a['pts'] !== $b['pts']) return $b['pts'] - $a['pts'];
             $gdA = $a['gf'] - $a['ga'];
@@ -463,17 +495,18 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
         $result   = [];
         foreach ($stats as $teamName => $s) {
             $result[] = [
-                'team_name'  => $teamName,
-                'team_crest' => $crestMap[$teamName] ?? '',
-                'position'   => $position++,
-                'played'     => $s['p'],
-                'won'        => $s['w'],
-                'drawn'      => $s['d'],
-                'lost'       => $s['l'],
-                'gf'         => $s['gf'],
-                'ga'         => $s['ga'],
-                'gd'         => $s['gf'] - $s['ga'],
-                'points'     => $s['pts'],
+                'team_name'      => $teamName,
+                'team_crest'     => $crestMap[$teamName] ?? '',
+                'position'       => $position++,
+                'played'         => $s['p'],
+                'won'            => $s['w'],
+                'drawn'          => $s['d'],
+                'lost'           => $s['l'],
+                'gf'             => $s['gf'],
+                'ga'             => $s['ga'],
+                'gd'             => $s['gf'] - $s['ga'],
+                'points'         => $s['pts'],
+                'total_expected' => $totalExpected[$teamName] ?? null,
             ];
         }
         return $result;

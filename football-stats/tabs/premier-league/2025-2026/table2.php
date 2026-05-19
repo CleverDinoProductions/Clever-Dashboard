@@ -16,7 +16,7 @@ $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], 
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 $_filter_max_date = ($calcMode === 'by_date' && !empty($tableView['active_date'])) ? $tableView['active_date'] : null;
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', null, $_filter_max_date);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', null, $_filter_max_date, null, $total_games);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
@@ -315,7 +315,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             }
 
             //remaining games
-            $games_remaining = max(0, $total_games - $team['played']);
+            $games_remaining = max(0, ($team['total_expected'] ?? $total_games) - $team['played']);
             if ($games_remaining == 0) {
                 $games_color = '#808080'; // Grey for 0 games remaining meaning the season is over and the team has no more chances to change their fate as their fate is sealed i.e. Survival, Relegation, etc.
             } elseif ($games_remaining <= 3) {
