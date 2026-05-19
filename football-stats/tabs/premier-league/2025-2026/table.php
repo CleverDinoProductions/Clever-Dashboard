@@ -7,7 +7,7 @@ $standings = $tableView['standings'];
 $last_update = $tableView['last_update'];
 
 // Safety calculation
-$halfway_games = 17; // First half ends at MW 17
+$halfway_games = 19; // First half ends at MW 18
 $second_half_start = 19; // Second half starts at MW 19 (MW 18 = winter break)
 $safety_target_halfway = 20; // Points needed by game 19 to stay safe
 $total_games = 38; // Total games in season
@@ -26,7 +26,7 @@ if ($table_filter !== 'all') {
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
-    $_second_half_games = $max_regular_mw - $second_half_start + 1; // MW 19-38 = 20 games
+    $_second_half_games = $max_regular_mw - $second_half_start; // MW 19-38 = 20 games
     if ($table_filter === 'first_half') {
         $total_games = $halfway_games;
     } elseif ($table_filter === 'second_half') {
