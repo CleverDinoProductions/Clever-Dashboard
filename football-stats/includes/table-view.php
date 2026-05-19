@@ -396,11 +396,25 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
         }
         $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if (empty($matches)) {
+        // Seed every team in the competition for this season with zero stats so that
+        // teams with no games on the counted side (e.g. no home games in MW20-21) still
+        // appear in the table rather than being silently omitted.
+        $stats = [];
+        try {
+            $allTeamsStmt = $db->prepare(
+                "SELECT DISTINCT home_team AS team FROM matches WHERE competition_code = ? AND season_label = ? " .
+                "UNION SELECT DISTINCT away_team AS team FROM matches WHERE competition_code = ? AND season_label = ?"
+            );
+            $allTeamsStmt->execute([$competitionCode, $seasonLabel, $competitionCode, $seasonLabel]);
+            foreach ($allTeamsStmt->fetchAll(PDO::FETCH_COLUMN) as $team) {
+                $stats[$team] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
+            }
+        } catch (Exception $e) {}
+
+        if (empty($matches) && empty($stats)) {
             return [];
         }
 
-        $stats = [];
         foreach ($matches as $m) {
             $hg   = (int)$m['home_goals'];
             $ag   = (int)$m['away_goals'];
@@ -435,15 +449,13 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
             }
         }
 
-        // Drop teams that never appeared on the counted side (e.g. away teams when filter is home-only)
-        $stats = array_filter($stats, fn($s) => $s['p'] > 0);
-
         uasort($stats, function ($a, $b) {
             if ($a['pts'] !== $b['pts']) return $b['pts'] - $a['pts'];
             $gdA = $a['gf'] - $a['ga'];
             $gdB = $b['gf'] - $b['ga'];
             if ($gdA !== $gdB) return $gdB - $gdA;
-            return $b['gf'] - $a['gf'];
+            if ($b['gf'] !== $a['gf']) return $b['gf'] - $a['gf'];
+            return $a['p'] <=> $b['p']; // teams with fewer games played sort lower when otherwise tied
         });
 
         $position = 1;
