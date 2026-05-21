@@ -65,21 +65,35 @@
 
         <!-- System Controls -->
         <div class="admin-card">
-            <h2>⚙️ Server Environment</h2>
-            <div class="sys-info">
-                <strong>OS:</strong> <?php echo PHP_OS; ?> <br>
-                <strong>PHP Version:</strong> <?php echo phpversion(); ?> <br>
-                <strong>Server IP:</strong> <?php echo $_SERVER['SERVER_ADDR']; ?> <br>
-                <strong>Document Root:</strong> <br> <code style="color: #5865F2;"><?php echo $_SERVER['DOCUMENT_ROOT']; ?></code>
-            </div>
-            <h3 style="margin-top: 20px; font-size: 14px; color: #888;">Active Ports</h3>
-            <p style="margin-top: 5px;">
-                <span class="badge">Web: 80</span> 
-                <span class="badge">IRC: 9000</span> 
-                <span class="badge">MySQL: 3306</span>
-            </p>
-        </div>
+            <h2>📜 Quick Access Logs</h2>
+            <p style="color: #888; font-size: 13px; margin-bottom: 10px;">Direct links to internal tracking files.</p>
+            
+            <a href="view-log.php" class="tool-link" style="border: 1px solid #43b581;">
+                <span style="color: #43b581;">#</span> ⚽ Football Update Logs
+            </a>
 
+            <a href="/mam-dashboard/logs/irc_sync.log" class="tool-link"><span>#</span> IRC Sync Logs</a>
+            <a href="/youtube-dashboard/logs/rss_fetch.log" class="tool-link"><span>#</span> RSS Fetcher Logs</a>
+            <a href="/football-stats/logs/api_requests.log" class="tool-link"><span>#</span> API Usage Logs</a>
+
+            <h3 style="margin-top: 15px; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Live Stats Engine Tail</h3>
+            <div style="background: #111214; padding: 10px; font-family: monospace; font-size: 11px; border-radius: 4px; margin-top: 5px; max-height: 120px; overflow-y: auto; color: #43b581; border: 1px solid #202225;">
+                <?php
+                $log_file = '/var/log/update-stats.log';
+                if (file_exists($log_file) && is_readable($log_file)) {
+                    // Pulls the last 4 lines of the log file dynamically
+                    $file = file($log_file);
+                    $last_lines = array_slice($file, -4);
+                    foreach ($last_lines as $line) {
+                        echo htmlspecialchars($line) . '<br>';
+                    }
+                } else {
+                    echo '<span style="color: #f04747;">Log file missing or unreadable by web server.</span>';
+                }
+                ?>
+            </div>
+        </div>
+        
         <!-- Activity & Logs -->
         <div class="admin-card">
             <h2>📜 Quick Access Logs</h2>
