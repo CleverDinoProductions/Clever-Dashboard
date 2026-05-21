@@ -114,8 +114,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 $halfwayTarget = round($ppg * 23, 0);
                 $halfwayActual = $team['points'];
                 $remainingGames = 46 - $team['played'];
-                $pointsNeededFor48 = max(0, 48 - $team['points']);
-                $ppgNeededFor48 = $remainingGames > 0 ? round($pointsNeededFor48 / $remainingGames, 2) : 0;
+                $targets = getLeagueBlockTargets('national-league', $blockNumber);
+                $ppgForLower = $remainingGames > 0 ? max(0, round(($targets['lower_pts'] - $team['points']) / $remainingGames, 2)) : 0;
+                $ppgForUpper = $remainingGames > 0 ? max(0, round(($targets['upper_pts'] - $team['points']) / $remainingGames, 2)) : 0;
                 // Find 19th place for context
                 $team19th = null;
                 foreach ($tableView['standings'] as $candidateTeam) {
@@ -169,18 +170,33 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         </span>
                     </div>
                     <div class="proj-row">
-                        <span class="proj-label">Safety target:</span>
-                        <span class="proj-value">~48 pts</span>
-                    </div>
-                    <div class="proj-row">
                         <span class="proj-label">Games remaining:</span>
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
                     </div>
-                    <?php if ($projectedPoints < 48): ?>
-                    <div class="proj-alert" style="background: rgba(255, 152, 0, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #FF9800;">
-                        <strong>⚠️ PPG needed for 48pts safety:</strong> <?php echo $ppgNeededFor48; ?>
+                    <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
+                        <span class="proj-label">Lower Target:</span>
+                        <span class="proj-value"><?php echo $targets['lower_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['lower_label']; ?>)</small></span>
                     </div>
-                    <?php endif; ?>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['lower_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForLower <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForLower; ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label">Upper Target:</span>
+                        <span class="proj-value"><?php echo $targets['upper_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['upper_label']; ?>)</small></span>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['upper_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForUpper <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForUpper; ?></span>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>

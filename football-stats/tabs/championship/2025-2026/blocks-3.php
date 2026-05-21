@@ -40,9 +40,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
             📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
-            <?php if ($currentMatchday < 19): ?>
+            <?php if ($currentMatchday < 23): ?>
                 First half of season
-            <?php elseif ($currentMatchday == 19): ?>
+            <?php elseif ($currentMatchday == 23): ?>
                 🎯 Halfway point!
             <?php else: ?>
                 Second half of season
@@ -107,10 +107,13 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
     <div class="panel">
         <h3>🎯 Season Projection Targets</h3>
         <div class="projections-grid">
-            <?php foreach ($teams as $team): 
+            <?php foreach ($teams as $team):
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                 $projectedPoints = round($ppg * 46, 0);
                 $remainingGames = 46 - $team['played'];
+                $targets = getLeagueBlockTargets('championship', $blockNumber);
+                $ppgForLower = $remainingGames > 0 ? max(0, round(($targets['lower_pts'] - $team['points']) / $remainingGames, 2)) : 0;
+                $ppgForUpper = $remainingGames > 0 ? max(0, round(($targets['upper_pts'] - $team['points']) / $remainingGames, 2)) : 0;
             ?>
             <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
                 <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
@@ -130,12 +133,32 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         </span>
                     </div>
                     <div class="proj-row">
-                        <span class="proj-label">Mid-table range:</span>
-                        <span class="proj-value">40-55 pts</span>
-                    </div>
-                    <div class="proj-row">
                         <span class="proj-label">Games remaining:</span>
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
+                    </div>
+                    <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
+                        <span class="proj-label">Lower Target:</span>
+                        <span class="proj-value"><?php echo $targets['lower_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['lower_label']; ?>)</small></span>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['lower_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForLower <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForLower; ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label">Upper Target:</span>
+                        <span class="proj-value"><?php echo $targets['upper_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['upper_label']; ?>)</small></span>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['upper_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForUpper <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForUpper; ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -183,7 +206,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                     <tr style="background: rgba(153, 170, 181, 0.1); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;">
                         <th style="padding: 12px; text-align: left;">Position Range</th>
                         <th style="padding: 12px; text-align: center;">Typical Points</th>
-                        <th style="padding: 12px; text-align: center;">At Halfway (MD19)</th>
+                        <th style="padding: 12px; text-align: center;">At Halfway (MD23)</th>
                         <th style="padding: 12px; text-align: center;">PPG Required</th>
                     </tr>
                 </thead>
