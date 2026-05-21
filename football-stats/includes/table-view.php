@@ -333,7 +333,7 @@ if (!function_exists('football_stats_render_matches_controls')) {
  * Supports filters: first_half, second_half, home, away.
  */
 if (!function_exists('football_stats_compute_filtered_standings')) {
-    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null)
+    function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null, $quarterBoundaries = null)
     {
         // Build crest map from live table, fallback to snapshots
         $crestMap = [];
@@ -365,6 +365,15 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
                 $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek > ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
                 $stmt->execute([$competitionCode, $seasonLabel, $halfwayMatchweek]);
             }
+        } elseif (in_array($filter, ['q1', 'q2', 'q3', 'q4'], true) && $quarterBoundaries !== null) {
+            [$q1End, $q2End, $q3End] = $quarterBoundaries;
+            $qMaxMW = $maxRegularMW ?? 999;
+            if ($filter === 'q1')      { $minMW = 1;          $maxMW = $q1End; }
+            elseif ($filter === 'q2')  { $minMW = $q1End + 1; $maxMW = $q2End; }
+            elseif ($filter === 'q3')  { $minMW = $q2End + 1; $maxMW = $q3End; }
+            else                       { $minMW = $q3End + 1; $maxMW = $qMaxMW; }
+            $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= ? AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
+            $stmt->execute([$competitionCode, $seasonLabel, $minMW, $maxMW]);
         } else {
             if ($maxRegularMW !== null) {
                 $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND home_goals IS NOT NULL AND away_goals IS NOT NULL");
@@ -448,12 +457,19 @@ if (!function_exists('football_stats_compute_filtered_standings')) {
  * Render filter buttons for first half / second half / home / away views.
  */
 if (!function_exists('football_stats_render_table_filter_buttons')) {
-    function football_stats_render_table_filter_buttons($activeFilter, $tab, $league, $subtab)
+    function football_stats_render_table_filter_buttons($activeFilter, $tab, $league, $subtab, $quarterBoundaries = null)
     {
+        $qb = $quarterBoundaries ?? [10, 20, 30];
+        [$q1End, $q2End, $q3End] = $qb;
+
         $filters = [
             'all'         => 'All',
             'first_half'  => '1st Half',
             'second_half' => '2nd Half',
+            'q1'          => 'Q1',
+            'q2'          => 'Q2',
+            'q3'          => 'Q3',
+            'q4'          => 'Q4',
             'home'        => 'Home',
             'away'        => 'Away',
         ];
@@ -461,13 +477,16 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
             'all'         => 'Full season standings',
             'first_half'  => 'Standings based on matchweeks in the first half of the season',
             'second_half' => 'Standings based on matchweeks in the second half of the season',
+            'q1'          => '1st Quarter (MW 1–' . $q1End . ')',
+            'q2'          => '2nd Quarter (MW ' . ($q1End + 1) . '–' . $q2End . ')',
+            'q3'          => '3rd Quarter (MW ' . ($q2End + 1) . '–' . $q3End . ')',
+            'q4'          => '4th Quarter (MW ' . ($q3End + 1) . '+)',
             'home'        => 'Standings based on home matches only',
             'away'        => 'Standings based on away matches only',
         ];
 
         $baseParams = $_GET;
         unset($baseParams['table_filter']);
-        $baseUrl = '?' . http_build_query($baseParams);
         ?>
         <div style="display:flex;gap:8px;margin:10px 0 14px;flex-wrap:wrap;">
             <?php foreach ($filters as $key => $label):
