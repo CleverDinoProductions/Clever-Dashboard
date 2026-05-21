@@ -264,6 +264,51 @@ function getStatusBadge($status) {
 }
 
 /**
+ * Get league-specific block target ranges (lower and upper points bounds)
+ * Based on historical data for each league and block.
+ */
+function getLeagueBlockTargets($league, $blockNumber) {
+    $targets = [
+        'premier-league' => [
+            1 => ['lower_pts' => 68, 'upper_pts' => 91, 'lower_label' => 'Min CL (4th)',      'upper_label' => 'Title contention'],
+            2 => ['lower_pts' => 52, 'upper_pts' => 69, 'lower_label' => 'Min European (7th)', 'upper_label' => 'Europa (5th)'],
+            3 => ['lower_pts' => 33, 'upper_pts' => 58, 'lower_label' => 'Safety floor',        'upper_label' => 'Upper mid-table'],
+            4 => ['lower_pts' => 27, 'upper_pts' => 40, 'lower_label' => 'Survival minimum',    'upper_label' => 'Comfortable safety'],
+            5 => ['lower_pts' => 25, 'upper_pts' => 35, 'lower_label' => 'Minimum hope',        'upper_label' => 'Survival target'],
+        ],
+        'championship' => [
+            1 => ['lower_pts' => 85, 'upper_pts' => 106, 'lower_label' => 'Auto-promotion (2nd)', 'upper_label' => 'Championship winners'],
+            2 => ['lower_pts' => 67, 'upper_pts' =>  91, 'lower_label' => 'Min play-offs (6th)',  'upper_label' => 'Top play-off (3rd)'],
+            3 => ['lower_pts' => 49, 'upper_pts' =>  76, 'lower_label' => 'Mid-table floor',       'upper_label' => 'Upper mid-table'],
+            4 => ['lower_pts' => 43, 'upper_pts' =>  59, 'lower_label' => 'Survival target',       'upper_label' => 'Safety buffer'],
+            5 => ['lower_pts' => 24, 'upper_pts' =>  50, 'lower_label' => 'Minimum',               'upper_label' => 'Survival target'],
+        ],
+        'league-one' => [
+            1 => ['lower_pts' => 84, 'upper_pts' => 106, 'lower_label' => 'Auto-promotion (2nd)', 'upper_label' => 'Champions'],
+            2 => ['lower_pts' => 67, 'upper_pts' =>  90, 'lower_label' => 'Min play-offs (6th)',  'upper_label' => 'Top play-off (3rd)'],
+            3 => ['lower_pts' => 44, 'upper_pts' =>  74, 'lower_label' => 'Safety floor',          'upper_label' => 'Upper mid-table'],
+            4 => ['lower_pts' => 34, 'upper_pts' =>  51, 'lower_label' => 'Survival target',       'upper_label' => 'Safety buffer'],
+            5 => ['lower_pts' => 18, 'upper_pts' =>  43, 'lower_label' => 'Minimum',               'upper_label' => 'Survival target'],
+        ],
+        'league-two' => [
+            1 => ['lower_pts' => 76, 'upper_pts' => 103, 'lower_label' => 'Auto-promotion (3rd)', 'upper_label' => 'Champions'],
+            2 => ['lower_pts' => 61, 'upper_pts' =>  84, 'lower_label' => 'Min play-offs (7th)',  'upper_label' => 'Top play-off (4th)'],
+            3 => ['lower_pts' => 43, 'upper_pts' =>  71, 'lower_label' => 'Safety floor',          'upper_label' => 'Upper mid-table'],
+            4 => ['lower_pts' => 37, 'upper_pts' =>  51, 'lower_label' => 'Survival target',       'upper_label' => 'Safety buffer'],
+            5 => ['lower_pts' => 20, 'upper_pts' =>  39, 'lower_label' => 'Minimum',               'upper_label' => 'Survival target'],
+        ],
+        'national-league' => [
+            1 => ['lower_pts' => 88, 'upper_pts' => 108, 'lower_label' => 'Promotion minimum',    'upper_label' => 'Champions peak'],
+            2 => ['lower_pts' => 73, 'upper_pts' => 104, 'lower_label' => 'Min play-offs (7th)', 'upper_label' => '2nd (auto-promotion)'],
+            3 => ['lower_pts' => 46, 'upper_pts' =>  75, 'lower_label' => 'Safety floor',          'upper_label' => 'Upper mid-table'],
+            4 => ['lower_pts' => 38, 'upper_pts' =>  53, 'lower_label' => 'Survival target',       'upper_label' => 'Safety buffer'],
+            5 => ['lower_pts' => 20, 'upper_pts' =>  40, 'lower_label' => 'Minimum',               'upper_label' => 'Survival target'],
+        ],
+    ];
+    return $targets[$league][$blockNumber] ?? ['lower_pts' => 40, 'upper_pts' => 60, 'lower_label' => 'Lower target', 'upper_label' => 'Upper target'];
+}
+
+/**
  * Get last updated timestamp
  */
 function getLastUpdated($pdo) {
