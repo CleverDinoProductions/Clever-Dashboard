@@ -11,22 +11,18 @@ $halfway_games = 23;
 $total_games = 46;
 $max_regular_mw = 46; // Playoff matches have matchweek > 46
 
-// Quarter boundaries: Q1 GW 1-12, Q2 GW 13-23, Q3 GW 24-35, Q4 GW 36-46
-$quarter_boundaries = [12, 23, 35];
-
 // Table filter
-$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'q1', 'q2', 'q3', 'q4'], true) ? $_GET['table_filter'] : 'all';
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, $table_filter, $halfway_games, 'league_table_NL', $max_regular_mw, $quarter_boundaries);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, $table_filter, $halfway_games, 'league_table_NL', $max_regular_mw);
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
-    $quarter_games = ['q1' => 12, 'q2' => 11, 'q3' => 12, 'q4' => 11];
-    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : ($quarter_games[$table_filter] ?? (int)($total_games / 2)));
+    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
-$homeStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'home', $halfway_games, 'league_table_NL', $max_regular_mw, $quarter_boundaries);
-$awayStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'away', $halfway_games, 'league_table_NL', $max_regular_mw, $quarter_boundaries);
+$homeStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'home', $halfway_games, 'league_table_NL', $max_regular_mw);
+$awayStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'away', $halfway_games, 'league_table_NL', $max_regular_mw);
 
 $team_info = [
     'Aldershot Town' => ['name' => 'Aldershot Town', 'common_name' => 'Aldershot', 'nickname' => 'The Shots', 'short' => 'ALD', 'color' => '#E30613'],
@@ -84,7 +80,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 <div class="panel">
     <h2>National League Table 2025/26</h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'table'); ?>
-    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'table', $quarter_boundaries); ?>
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'table'); ?>
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label']) ?>: 
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>

@@ -11,22 +11,18 @@ $halfway_games = 19; // Halfway point in season
 $safety_target_halfway = 20; // Points needed by game 19 to stay safe
 $total_games = 38; // Total games in season
 
-// Quarter boundaries: Q1 GW 1-10, Q2 GW 11-20, Q3 GW 21-30, Q4 GW 31-38
-$quarter_boundaries = [10, 20, 30];
-
 // Table filter
-$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'q1', 'q2', 'q3', 'q4'], true) ? $_GET['table_filter'] : 'all';
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
-    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', null, $quarter_boundaries);
+    $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL');
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
-    $quarter_games = ['q1' => 10, 'q2' => 10, 'q3' => 10, 'q4' => 8];
-    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : ($quarter_games[$table_filter] ?? (int)($total_games / 2)));
+    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
-$homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL', null, $quarter_boundaries);
-$awayStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'away', $halfway_games, 'league_table_PL', null, $quarter_boundaries);
+$homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL');
+$awayStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'away', $halfway_games, 'league_table_PL');
 $safety_target_magic = 40; // Magic number for safety
 $safety_target_average = 36; // Average Points needed by end of season to stay safe
 $safety_target_low = 34; // Low safety target
@@ -250,7 +246,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 <div class="panel">
     <h2>Premier League Table 2025/26</h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table'); ?>
-    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table', $quarter_boundaries); ?>
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'table'); ?>
     <p class="update-info">
         <?= htmlspecialchars($tableView['updated_label'], ENT_QUOTES, 'UTF-8') ?>:
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>

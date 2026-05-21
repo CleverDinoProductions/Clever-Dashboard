@@ -17,14 +17,8 @@ $comp_code     = $league_config['comp_code'];
 $season_label  = $league_config['season_label'];
 $halfway_games = $league_config['halfway_games'] ?? (int) ($league_config['total_games'] / 2);
 
-// Quarter boundaries derived from league config
-$_total_gw = $league_config['total_games'] ?? 38;
-$quarter_boundaries = ($_total_gw <= 38)
-    ? [10, 20, 30]   // PL: Q1 1-10, Q2 11-20, Q3 21-30, Q4 31-38
-    : [12, 23, 35];  // 46-game leagues: Q1 1-12, Q2 13-23, Q3 24-35, Q4 36-46
-
 // Table filter (affects which matches are used for team strength calculation)
-$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'q1', 'q2', 'q3', 'q4'], true) ? $_GET['table_filter'] : 'all';
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
 
 // ── Table-view: fetch standings for season selector ──────────────────────────
 $live_table_name = 'league_table_' . $comp_code;
@@ -117,7 +111,7 @@ $n_sims = isset($_GET['n_sims']) && in_array((int) $_GET['n_sims'], $n_sims_allo
 // ── Compute filter-based strength override ───────────────────────────────────
 $strength_override = null;
 if ($table_filter !== 'all') {
-    $strength_override = sim_calculate_strengths_from_filtered_matches($db, $comp_code, $sim_season_label, $table_filter, $halfway_games, $quarter_boundaries);
+    $strength_override = sim_calculate_strengths_from_filtered_matches($db, $comp_code, $sim_season_label, $table_filter, $halfway_games);
 }
 
 // ── Run simulation ───────────────────────────────────────────────────────────
@@ -234,23 +228,11 @@ details .sim-table th { position:static; z-index:auto; }
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'simulation'); ?>
 
     <!-- Team-strength filter -->
-    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'simulation', $quarter_boundaries); ?>
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'simulation'); ?>
     <?php if ($table_filter !== 'all'): ?>
     <div style="padding:10px 14px;background:rgba(250,166,26,0.1);border:1px solid rgba(250,166,26,0.3);border-radius:8px;font-size:12px;color:#faa61a;margin-bottom:14px;">
         <strong>Filter active:</strong>
-        <?php
-        [$_q1e, $_q2e, $_q3e] = $quarter_boundaries;
-        $filter_labels = [
-            'first_half'  => '1st Half (MW 1–' . $halfway_games . ')',
-            'second_half' => '2nd Half (MW ' . ($halfway_games + 1) . '+)',
-            'q1'          => '1st Quarter (MW 1–' . $_q1e . ')',
-            'q2'          => '2nd Quarter (MW ' . ($_q1e + 1) . '–' . $_q2e . ')',
-            'q3'          => '3rd Quarter (MW ' . ($_q2e + 1) . '–' . $_q3e . ')',
-            'q4'          => '4th Quarter (MW ' . ($_q3e + 1) . '+)',
-            'home'        => 'Home matches only',
-            'away'        => 'Away matches only',
-        ];
-        ?>
+        <?php $filter_labels = ['first_half' => '1st Half (MW 1–' . $halfway_games . ')', 'second_half' => '2nd Half (MW ' . ($halfway_games + 1) . '+)', 'home' => 'Home matches only', 'away' => 'Away matches only']; ?>
         Team strengths are calculated using <strong><?= htmlspecialchars($filter_labels[$table_filter] ?? $table_filter) ?></strong> results.
         Simulation projections reflect form during that period.
     </div>
@@ -417,7 +399,7 @@ details .sim-table th { position:static; z-index:auto; }
     <!-- Simulation metadata -->
     <div class="sim-meta">
         <span class="sim-meta-badge">🎲 Monte Carlo</span>
-        <?php if ($table_filter !== 'all' && isset($filter_labels)): ?>
+        <?php if ($table_filter !== 'all'): ?>
         <span class="sim-meta-badge" style="background:rgba(250,166,26,0.15);border-color:rgba(250,166,26,0.4);color:#faa61a;">
             📊 <?= htmlspecialchars($filter_labels[$table_filter] ?? $table_filter) ?> Form
         </span>

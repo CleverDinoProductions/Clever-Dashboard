@@ -173,7 +173,7 @@ if (!function_exists('sim_calculate_strengths')) {
  * Returns ['strengths' => [...], 'avg_home_goals' => ..., 'avg_away_goals' => ...] or null.
  */
 if (!function_exists('sim_calculate_strengths_from_filtered_matches')) {
-    function sim_calculate_strengths_from_filtered_matches(PDO $db, $comp_code, $season_label, $filter, $halfway_mw, $quarterBoundaries = null)
+    function sim_calculate_strengths_from_filtered_matches(PDO $db, $comp_code, $season_label, $filter, $halfway_mw)
     {
         if ($filter === 'first_half') {
             $stmt = $db->prepare(
@@ -189,18 +189,6 @@ if (!function_exists('sim_calculate_strengths_from_filtered_matches')) {
                    AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
             );
             $stmt->execute([$comp_code, $season_label, $halfway_mw]);
-        } elseif (in_array($filter, ['q1', 'q2', 'q3', 'q4'], true) && $quarterBoundaries !== null) {
-            [$q1End, $q2End, $q3End] = $quarterBoundaries;
-            if ($filter === 'q1')      { $minMW = 1;          $maxMW = $q1End; }
-            elseif ($filter === 'q2')  { $minMW = $q1End + 1; $maxMW = $q2End; }
-            elseif ($filter === 'q3')  { $minMW = $q2End + 1; $maxMW = $q3End; }
-            else                       { $minMW = $q3End + 1; $maxMW = 999; }
-            $stmt = $db->prepare(
-                'SELECT home_team, away_team, home_goals, away_goals FROM matches
-                 WHERE competition_code = ? AND season_label = ? AND matchweek >= ? AND matchweek <= ?
-                   AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
-            );
-            $stmt->execute([$comp_code, $season_label, $minMW, $maxMW]);
         } else {
             $stmt = $db->prepare(
                 'SELECT home_team, away_team, home_goals, away_goals FROM matches
