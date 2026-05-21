@@ -114,8 +114,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                 $projectedPoints = round($ppg * 46, 0);
                 $remainingGames = 46 - $team['played'];
-                $pointsNeededFor45 = max(0, 45 - $team['points']);
-                $ppgNeededFor45 = $remainingGames > 0 ? round($pointsNeededFor45 / $remainingGames, 2) : 0;
+                $targets = getLeagueBlockTargets('league-one', $blockNumber);
+                $ppgForLower = $remainingGames > 0 ? max(0, round(($targets['lower_pts'] - $team['points']) / $remainingGames, 2)) : 0;
+                $ppgForUpper = $remainingGames > 0 ? max(0, round(($targets['upper_pts'] - $team['points']) / $remainingGames, 2)) : 0;
 
                 // Get points to 21st place (just above relegation zone)
                 $team21st = null;
@@ -151,17 +152,32 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         </span>
                     </div>
                     <div class="proj-row">
-                        <span class="proj-label">Survival target:</span>
-                        <span class="proj-value">~40 pts</span>
-                    </div>
-                    <div class="proj-row">
                         <span class="proj-label">Games remaining:</span>
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
                     </div>
-                    <div class="proj-alert" style="background: rgba(244, 67, 54, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #F44336;">
-                        <strong>🚨 PPG needed for escape (45pts):</strong> <?php echo $ppgNeededFor45; ?>
-                        <br>
-                        <span style="font-size: 0.85em; color: #888;">Must gain <?php echo $pointsNeededFor45; ?> points from <?php echo $remainingGames; ?> games</span>
+                    <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
+                        <span class="proj-label">Lower Target:</span>
+                        <span class="proj-value"><?php echo $targets['lower_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['lower_label']; ?>)</small></span>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['lower_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForLower <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForLower; ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label">Upper Target:</span>
+                        <span class="proj-value"><?php echo $targets['upper_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['upper_label']; ?>)</small></span>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['upper_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForUpper <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForUpper; ?></span>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

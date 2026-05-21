@@ -40,9 +40,9 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
         </p>
         <p style="margin-top: 10px; color: #888; font-size: 0.9em;">
             📅 Current Matchday: <strong><?php echo $currentMatchday; ?></strong> of 46 • 
-            <?php if ($currentMatchday < 19): ?>
+            <?php if ($currentMatchday < 23): ?>
                 First half of season
-            <?php elseif ($currentMatchday == 19): ?>
+            <?php elseif ($currentMatchday == 23): ?>
                 🎯 Halfway point!
             <?php else: ?>
                 Second half of season
@@ -81,7 +81,7 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                     <?php foreach ($teams as $team): 
                         $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                         $projectedPoints = round($ppg * 46, 1);
-                        $halfwayTarget = round($ppg * 19, 1);
+                        $halfwayTarget = round($ppg * 23, 1);
                     ?>
                     <tr>
                         <td class="pos-cell" style="color: <?php echo $blockInfo['color']; ?>; font-weight: bold;"><?php echo $team['position']; ?></td>
@@ -112,11 +112,12 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
             <?php foreach ($teams as $team): 
                 $ppg = $team['played'] > 0 ? round($team['points'] / $team['played'], 2) : 0;
                 $projectedPoints = round($ppg * 46, 0);
-                $halfwayTarget = round($ppg * 19, 0);
+                $halfwayTarget = round($ppg * 23, 0);
                 $halfwayActual = $team['points'];
                 $remainingGames = 46 - $team['played'];
-                $pointsNeededFor70 = max(0, 70 - $team['points']);
-                $ppgNeededFor70 = $remainingGames > 0 ? round($pointsNeededFor70 / $remainingGames, 2) : 0;
+                $targets = getLeagueBlockTargets('championship', $blockNumber);
+                $ppgForLower = $remainingGames > 0 ? max(0, round(($targets['lower_pts'] - $team['points']) / $remainingGames, 2)) : 0;
+                $ppgForUpper = $remainingGames > 0 ? max(0, round(($targets['upper_pts'] - $team['points']) / $remainingGames, 2)) : 0;
             ?>
             <div class="projection-card" style="border-left: 3px solid <?php echo $blockInfo['color']; ?>;">
                 <h4><?php echo htmlspecialchars($team['team_name']); ?></h4>
@@ -130,12 +131,12 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         <span class="proj-value"><strong><?php echo $team['points']; ?></strong></span>
                     </div>
                     <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-                        <span class="proj-label">🎯 Halfway (MD19):</span>
+                        <span class="proj-label">🎯 Halfway (MD23):</span>
                         <span class="proj-value"><?php echo $halfwayTarget; ?> pts target</span>
                     </div>
-                    <?php if ($currentMatchday >= 19): ?>
+                    <?php if ($currentMatchday >= 23): ?>
                     <div class="proj-row">
-                        <span class="proj-label">Actual at MD19:</span>
+                        <span class="proj-label">Actual at MD23:</span>
                         <span class="proj-value <?php echo $halfwayActual >= $halfwayTarget ? 'success' : 'warning'; ?>">
                             <?php echo $halfwayActual; ?> pts
                             <?php if ($halfwayActual >= $halfwayTarget): ?>
@@ -153,18 +154,33 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                         </span>
                     </div>
                     <div class="proj-row">
-                        <span class="proj-label">Minimum for CL:</span>
-                        <span class="proj-value">~70 pts</span>
-                    </div>
-                    <div class="proj-row">
                         <span class="proj-label">Games remaining:</span>
                         <span class="proj-value"><?php echo $remainingGames; ?></span>
                     </div>
-                    <?php if ($projectedPoints < 70): ?>
-                    <div class="proj-alert" style="background: rgba(255, 152, 0, 0.1); padding: 10px; border-radius: 5px; margin-top: 10px; border-left: 3px solid #FF9800;">
-                        <strong>⚠️ PPG needed for 70pts:</strong> <?php echo $ppgNeededFor70; ?>
+                    <div class="proj-row" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
+                        <span class="proj-label">Lower Target:</span>
+                        <span class="proj-value"><?php echo $targets['lower_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['lower_label']; ?>)</small></span>
                     </div>
-                    <?php endif; ?>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['lower_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForLower <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForLower; ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label">Upper Target:</span>
+                        <span class="proj-value"><?php echo $targets['upper_pts']; ?> pts <small style="color: #888;">(<?php echo $targets['upper_label']; ?>)</small></span>
+                    </div>
+                    <div class="proj-row">
+                        <span class="proj-label" style="padding-left: 10px;">PPG needed:</span>
+                        <?php if ($team['points'] >= $targets['upper_pts']): ?>
+                        <span class="proj-value success">✅ Achieved</span>
+                        <?php else: ?>
+                        <span class="proj-value" style="color: <?php echo $ppgForUpper <= $ppg ? '#4CAF50' : '#FF9800'; ?>;"><?php echo $ppgForUpper; ?></span>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -182,30 +198,21 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
         <h3>🎯 Block 1 Targets & Benchmarks</h3>
         <div class="benchmarks-grid">
             <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
-                <h4>🏆 Title Challenge</h4>
+                <h4>🏆 Championship Winners (1st Place)</h4>
                 <ul>
-                    <li><strong>Target PPG:</strong> 2.3-2.5</li>
-                    <li><strong>Halfway (MD23):</strong> 44-48 points</li>
-                    <li><strong>Season End (MD46):</strong> 88-95 points</li>
-                    <li><strong>Win Rate:</strong> 70%+</li>
+                    <li><strong>Target PPG:</strong> 1.96-2.30</li>
+                    <li><strong>Halfway (MD23):</strong> 45-53 pts</li>
+                    <li><strong>Season End (MD46):</strong> 90-106 pts</li>
+                    <li><strong>Win Rate:</strong> 60%+</li>
                 </ul>
             </div>
             <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
-                <h4>🥈 2nd-3rd Place</h4>
+                <h4>🥈 Auto-Promotion (2nd Place)</h4>
                 <ul>
-                    <li><strong>Target PPG:</strong> 2.0-2.2</li>
-                    <li><strong>Halfway (MD23):</strong> 38-42 points</li>
-                    <li><strong>Season End (MD46):</strong> 76-84 points</li>
-                    <li><strong>Win Rate:</strong> 60-65%</li>
-                </ul>
-            </div>
-            <div class="benchmark-card" style="border-left: 4px solid <?php echo $blockInfo['color']; ?>;">
-                <h4>⚽ 4th Place (Last CL Spot)</h4>
-                <ul>
-                    <li><strong>Target PPG:</strong> 1.8-2.0</li>
-                    <li><strong>Halfway (MD23):</strong> 34-38 points</li>
-                    <li><strong>Season End (MD46):</strong> 68-76 points</li>
-                    <li><strong>Win Rate:</strong> 55%+</li>
+                    <li><strong>Target PPG:</strong> 1.85-2.13</li>
+                    <li><strong>Halfway (MD23):</strong> 43-49 pts</li>
+                    <li><strong>Season End (MD46):</strong> 85-98 pts</li>
+                    <li><strong>Win Rate:</strong> 58-65%</li>
                 </ul>
             </div>
         </div>
@@ -220,34 +227,22 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
                     <tr style="background: rgba(255, 215, 0, 0.1); border-bottom: 2px solid <?php echo $blockInfo['color']; ?>;">
                         <th style="padding: 12px; text-align: left;">Position</th>
                         <th style="padding: 12px; text-align: center;">Typical Points</th>
-                        <th style="padding: 12px; text-align: center;">At Halfway (MD19)</th>
+                        <th style="padding: 12px; text-align: center;">At Halfway (MD23)</th>
                         <th style="padding: 12px; text-align: center;">PPG Required</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                         <td style="padding: 10px;"><strong>1st - Champions</strong></td>
-                        <td style="padding: 10px; text-align: center;">88-95 pts</td>
-                        <td style="padding: 10px; text-align: center;">44-48 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>2.3-2.5</strong></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px;"><strong>2nd Place</strong></td>
-                        <td style="padding: 10px; text-align: center;">78-86 pts</td>
-                        <td style="padding: 10px; text-align: center;">39-43 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>2.0-2.3</strong></td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                        <td style="padding: 10px;"><strong>3rd Place</strong></td>
-                        <td style="padding: 10px; text-align: center;">72-80 pts</td>
-                        <td style="padding: 10px; text-align: center;">36-40 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.9-2.1</strong></td>
+                        <td style="padding: 10px; text-align: center;">90-106 pts</td>
+                        <td style="padding: 10px; text-align: center;">45-53 pts</td>
+                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.96-2.30</strong></td>
                     </tr>
                     <tr>
-                        <td style="padding: 10px;"><strong>4th - Last CL Spot</strong></td>
-                        <td style="padding: 10px; text-align: center;">68-76 pts</td>
-                        <td style="padding: 10px; text-align: center;">34-38 pts</td>
-                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.8-2.0</strong></td>
+                        <td style="padding: 10px;"><strong>2nd - Auto-Promoted</strong></td>
+                        <td style="padding: 10px; text-align: center;">85-98 pts</td>
+                        <td style="padding: 10px; text-align: center;">43-49 pts</td>
+                        <td style="padding: 10px; text-align: center; color: <?php echo $blockInfo['color']; ?>;"><strong>1.85-2.13</strong></td>
                     </tr>
                 </tbody>
             </table>
@@ -255,9 +250,10 @@ $tableViewNavParams = football_stats_get_current_table_view_params();
         <div class="insight-box" style="background: rgba(255, 215, 0, 0.1); border-left: 3px solid <?php echo $blockInfo['color']; ?>; margin-top: 20px; padding: 15px; border-radius: 5px;">
             <h4>💡 Key Insight</h4>
             <p>
-                The gap between 4th place (last Champions League spot) and 5th place averages <strong>8-12 points</strong>
-                per season. This represents the massive financial and prestige difference between Block 1 and Block 2.
-                Teams on 70+ points by season end are virtually guaranteed Champions League football.
+                In the Championship, automatic promotion typically requires <strong>85+ points</strong>. Champions often
+                reach <strong>95-106 points</strong>. Teams that secure the top 2 by Christmas maintain their position
+                approximately <strong>70% of the time</strong>. The gap between 2nd and 3rd averages
+                <strong>5-10 points</strong> at season end, making the auto-promotion race decisive.
             </p>
         </div>
     </div>
