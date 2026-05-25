@@ -1,11 +1,10 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 /**
  * Block 5: Relegation Zone (Positions 18-20)
  * The drop zone - heading to the Championship
  */
+
+include_once __DIR__ . '/../../../includes/blocks-functions.php';
 
 $blockNumber = 5;
 $blockInfo = [

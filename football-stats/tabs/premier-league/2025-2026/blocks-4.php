@@ -4,6 +4,8 @@
  * Danger zone - fighting for survival
  */
 
+include_once __DIR__ . '/../../../includes/blocks-functions.php';
+
 $blockNumber = 4;
 $blockInfo = [
     'title' => 'Relegation Battle',

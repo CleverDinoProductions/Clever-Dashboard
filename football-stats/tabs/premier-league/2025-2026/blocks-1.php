@@ -4,6 +4,8 @@
  * Champions League qualification zone
  */
 
+include_once __DIR__ . '/../../../includes/blocks-functions.php';
+
 $blockNumber = 1;
 $blockInfo = [
     'title' => 'Title Contenders',

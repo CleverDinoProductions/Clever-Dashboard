@@ -4,6 +4,8 @@
  * Safe from relegation, no European pressure
  */
 
+include_once __DIR__ . '/../../../includes/blocks-functions.php';
+
 $blockNumber = 3;
 $blockInfo = [
     'title' => 'Mid-Table Security',

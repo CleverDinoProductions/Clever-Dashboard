@@ -4,6 +4,8 @@
  * Europa League & Conference League qualification zone
  */
 
+include_once __DIR__ . '/../../../includes/blocks-functions.php';
+
 $blockNumber = 2;
 $blockInfo = [
     'title' => 'Playoff Contenders',
