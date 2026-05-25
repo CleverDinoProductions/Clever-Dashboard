@@ -25,31 +25,41 @@ $playoffMatches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
 
 // --- Group matches by normalised team pair ---
+// Cancelled/postponed fixtures (e.g. rearranged legs) are flagged but kept for display
 $teamPairs = [];
 foreach ($playoffMatches as $m) {
     $teams = [$m['home_team'], $m['away_team']];
     sort($teams);
     $key = $teams[0] . '|||' . $teams[1];
     if (!isset($teamPairs[$key])) {
-        $teamPairs[$key] = ['team_a' => $teams[0], 'team_b' => $teams[1], 'legs' => []];
+        $teamPairs[$key] = ['team_a' => $teams[0], 'team_b' => $teams[1], 'legs' => [], 'active_legs' => []];
     }
     $teamPairs[$key]['legs'][] = $m;
+    // Active legs exclude cancelled/postponed entries
+    $s = strtolower(trim($m['status'] ?? ''));
+    if ($s !== 'postponed' && $s !== 'cancelled') {
+        $teamPairs[$key]['active_legs'][] = $m;
+    }
 }
 
 foreach ($teamPairs as &$pair) {
     usort($pair['legs'], fn($a, $b) => strcmp($a['match_date'], $b['match_date']));
+    usort($pair['active_legs'], fn($a, $b) => strcmp($a['match_date'], $b['match_date']));
 }
 unset($pair);
 
-// Sort pairs by their first leg date
-uasort($teamPairs, fn($a, $b) => strcmp($a['legs'][0]['match_date'], $b['legs'][0]['match_date']));
+// Remove pairs that have no active legs at all (fully cancelled with no replacement yet)
+$teamPairs = array_filter($teamPairs, fn($p) => count($p['active_legs']) > 0);
+
+// Sort pairs by first active leg date
+uasort($teamPairs, fn($a, $b) => strcmp($a['active_legs'][0]['match_date'], $b['active_legs'][0]['match_date']));
 $pairsArr = array_values($teamPairs);
 
-// Pairs with 2 legs = semi-finals; pair with 1 leg = final
+// Pairs with 2+ active legs = semi-finals; pair with 1 active leg = final
 $semiFinals = [];
 $finalPair = null;
 foreach ($pairsArr as $pair) {
-    if (count($pair['legs']) >= 2) {
+    if (count($pair['active_legs']) >= 2) {
         $semiFinals[] = $pair;
     } else {
         $finalPair = $pair;
@@ -64,7 +74,7 @@ function po_score($m) {
 
 function po_aggregate($pair) {
     $ag = ['team_a' => 0, 'team_b' => 0, 'legs_played' => 0];
-    foreach ($pair['legs'] as $leg) {
+    foreach ($pair['active_legs'] as $leg) {
         $sc = po_score($leg);
         if ($sc === null) continue;
         $ag['legs_played']++;
@@ -206,7 +216,7 @@ foreach ($semiFinals as $sf) {
                 <div class="po-sf-label">Semi-Final <?= $sfIdx + 1 ?></div>
 
                 <?php foreach ([0, 1] as $legNum):
-                    $leg = $sf['legs'][$legNum] ?? null;
+                    $leg = $sf['active_legs'][$legNum] ?? null;
                     $sc = $leg ? po_score($leg) : null;
                     $played = $sc !== null;
                     if ($played) {
@@ -260,6 +270,7 @@ foreach ($semiFinals as $sf) {
                 $agg = po_aggregate($sf);
                 $aWinner = $agg['winner'] === 'a';
                 $bWinner = $agg['winner'] === 'b';
+                $totalActiveLegs = count($sf['active_legs']);
             ?>
 
             <?php if ($sfIdx > 0): ?>
@@ -270,8 +281,8 @@ foreach ($semiFinals as $sf) {
                 <div class="po-sf-label">Aggregate</div>
                 <div class="po-match agg-card" style="margin:auto 0;">
                     <div class="po-match-header">
-                        <span>Over 2 Legs</span>
-                        <span><?= $agg['legs_played'] ?>/2 played</span>
+                        <span>Over <?= $totalActiveLegs ?> Leg<?= $totalActiveLegs !== 1 ? 's' : '' ?></span>
+                        <span><?= $agg['legs_played'] ?>/<?= $totalActiveLegs ?> played</span>
                     </div>
                     <div class="po-team <?= $aWinner ? 'winner' : '' ?>">
                         <span><?= htmlspecialchars($sf['team_a']) ?></span>
@@ -283,7 +294,7 @@ foreach ($semiFinals as $sf) {
                     </div>
                     <?php if ($agg['winner'] !== null): ?>
                     <div class="po-pens">✅ <?= htmlspecialchars($agg['winner'] === 'a' ? $sf['team_a'] : $sf['team_b']) ?> advance</div>
-                    <?php elseif ($agg['legs_played'] === 2): ?>
+                    <?php elseif ($agg['legs_played'] >= $totalActiveLegs && $totalActiveLegs >= 2): ?>
                     <div class="po-pens">⚖️ Tied — ET / Pens may apply</div>
                     <?php endif; ?>
                 </div>
@@ -304,7 +315,7 @@ foreach ($semiFinals as $sf) {
 
         <!-- Column 3: Final -->
         <?php if ($finalPair !== null):
-            $fLeg = $finalPair['legs'][0];
+            $fLeg = $finalPair['active_legs'][0];
             $fSc = po_score($fLeg);
             $fPlayed = $fSc !== null;
             $fHasPens = isset($fLeg['home_pens']) && is_numeric($fLeg['home_pens']) && is_numeric($fLeg['away_pens']);
@@ -362,7 +373,7 @@ foreach ($semiFinals as $sf) {
     <?php elseif ($finalPair !== null): ?>
     <!-- Only a final, no SF data (e.g. historical data stored differently) -->
     <?php
-        $fLeg = $finalPair['legs'][0];
+        $fLeg = $finalPair['active_legs'][0];
         $fSc = po_score($fLeg);
         $fPlayed = $fSc !== null;
         $fHasPens = isset($fLeg['home_pens']) && is_numeric($fLeg['home_pens']) && is_numeric($fLeg['away_pens']);

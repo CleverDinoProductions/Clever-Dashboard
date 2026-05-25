@@ -24,7 +24,7 @@ $tables = [
     "league_table_L1" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_L2" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_NL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
-    "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, home_pens INTEGER, away_pens INTEGER, source TEXT",
+    "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, home_pens INTEGER, away_pens INTEGER, status TEXT, source TEXT",
     "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
     "league_table_snapshots_by_date" => "competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
@@ -34,9 +34,9 @@ foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
 }
 
-// Add penalty columns to existing matches tables (no-op if already present)
-foreach (['home_pens', 'away_pens'] as $col) {
-    try { $db->exec("ALTER TABLE matches ADD COLUMN $col INTEGER"); } catch (Exception $e) {}
+// Add missing columns to existing matches tables (no-op if already present)
+foreach (['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT'] as $colDef) {
+    try { $db->exec("ALTER TABLE matches ADD COLUMN $colDef"); } catch (Exception $e) {}
 }
 
 // --- 2. Core League Processing ---
@@ -107,9 +107,9 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $db->exec("DELETE FROM matches WHERE competition_code = '$code' AND season_label = '$season'");
         $db->exec("DELETE FROM league_table_snapshots WHERE competition_code = '$code' AND season_label = '$season'");
 
-        $m_ins = $db->prepare("INSERT INTO matches (competition_code, season_label, matchweek, match_date, home_team, away_team, home_goals, away_goals, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        
-        $mw_buckets = []; $running_stats = []; 
+        $m_ins = $db->prepare("INSERT INTO matches (competition_code, season_label, matchweek, match_date, home_team, away_team, home_goals, away_goals, status, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        $mw_buckets = []; $running_stats = [];
 
         foreach ($fixtures['events'] as $e) {
             // New Badge Injection Point: Grabbing badges directly from the event payload
@@ -123,10 +123,25 @@ function sync_league($db, $BASE_URL, $code, $id) {
             $hg = ($e['intHomeScore'] !== null) ? (int)$e['intHomeScore'] : null;
             $ag = ($e['intAwayScore'] !== null) ? (int)$e['intAwayScore'] : null;
 
+            // Determine match status from TheSportsDB fields
+            $apiStatus = strtolower(trim($e['strStatus'] ?? ''));
+            if (!empty($e['strPostponed']) && strtolower($e['strPostponed']) === 'yes') {
+                $matchStatus = 'postponed';
+            } elseif (str_contains($apiStatus, 'postponed')) {
+                $matchStatus = 'postponed';
+            } elseif (str_contains($apiStatus, 'cancel')) {
+                $matchStatus = 'cancelled';
+            } elseif ($hg !== null && $ag !== null) {
+                $matchStatus = 'played';
+            } else {
+                $matchStatus = 'scheduled';
+            }
+
             $m_ins->bindValue(1, $code); $m_ins->bindValue(2, $season); $m_ins->bindValue(3, $mw);
             $m_ins->bindValue(4, $e['dateEvent']); $m_ins->bindValue(5, $e['strHomeTeam']);
             $m_ins->bindValue(6, $e['strAwayTeam']); $m_ins->bindValue(7, $hg);
-            $m_ins->bindValue(8, $ag); $m_ins->bindValue(9, 'tsdb_v2_optimized');
+            $m_ins->bindValue(8, $ag); $m_ins->bindValue(9, $matchStatus);
+            $m_ins->bindValue(10, 'tsdb_v2_optimized');
             $m_ins->execute();
 
             if ($hg !== null && $ag !== null) {
