@@ -56,9 +56,13 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
     // STEP B: Update Live View
     $live_data = json_decode(@file_get_contents("{$BASE_URL}lookuptable.php?l=$id"), true);
-    $current_season = "";
+    // Derive current season from date so playoff-era fetches aren't skipped if the live
+    // table has already rolled over to next season (TheSportsDB does this at season end).
+    $cm = (int)date('n'); $cy = (int)date('Y');
+    $date_based_season = $cm >= 7 ? "$cy-" . ($cy + 1) : ($cy - 1) . "-$cy";
+    $current_season = $date_based_season;
     if ($live_data && isset($live_data['table'])) {
-        $current_season = $live_data['table'][0]['strSeason'] ?? '';
+        $current_season = $live_data['table'][0]['strSeason'] ?? $date_based_season;
         $current_mw = max(array_column($live_data['table'], 'intPlayed'));
         $table_name = "league_table_$code";
 
@@ -88,12 +92,16 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $season = $s_obj['strSeason'];
         if ((int)substr($season, 0, 4) < 1987) continue;
 
-        // Optimization: Only skip if badges exist AND it's not the current season
+        // Optimization: Only skip if badges exist AND it's not the current season.
+        // Always re-fetch both the API-reported current season AND the date-inferred one
+        // so that end-of-season playoff results are picked up even when the live table
+        // has rolled over.
         $check = $db->prepare("SELECT team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? LIMIT 1");
         $check->bindValue(1, $code); $check->bindValue(2, $season);
         $res = $check->execute()->fetchArray(SQLITE3_ASSOC);
 
-        if ($season !== $current_season && $res !== false && !empty($res['team_crest'])) {
+        $is_current = ($season === $current_season || $season === $date_based_season);
+        if (!$is_current && $res !== false && !empty($res['team_crest'])) {
             echo "  -> Season $season: Cached. Skipping.\n";
             continue;
         }

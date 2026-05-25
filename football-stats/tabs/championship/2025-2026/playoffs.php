@@ -26,6 +26,7 @@ $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
 
 // --- Group matches by normalised team pair ---
 // Cancelled/postponed fixtures (e.g. rearranged legs) are flagged but kept for display
+$today = date('Y-m-d');
 $teamPairs = [];
 foreach ($playoffMatches as $m) {
     $teams = [$m['home_team'], $m['away_team']];
@@ -35,9 +36,11 @@ foreach ($playoffMatches as $m) {
         $teamPairs[$key] = ['team_a' => $teams[0], 'team_b' => $teams[1], 'legs' => [], 'active_legs' => []];
     }
     $teamPairs[$key]['legs'][] = $m;
-    // Active legs exclude cancelled/postponed entries
+    // Active legs exclude: cancelled/postponed AND stale "scheduled" entries whose date
+    // has already passed (these are replaced fixtures that the source hasn't cleaned up yet).
     $s = strtolower(trim($m['status'] ?? ''));
-    if ($s !== 'postponed' && $s !== 'cancelled') {
+    $is_stale = ($s === 'scheduled' && !empty($m['match_date']) && $m['match_date'] < $today);
+    if ($s !== 'postponed' && $s !== 'cancelled' && !$is_stale) {
         $teamPairs[$key]['active_legs'][] = $m;
     }
 }
@@ -55,15 +58,28 @@ $teamPairs = array_filter($teamPairs, fn($p) => count($p['active_legs']) > 0);
 uasort($teamPairs, fn($a, $b) => strcmp($a['active_legs'][0]['match_date'], $b['active_legs'][0]['match_date']));
 $pairsArr = array_values($teamPairs);
 
-// Pairs with 2+ active legs = semi-finals; pair with 1 active leg = final
+// Pairs with 2+ active legs = semi-finals.
+// Among 1-leg pairs the LATEST by date is the final; any earlier orphans (e.g. a semi
+// whose second leg hasn't arrived in the source yet) are appended to the semi-final list.
 $semiFinals = [];
-$finalPair = null;
+$finalPair  = null;
+$oneLegPairs = [];
 foreach ($pairsArr as $pair) {
     if (count($pair['active_legs']) >= 2) {
         $semiFinals[] = $pair;
     } else {
-        $finalPair = $pair;
+        $oneLegPairs[] = $pair;
     }
+}
+if (!empty($oneLegPairs)) {
+    // Sort descending by last active leg date so the true final (latest match) floats first
+    usort($oneLegPairs, fn($a, $b) => strcmp(
+        end($b['active_legs'])['match_date'],
+        end($a['active_legs'])['match_date']
+    ));
+    $finalPair   = array_shift($oneLegPairs);   // latest = the final
+    $semiFinals  = array_merge($semiFinals, $oneLegPairs); // earlier orphans = semi legs
+    usort($semiFinals, fn($a, $b) => strcmp($a['active_legs'][0]['match_date'], $b['active_legs'][0]['match_date']));
 }
 
 // --- Helpers ---
