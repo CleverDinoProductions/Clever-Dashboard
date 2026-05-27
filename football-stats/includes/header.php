@@ -198,8 +198,19 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
         <?php if ($currentMainTab !== 'world-cup'): ?>
         <?php $tableViewParams = football_stats_get_current_table_view_params(); ?>
         <nav class="pill-nav tertiary-pills">
+            <?php
+            $trackerTabKeys = ['leeds', 'leeds-2', 'leeds-3', 'team-tracker', 'team-tracker-2', 'team-tracker-3'];
+            $trackerTeamParam = (isset($_GET['tracker_team']) && $_GET['tracker_team'] !== '')
+                ? ['tracker_team' => $_GET['tracker_team']]
+                : [];
+            ?>
             <?php foreach ($seasonLeagueConfigs[$currentMainTab][$currentLeague]['tabs'] as $tabKey => $tabConfig): ?>
-                <?php $extraParams = football_stats_tab_supports_table_view($tabKey) ? $tableViewParams : []; ?>
+                <?php
+                $extraParams = football_stats_tab_supports_table_view($tabKey) ? $tableViewParams : [];
+                if (in_array($tabKey, $trackerTabKeys, true)) {
+                    $extraParams = array_merge($extraParams, $trackerTeamParam);
+                }
+                ?>
                 <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, $tabKey, $extraParams), ENT_QUOTES, 'UTF-8'); ?>"
                    class="pill-tab <?php echo ($currentSubTab === $tabKey) ? 'active' : ''; ?>">
                     <?php echo $tabConfig['icon']; ?> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
