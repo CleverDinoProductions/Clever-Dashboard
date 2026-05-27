@@ -146,7 +146,7 @@ if (!function_exists('football_stats_get_tracker_team')) {
 if (!function_exists('football_stats_render_team_selector')) {
     function football_stats_render_team_selector($standings, $selectedTeamName) {
         $baseParams = [];
-        foreach (['tab', 'league', 'subtab', 'table_view', 'snapshot_date'] as $key) {
+        foreach (['tab', 'league', 'subtab', 'table_view', 'snapshot_season', 'snapshot_date', 'matchweek', 'calc_mode'] as $key) {
             if (isset($_GET[$key]) && $_GET[$key] !== '') {
                 $baseParams[$key] = $_GET[$key];
             }
