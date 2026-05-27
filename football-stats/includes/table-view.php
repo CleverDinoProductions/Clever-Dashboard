@@ -41,6 +41,7 @@ if (!function_exists('football_stats_tab_supports_table_view')) {
                 'table', 'table-2', 'blocks-overview', 'blocks-dynamic',
                 'blocks-1', 'blocks-2', 'blocks-3', 'blocks-4', 'blocks-5',
                 'relegation', 'relegation-2', 'leeds', 'leeds-2', 'leeds-3',
+                'team-tracker', 'team-tracker-2', 'team-tracker-3',
                 'simulation',
             ],
             true

@@ -1,23 +1,22 @@
 <?php
-
-// LEEDS UNITED - COMPREHENSIVE SURVIVAL TRACKER
-// Includes: Position, Points, Dual Halfway Targets, Form, Fixtures, Stats
+// TEAM TRACKER DASHBOARD (Championship) - Data queries
+require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 
 $tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
-$leeds = null;
-foreach ($standings as $teamRow) {
-    if ($teamRow['team_name'] === 'Leeds United' || stripos($teamRow['team_name'], 'Leeds') !== false) {
-        $leeds = $teamRow;
-        break;
-    }
-}
 
-if (!$leeds) {
-    echo "<div class='panel'><h2>Leeds United data not found</h2></div>";
+$team = football_stats_get_tracker_team($standings, 'Leeds United');
+
+if (!$team) {
+    echo "<div class='panel'><h2>No team data found</h2></div>";
     return;
 }
+
+$teamName      = $team['team_name'];
+$teamColors    = football_stats_get_team_colors($teamName);
+$teamPrimary   = $teamColors['primary'];
+$teamSecondary = $teamColors['secondary'];
 
 // Halfway calculations
 $halfway_point = 23;
@@ -25,8 +24,8 @@ $target_100pct = 20; // Ideal target
 $target_75pct = 15;  // Minimum acceptable (75% rule)
 $target_50pct = 10;  // Critical zone
 
-$games_played = $leeds['played'];
-$current_points = $leeds['points'];
+$games_played = $team['played'];
+$current_points = $team['points'];
 $games_to_halfway = max(0, $halfway_point - $games_played);
 
 // Current PPG
@@ -138,20 +137,15 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 ?>
 
 <!-- HERO SECTION -->
-<div class="panel" style="background: linear-gradient(135deg, #1D428A, #FFCD00); border: 3px solid #FFFFFF;">
+<div class="panel" style="background: linear-gradient(135deg, <?= $teamPrimary ?>, <?= $teamSecondary ?>); border: 3px solid #FFFFFF;">
     <div style="text-align: center;">
-        <h1 style="color: #FFFFFF; font-size: 64px; margin: 0;">
-            🤍💛💙
-        </h1>
         <h1 style="color: #FFFFFF; font-size: 48px; margin: 10px 0;">
-            LEEDS UNITED
+            ⚽ <?= htmlspecialchars($teamName) ?>
         </h1>
-        <h2 style="color: #1D428A; font-size: 32px; margin: 10px 0;">
-            Premier League 2025/26
+        <h2 style="color: #FFFFFF; font-size: 24px; margin: 10px 0; opacity: 0.85;">
+            Championship 2025/26 · Team Dashboard
         </h2>
-        <p style="color: rgba(255,255,255,0.9); font-size: 18px; margin-top: 15px;">
-            Marching On Together - Season Survival Tracker
-        </p>
+        <?php football_stats_render_team_selector($standings, $teamName); ?>
         <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'leeds-2'); ?>
     </div>
 </div>
@@ -161,10 +155,10 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">CURRENT POSITION</h3>
         <div style="font-size: 64px; font-weight: bold; color: <?php 
-            echo $leeds['position'] <= 10 ? '#43b581' : 
-                ($leeds['position'] <= 17 ? '#faa61a' : '#f04747'); 
+            echo $team['position'] <= 10 ? '#43b581' : 
+                ($team['position'] <= 17 ? '#faa61a' : '#f04747'); 
         ?>;">
-            <?= $leeds['position'] ?>
+            <?= $team['position'] ?>
         </div>
         <p style="color: #dcddde; font-size: 16px; margin: 10px 0 0 0;">
             out of 20 teams
@@ -173,7 +167,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">CURRENT POINTS</h3>
-        <div style="font-size: 64px; font-weight: bold; color: #FFCD00;">
+        <div style="font-size: 64px; font-weight: bold; color: <?= $teamSecondary ?>;">
             <?= $current_points ?>
         </div>
         <p style="color: #dcddde; font-size: 16px; margin: 10px 0 0 0;">
@@ -209,17 +203,17 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 </div>
 
 <!-- DUAL HALFWAY TARGETS - THE STAR FEATURE! -->
-<div class="panel" style="background: linear-gradient(135deg, #1D428A, #2e3136); border: 3px solid #FFCD00;">
+<div class="panel" style="background: linear-gradient(135deg, <?= $teamPrimary ?>, #2e3136); border: 3px solid <?= $teamSecondary ?>;">
     <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="color: #FFFFFF; font-size: 36px; margin: 0;">
             🎯 HALFWAY POINT TARGETS
         </h2>
         <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-top: 10px;">
-            Game <?= $halfway_point ?> is the season's halfway point - here's what Leeds needs
+            Game <?= $halfway_point ?> is the season's halfway point - here's what <?= htmlspecialchars($teamName) ?> needs
         </p>
         <?php if ($games_to_halfway > 0): ?>
             <div style="background: rgba(255,205,0,0.2); padding: 10px; border-radius: 6px; margin-top: 15px; display: inline-block;">
-                <span style="color: #FFCD00; font-weight: bold; font-size: 18px;">
+                <span style="color: <?= $teamSecondary ?>; font-weight: bold; font-size: 18px;">
                     ⏰ <?= $games_to_halfway ?> game<?= $games_to_halfway > 1 ? 's' : '' ?> remaining to halfway!
                 </span>
             </div>
@@ -238,7 +232,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         <!-- 75% RULE (MINIMUM SURVIVAL TARGET) -->
         <div style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; border: 3px solid <?= $status_75_color ?>;">
             <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="color: #FFCD00; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
+                <h3 style="color: <?= $teamSecondary ?>; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
                     MINIMUM TARGET
                 </h3>
                 <h2 style="color: white; font-size: 32px; margin: 0;">
@@ -322,7 +316,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         <!-- 100% RULE (IDEAL TARGET) -->
         <div style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; border: 3px solid <?= $status_100_color ?>;">
             <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="color: #FFCD00; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
+                <h3 style="color: <?= $teamSecondary ?>; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
                     IDEAL TARGET
                 </h3>
                 <h2 style="color: white; font-size: 32px; margin: 0;">
@@ -405,13 +399,13 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     </div>
     
     <!-- COMPARISON FOOTER -->
-    <div style="margin-top: 25px; padding: 20px; background: rgba(255,205,0,0.1); border-radius: 8px; border: 2px solid #FFCD00;">
-        <h3 style="color: #FFCD00; margin: 0 0 15px 0; text-align: center;">
-            📊 What This Means For Leeds
+    <div style="margin-top: 25px; padding: 20px; background: rgba(255,205,0,0.1); border-radius: 8px; border: 2px solid <?= $teamSecondary ?>;">
+        <h3 style="color: <?= $teamSecondary ?>; margin: 0 0 15px 0; text-align: center;">
+            📊 What This Means For <?= htmlspecialchars($teamName) ?>
         </h3>
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
             <div>
-                <h4 style="color: white; margin: 0 0 8px 0; font-size: 14px;">✅ If Leeds Hits 75% (15 pts):</h4>
+                <h4 style="color: white; margin: 0 0 8px 0; font-size: 14px;">✅ Hits 75% (15 pts):</h4>
                 <ul style="color: rgba(255,255,255,0.9); font-size: 13px; line-height: 1.8; margin: 0; padding-left: 20px;">
                     <li>85-90% chance of survival</li>
                     <li>Need ~23 more points in second half</li>
@@ -420,7 +414,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                 </ul>
             </div>
             <div>
-                <h4 style="color: white; margin: 0 0 8px 0; font-size: 14px;">🏆 If Leeds Hits 100% (20 pts):</h4>
+                <h4 style="color: white; margin: 0 0 8px 0; font-size: 14px;">🏆 Hits 100% (20 pts):</h4>
                 <ul style="color: rgba(255,255,255,0.9); font-size: 13px; line-height: 1.8; margin: 0; padding-left: 20px;">
                     <li>95%+ chance of survival</li>
                     <li>Need ~18 more points in second half</li>
@@ -434,7 +428,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- FULL SEASON PROJECTION -->
 <div class="panel">
-    <h2 style="color: #FFCD00;">📈 Full Season Projection</h2>
+    <h2 style="color: <?= $teamSecondary ?>;">📈 Full Season Projection</h2>
     <p style="color: #888; font-size: 13px; margin-bottom: 20px;">
         Based on current form (<?= number_format($ppg, 2) ?> PPG)
     </p>
@@ -473,19 +467,19 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <!-- Projection context -->
     <div style="margin-top: 20px; padding: 15px; background: #40444b; border-radius: 8px; border-left: 4px solid #5865F2;">
-        <h4 style="color: #FFCD00; margin: 0 0 10px 0;">💡 Context</h4>
+        <h4 style="color: <?= $teamSecondary ?>; margin: 0 0 10px 0;">💡 Context</h4>
         <ul style="color: #dcddde; line-height: 2; margin: 0; padding-left: 20px;">
             <li><strong style="color: #43b581;">38 points</strong> is historically the "safe" threshold (80-85% survival)</li>
             <li><strong style="color: #faa61a;">35-37 points</strong> is the danger zone (50-70% survival)</li>
             <li><strong style="color: #f04747;">Below 35 points</strong> typically leads to relegation</li>
-            <li>Leeds needs <strong style="color: #FFCD00;"><?= number_format($ppg_needed_safety, 2) ?> PPG</strong> in remaining games to hit 38</li>
+            <li>Leeds needs <strong style="color: <?= $teamSecondary ?>;"><?= number_format($ppg_needed_safety, 2) ?> PPG</strong> in remaining games to hit 38</li>
         </ul>
     </div>
 </div>
 
 <!-- DETAILED STATS -->
 <div class="panel">
-    <h2 style="color: #FFCD00;">📊 Season Statistics</h2>
+    <h2 style="color: <?= $teamSecondary ?>;">📊 Season Statistics</h2>
     
     <table>
         <tr>
@@ -496,53 +490,53 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         </tr>
         <tr>
             <td>Games Played</td>
-            <td><strong><?= $leeds['played'] ?></strong></td>
+            <td><strong><?= $team['played'] ?></strong></td>
             <td>-</td>
             <td>-</td>
         </tr>
         <tr>
             <td>Wins</td>
-            <td><strong><?= $leeds['won'] ?></strong></td>
+            <td><strong><?= $team['won'] ?></strong></td>
             <td>~8</td>
-            <td><?= $leeds['won'] >= 8 ? '✅' : '⚠️' ?></td>
+            <td><?= $team['won'] >= 8 ? '✅' : '⚠️' ?></td>
         </tr>
         <tr>
             <td>Draws</td>
-            <td><strong><?= $leeds['drawn'] ?></strong></td>
+            <td><strong><?= $team['drawn'] ?></strong></td>
             <td>~5</td>
             <td>-</td>
         </tr>
         <tr>
             <td>Losses</td>
-            <td><strong><?= $leeds['lost'] ?></strong></td>
+            <td><strong><?= $team['lost'] ?></strong></td>
             <td>~5</td>
-            <td><?= $leeds['lost'] <= 5 ? '✅' : '⚠️' ?></td>
+            <td><?= $team['lost'] <= 5 ? '✅' : '⚠️' ?></td>
         </tr>
         <tr>
             <td>Goals For</td>
-            <td><strong><?= $leeds['gf'] ?></strong></td>
+            <td><strong><?= $team['gf'] ?></strong></td>
             <td>~25</td>
-            <td><?= $leeds['gf'] >= 25 ? '✅' : ($leeds['gf'] >= 20 ? '⚠️' : '🚨') ?></td>
+            <td><?= $team['gf'] >= 25 ? '✅' : ($team['gf'] >= 20 ? '⚠️' : '🚨') ?></td>
         </tr>
         <tr>
             <td>Goals Against</td>
-            <td><strong><?= $leeds['ga'] ?></strong></td>
+            <td><strong><?= $team['ga'] ?></strong></td>
             <td>~25</td>
-            <td><?= $leeds['ga'] <= 25 ? '✅' : ($leeds['ga'] <= 30 ? '⚠️' : '🚨') ?></td>
+            <td><?= $team['ga'] <= 25 ? '✅' : ($team['ga'] <= 30 ? '⚠️' : '🚨') ?></td>
         </tr>
         <tr>
             <td>Goal Difference</td>
-            <td style="color: <?= $leeds['gd'] >= 0 ? '#43b581' : '#f04747' ?>; font-weight: bold;">
-                <?= $leeds['gd'] > 0 ? '+' : '' ?><?= $leeds['gd'] ?>
+            <td style="color: <?= $team['gd'] >= 0 ? '#43b581' : '#f04747' ?>; font-weight: bold;">
+                <?= $team['gd'] > 0 ? '+' : '' ?><?= $team['gd'] ?>
             </td>
             <td>~0</td>
-            <td><?= $leeds['gd'] >= 0 ? '✅' : '🚨' ?></td>
+            <td><?= $team['gd'] >= 0 ? '✅' : '🚨' ?></td>
         </tr>
         <tr style="background: rgba(255, 205, 0, 0.1);">
             <td><strong>Points</strong></td>
-            <td><strong style="color: #FFCD00; font-size: 18px;"><?= $leeds['points'] ?></strong></td>
+            <td><strong style="color: <?= $teamSecondary ?>; font-size: 18px;"><?= $team['points'] ?></strong></td>
             <td>~20</td>
-            <td><?= $leeds['points'] >= 20 ? '✅' : ($leeds['points'] >= 15 ? '⚠️' : '🚨') ?></td>
+            <td><?= $team['points'] >= 20 ? '✅' : ($team['points'] >= 15 ? '⚠️' : '🚨') ?></td>
         </tr>
         <tr>
             <td>Points Per Game</td>
@@ -555,11 +549,11 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- LEAGUE CONTEXT -->
 <div class="panel">
-    <h2 style="color: #FFCD00;">📍 Leeds in the League Table</h2>
+    <h2 style="color: <?= $teamSecondary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">
-        Teams around Leeds in the standings
+        Teams around <?= htmlspecialchars($teamName) ?> in the standings
     </p>
-    
+
     <table>
         <tr>
             <th>Pos</th>
@@ -570,42 +564,43 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             <th>Gap</th>
         </tr>
         <?php
-        // Show teams from 5 positions above to 5 below Leeds
-        $start_pos = max(1, $leeds['position'] - 5);
-        $end_pos = min(20, $leeds['position'] + 5);
-        
-        foreach ($standings as $team):
-            if ($team['position'] < $start_pos || $team['position'] > $end_pos) continue;
-            
-            $is_leeds = $team['position'] == $leeds['position'];
-            $is_relegation = $team['position'] >= 18;
-            
+        $selected_pos = (int)$team['position'];
+        $selected_pts = (int)$team['points'];
+        $start_pos = max(1, $selected_pos - 5);
+        $end_pos = min(24, $selected_pos + 5);
+
+        foreach ($standings as $tableRow):
+            if ($tableRow['position'] < $start_pos || $tableRow['position'] > $end_pos) continue;
+
+            $is_selected_row = ($tableRow['team_name'] === $teamName);
+            $is_relegation   = ($tableRow['position'] >= 18);
+
             $row_style = '';
-            if ($is_leeds) {
-                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFCD00;';
+            if ($is_selected_row) {
+                $row_style = 'background: rgba(0,0,0,0.35); border-left: 4px solid ' . $teamSecondary . ';';
             } elseif ($is_relegation) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             }
-            
-            $gap = $team['points'] - $leeds['points'];
+
+            $row_gap = (int)$tableRow['points'] - $selected_pts;
         ?>
         <tr style="<?= $row_style ?>">
-            <td><strong><?= $team['position'] ?></strong></td>
+            <td><strong><?= $tableRow['position'] ?></strong></td>
             <td>
-                <?php if ($is_leeds): ?>
-                    <strong style="color: #FFCD00;">🤍💛💙 <?= htmlspecialchars($team['team_name']) ?></strong>
+                <?php if ($is_selected_row): ?>
+                    <strong style="color: <?= $teamSecondary ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
                 <?php else: ?>
-                    <?= htmlspecialchars($team['team_name']) ?>
+                    <?= htmlspecialchars($tableRow['team_name']) ?>
                 <?php endif; ?>
             </td>
-            <td><?= $team['played'] ?></td>
-            <td style="color: <?= $team['gd'] >= 0 ? '#43b581' : '#f04747' ?>;">
-                <?= $team['gd'] > 0 ? '+' : '' ?><?= $team['gd'] ?>
+            <td><?= $tableRow['played'] ?></td>
+            <td style="color: <?= $tableRow['gd'] >= 0 ? '#43b581' : '#f04747' ?>;">
+                <?= $tableRow['gd'] > 0 ? '+' : '' ?><?= $tableRow['gd'] ?>
             </td>
-            <td><strong><?= $team['points'] ?></strong></td>
-            <td style="color: <?= $gap > 0 ? '#f04747' : ($gap < 0 ? '#43b581' : '#888') ?>;">
-                <?php if (!$is_leeds): ?>
-                    <?= $gap > 0 ? '+' : '' ?><?= $gap ?>
+            <td><strong><?= $tableRow['points'] ?></strong></td>
+            <td style="color: <?= $row_gap > 0 ? '#f04747' : ($row_gap < 0 ? '#43b581' : '#888') ?>;">
+                <?php if (!$is_selected_row): ?>
+                    <?= $row_gap > 0 ? '+' : '' ?><?= $row_gap ?>
                 <?php else: ?>
                     -
                 <?php endif; ?>
@@ -616,17 +611,18 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <div style="margin-top: 15px; padding: 15px; background: #40444b; border-radius: 8px;">
         <div style="display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; justify-content: center;">
-            <div><span style="color: #FFCD00;">■</span> Leeds United 🤍💛💙</div>
+            <div><span style="color: <?= $teamSecondary ?>;">■</span> Leeds United 🤍💛💙</div>
+            <div><span style="color: <?= $teamSecondary ?>;">■</span> <?= htmlspecialchars($teamName) ?> ⭐</div>
             <div><span style="color: #f04747;">■</span> Relegation Zone (18th-20th)</div>
         </div>
     </div>
 </div>
 
 <!-- KEY INSIGHTS -->
-<div class="panel" style="background: #2e3136; border-left: 4px solid #FFCD00;">
-    <h3 style="color: #FFCD00;">💡 Key Insights</h3>
+<div class="panel" style="background: #2e3136; border-left: 4px solid <?= $teamSecondary ?>;">
+    <h3 style="color: <?= $teamSecondary ?>;">💡 Key Insights</h3>
     <ul style="color: #dcddde; line-height: 2;">
-        <li><strong>Current Status:</strong> <?= $leeds['position'] ?>th place with <?= $current_points ?> points from <?= $games_played ?> games</li>
+        <li><strong>Current Status:</strong> <?= $team['position'] ?>th place with <?= $current_points ?> points from <?= $games_played ?> games</li>
         <li><strong>Gap to Safety:</strong> <?= $gap_to_relegation > 0 ? '+' : '' ?><?= $gap_to_relegation ?> points clear of 18th place (relegation zone)</li>
         <li><strong>75% Rule:</strong> <?= $status_75_text ?> (<?= round($progress_75pct) ?>% of 15-point target)</li>
         <li><strong>100% Rule:</strong> <?= $status_100_text ?> (<?= round($progress_100pct) ?>% of 20-point target)</li>
@@ -638,12 +634,12 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     </ul>
 </div>
 
-<!-- MARCHING ON TOGETHER -->
-<div class="panel" style="background: linear-gradient(135deg, #1D428A, #FFCD00); text-align: center;">
+<!-- FOOTER BANNER -->
+<div class="panel" style="background: linear-gradient(135deg, <?= $teamPrimary ?>, <?= $teamSecondary ?>); text-align: center;">
     <h2 style="color: white; font-size: 32px; margin: 0;">
-        🤍💛💙 MARCHING ON TOGETHER 🤍💛💙
+        ⚽ <?= htmlspecialchars(strtoupper($teamName)) ?> ⚽
     </h2>
     <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 10px;">
-        We all love Leeds! Keep the faith - survival is in our hands!
+        Keep the faith - survival is in our hands!
     </p>
 </div>

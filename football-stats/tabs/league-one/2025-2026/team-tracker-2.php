@@ -1,12 +1,12 @@
 <?php
-// TEAM TRACKER DASHBOARD (Premier League) - Data queries
+// TEAM TRACKER DASHBOARD (League One) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 
-$tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'L1', 'league_table_L1', $currentMainTab ?? '2025-2026');
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 
-$team = football_stats_get_tracker_team($standings, 'Leeds United');
+$team = football_stats_get_tracker_team($standings);
 
 if (!$team) {
     echo "<div class='panel'><h2>No team data found</h2></div>";
@@ -19,7 +19,7 @@ $teamPrimary   = $teamColors['primary'];
 $teamSecondary = $teamColors['secondary'];
 
 // Halfway calculations
-$halfway_point = 19;
+$halfway_point = 23;
 $target_100pct = 20; // Ideal target
 $target_75pct = 15;  // Minimum acceptable (75% rule)
 $target_50pct = 10;  // Critical zone
@@ -127,12 +127,12 @@ $relegation_team = reset($relegation_zone);
 $gap_to_relegation = $relegation_team ? $current_points - $relegation_team['points'] : 0;
 
 // Full season projection
-$projected_final = round($ppg * 38, 1);
+$projected_final = round($ppg * 46, 1);
 
 // Safety threshold (historical: 38 points usually safe)
-$safety_threshold = 38;
+$safety_threshold = 46;
 $points_to_safety = max(0, $safety_threshold - $current_points);
-$games_remaining_total = 38 - $games_played;
+$games_remaining_total = 46 - $games_played;
 $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_remaining_total : 0;
 ?>
 
@@ -143,10 +143,10 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             ⚽ <?= htmlspecialchars($teamName) ?>
         </h1>
         <h2 style="color: #FFFFFF; font-size: 24px; margin: 10px 0; opacity: 0.85;">
-            Premier League 2025/26 · Team Dashboard
+            League One 2025/26 · Team Dashboard
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds-2'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-one', $currentSubTab ?? 'team-tracker-2'); ?>
     </div>
 </div>
 
@@ -553,7 +553,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">
         Teams around <?= htmlspecialchars($teamName) ?> in the standings
     </p>
-    
+
     <table>
         <tr>
             <th>Pos</th>
@@ -567,7 +567,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         $selected_pos = (int)$team['position'];
         $selected_pts = (int)$team['points'];
         $start_pos = max(1, $selected_pos - 5);
-        $end_pos = min(20, $selected_pos + 5);
+        $end_pos = min(24, $selected_pos + 5);
 
         foreach ($standings as $tableRow):
             if ($tableRow['position'] < $start_pos || $tableRow['position'] > $end_pos) continue;
@@ -611,7 +611,8 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <div style="margin-top: 15px; padding: 15px; background: #40444b; border-radius: 8px;">
         <div style="display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; justify-content: center;">
-            <div><span style="color: <?= $teamSecondary ?>;">■</span> Leeds United </div>
+            <div><span style="color: <?= $teamSecondary ?>;">■</span> Leeds United 🤍💛💙</div>
+            <div><span style="color: <?= $teamSecondary ?>;">■</span> <?= htmlspecialchars($teamName) ?> ⭐</div>
             <div><span style="color: #f04747;">■</span> Relegation Zone (18th-20th)</div>
         </div>
     </div>
@@ -633,12 +634,12 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     </ul>
 </div>
 
-<!-- ⚽ -->
+<!-- FOOTER BANNER -->
 <div class="panel" style="background: linear-gradient(135deg, <?= $teamPrimary ?>, <?= $teamSecondary ?>); text-align: center;">
     <h2 style="color: white; font-size: 32px; margin: 0;">
-         ⚽ 
+        ⚽ <?= htmlspecialchars(strtoupper($teamName)) ?> ⚽
     </h2>
     <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin-top: 10px;">
-        ⚽! Keep the faith - survival is in our hands!
+        Keep the faith - survival is in our hands!
     </p>
 </div>

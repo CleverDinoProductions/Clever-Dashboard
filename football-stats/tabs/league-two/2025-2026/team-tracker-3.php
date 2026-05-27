@@ -1,12 +1,12 @@
 <?php
-// TEAM CLASSIC TRACKER (Championship) - Data queries
+// TEAM CLASSIC TRACKER (League Two) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 
-$tableView = football_stats_get_table_view_combined($db, 'ELC', 'league_table_ELC', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'L2', 'league_table_L2', $currentMainTab ?? '2025-2026');
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 
-$team = football_stats_get_tracker_team($standings, 'Leeds United');
+$team = football_stats_get_tracker_team($standings);
 
 if (!$team) {
     echo '<div class="panel" style="border:2px solid #f04747">';
@@ -86,7 +86,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
             Survival Tracker 2025/26
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'leeds-3'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'team-tracker-3'); ?>
         <div style="background:<?= $statusColor ?>;
                     display:inline-block;
                     padding:15px 40px;
