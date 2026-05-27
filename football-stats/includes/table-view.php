@@ -18,6 +18,11 @@ if (!function_exists('football_stats_build_table_view_url')) {
             $params['subtab'] = $subtab;
         }
 
+        // Carry tracker_team from the current request so snapshot/mode changes don't reset team selection
+        if (isset($_GET['tracker_team']) && $_GET['tracker_team'] !== '' && !array_key_exists('tracker_team', $extraParams)) {
+            $params['tracker_team'] = $_GET['tracker_team'];
+        }
+
         foreach ($extraParams as $key => $value) {
             if ($value === null || $value === '') {
                 continue;
