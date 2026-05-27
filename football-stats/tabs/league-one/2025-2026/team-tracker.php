@@ -481,7 +481,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
         }
         ?>
-        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $ultimate_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $guaranteed_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
 
         <!-- 42-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>

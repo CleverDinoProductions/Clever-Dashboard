@@ -359,6 +359,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
                 echo "🏆 100% Target Hit! Exceptional!";
             } elseif ($halfway_progress_pct >= 50) {
                 echo "⚠️ Need " . $points_to_75pct . " more to hit 75%";
+            } else {
+                echo "⚠️ Need " . $points_to_100pct . " more to hit 100%";
             }
             ?>
         </span>
@@ -407,6 +409,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
                 echo "🏆 Full Season Target Hit! Exceptional!";
             } elseif ($full_season_progress_pct >= 50) {
                 echo "⚠️ Need " . (46 - $team["points"]) . " more to hit safety";
+            } else {
+                echo "⚠️ Need " . (46 - $team["points"]) . " more to hit safety";
             }
             ?>
         </span>
@@ -454,6 +458,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
                 echo "🏆 Extended Target Hit! Exceptional!";
             } elseif ($extended_target_progress_pct >= 50) {
                 echo "⚠️ Need " . (50 - $team["points"]) . " more to hit extended target";
+            } else {
+                echo "⚠️ Need " . (50 - $team["points"]) . " more to hit extended target";
             }
             ?>
         </span>
@@ -481,7 +487,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
         }
         ?>
-        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $ultimate_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $guaranteed_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
 
         <!-- 42-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
@@ -499,6 +505,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             if ($guaranteed_target_progress_pct >= 100) {
                 echo "🏆 Ultimate Target Hit! Exceptional!";
             } elseif ($guaranteed_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (52 - $team["points"]) . " more to hit ultimate target";
+            }  else {
                 echo "⚠️ Need " . (52 - $team["points"]) . " more to hit ultimate target";
             }
             ?>
@@ -546,6 +554,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
                 echo "🏆 Ultimate Target Hit! Exceptional!";
             } elseif ($mathematical_target_progress_pct >= 50) {
                 echo "⚠️ Need " . (57 - $team["points"]) . " more to hit mathematical target"; 
+            } else {
+                echo "⚠️ Need " . (57 - $team["points"]) . " more to hit mathematical target";
             }
             ?>
         </span>
