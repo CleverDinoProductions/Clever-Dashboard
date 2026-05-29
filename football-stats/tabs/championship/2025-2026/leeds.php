@@ -702,8 +702,13 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
                 if ($projected_points >= 38) {
                     echo "✅ On pace for survival! Keep this form!";
                 } else {
-                    $ppg_improvement = round((38 - $projected_points) / $games_remaining, 2);
-                    echo "⚠️ Need to improve PPG by " . $ppg_improvement . " to reach 38 points";
+                    // Check if the season is already over to avoid dividing by zero
+                    if ($games_remaining > 0) {
+                        $ppg_improvement = round((38 - $projected_points) / $games_remaining, 2);
+                        echo "⚠️ Need to improve PPG by " . $ppg_improvement . " to reach 38 points";
+                    } else {
+                        echo "🏁 Season over. Final standings are locked in.";
+                    }
                 }
                 ?>
             </p>
