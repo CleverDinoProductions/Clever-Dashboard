@@ -83,7 +83,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
     <div style="text-align:center">
         <h1 style="color:#FFFFFF;font-size:48px;margin:0"><?= htmlspecialchars($teamName) ?></h1>
         <h2 style="color:<?= $teamSecondary ?>;font-size:32px;margin:10px 0">
-            Survival Tracker 2025/26
+            Survival Tracker
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
         <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds-3'); ?>
