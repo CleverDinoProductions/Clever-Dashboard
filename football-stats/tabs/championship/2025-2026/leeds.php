@@ -53,6 +53,7 @@ $halfway_progress_pct = ($team['points'] / 23) * 100;
 $target_75pct = 17; // 75% of 23
 $target_100pct = 23; // 100% of 23
 $points_to_75pct = max(0, $target_75pct - $team['points']);
+$points_to_100pct = max(0, $target_100pct - $team['points']);
 
 // Projected final points
 $current_ppg = $games_played > 0 ? $team['points'] / $games_played : 0;
@@ -357,8 +358,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             <?php 
             if ($halfway_progress_pct >= 100) {
                 echo "🏆 100% Target Hit! Exceptional!";
-            } elseif ($halfway_progress_pct >= 50) {
-                echo "⚠️ Need " . $points_to_75pct . " more to hit 75%";
+            } elseif ($halfway_progress_pct >= 75) {
+                echo "⚠️ Need " . $points_to_100pct . " more to hit 100%";
             } else {
                 echo "⚠️ Need " . $points_to_75pct . " more to hit 75%";
             }
