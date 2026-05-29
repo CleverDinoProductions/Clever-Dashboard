@@ -358,7 +358,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             <?php 
             if ($halfway_progress_pct >= 100) {
                 echo "🏆 100% Target Hit! Exceptional!";
-            } elseif ($halfway_progress_pct >= 50) {
+            } elseif ($halfway_progress_pct >= 75) {
                 echo "⚠️ Need " . $points_to_100pct . " more to hit 100%";
             } else {
                 echo "⚠️ Need " . $points_to_75pct . " more to hit 75%";
