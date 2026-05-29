@@ -827,22 +827,107 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         <?php endforeach; ?>
     </div>
 
-<!-- What If Scenarios (Full Season based on PPG for points) -->
+<!-- What If Scenarios (Full Season based on PPG for points between 0.0 and 0.9) -->
 <div class="panel" style="background: #2e3136;">
     <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
     <?php
     $season_scenarios = [
+        ['ppg' => 0.9, 'label' => '0.9 PPG (39 pts)'],
+        ['ppg' => 0.8, 'label' => '0.8 PPG (36 pts)'],
+        ['ppg' => 0.7, 'label' => '0.7 PPG (33 pts)'],
+        ['ppg' => 0.6, 'label' => '0.6 PPG (30 pts)'],
+        ['ppg' => 0.5, 'label' => '0.5 PPG (27 pts)'],
+        ['ppg' => 0.4, 'label' => '0.4 PPG (24 pts)'],
+        ['ppg' => 0.3, 'label' => '0.3 PPG (21 pts)'],
+        ['ppg' => 0.2, 'label' => '0.2 PPG (18 pts)'],
+        ['ppg' => 0.1, 'label' => '0.1 PPG (15 pts)'],
+        ['ppg' => 0.0, 'label' => '0.0 PPG (12 pts)']
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($season_scenarios as $scenario): ?>
+            <?php 
+            $scenario_points = $team['points'] * $scenario['ppg'];
+            $scenario_gap = $scenario_points - $safety_target;
+            $team_comparison = $scenario_points - $team['points'];
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($team_comparison); ?> points <?php echo $team_comparison >= 0 ? 'above' : 'below'; ?> <?= htmlspecialchars($teamName) ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- What If Scenarios (Full Season based on PPG for points between 1.0 and 2.0) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
+    <?php
+    $season_scenarios = [
+        ['ppg' => 2.0, 'label' => '2.0 PPG (70 pts)'],
+        ['ppg' => 1.9, 'label' => '1.9 PPG (66 pts)'],
+        ['ppg' => 1.8, 'label' => '1.8 PPG (63 pts)'],
+        ['ppg' => 1.7, 'label' => '1.7 PPG (60 pts)'],
+        ['ppg' => 1.6, 'label' => '1.6 PPG (56 pts)'],
         ['ppg' => 1.5, 'label' => '1.5 PPG (57 pts)'],
         ['ppg' => 1.4, 'label' => '1.4 PPG (53 pts)'],
         ['ppg' => 1.3, 'label' => '1.3 PPG (49 pts)'],
         ['ppg' => 1.2, 'label' => '1.2 PPG (48 pts)'],
         ['ppg' => 1.1, 'label' => '1.1 PPG (44 pts)'],
-        ['ppg' => 1.0, 'label' => '1.0 PPG (38 pts)'],
-        ['ppg' => 0.9, 'label' => '0.9 PPG (34 pts)'],
-        ['ppg' => 0.8, 'label' => '0.8 PPG (30 pts)'],
-        ['ppg' => 0.7, 'label' => '0.75 PPG (29 pts)'],
-        ['ppg' => 0.6, 'label' => '0.6 PPG (24 pts)'],
-        ['ppg' => 0.5, 'label' => '0.5 PPG (19 pts)']
+        ['ppg' => 1.0, 'label' => '1.0 PPG (46 pts)'],
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($season_scenarios as $scenario): ?>
+            <?php 
+            $scenario_points = round($scenario['ppg'] * 38);
+            $scenario_gap = $scenario_points - $safety_target;
+            $team_comparison = $scenario_points - $team['points'];
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($team_comparison); ?> points <?php echo $team_comparison >= 0 ? 'above' : 'below'; ?> <?= htmlspecialchars($teamName) ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- What If Scenarios (Full Season based on PPG for points between 2.0 and 3.0) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
+    <?php
+    $season_scenarios = [
+        ['ppg' => 3.0, 'label' => '3.0 PPG (78 pts)'],
+        ['ppg' => 2.9, 'label' => '2.9 PPG (75 pts)'],
+        ['ppg' => 2.8, 'label' => '2.8 PPG (72 pts)'],
+        ['ppg' => 2.7, 'label' => '2.7 PPG (68 pts)'],
+        ['ppg' => 2.6, 'label' => '2.6 PPG (64 pts)'],
+        ['ppg' => 2.5, 'label' => '2.5 PPG (70 pts)'],
+        ['ppg' => 2.4, 'label' => '2.4 PPG (66 pts)'],
+        ['ppg' => 2.3, 'label' => '2.3 PPG (62 pts)'],
+        ['ppg' => 2.2, 'label' => '2.2 PPG (60 pts)'],
+        ['ppg' => 2.1, 'label' => '2.1 PPG (56 pts)'],
+        ['ppg' => 2.0, 'label' => '2.0 PPG (58 pts)']
     ];
     ?>
     <div style="margin-top: 15px;">
