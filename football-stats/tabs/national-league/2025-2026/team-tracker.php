@@ -198,7 +198,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             </span>
         </div>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'team-tracker'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'team-tracker'); ?>
     </div>
 </div>
 

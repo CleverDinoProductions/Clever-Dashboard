@@ -143,10 +143,10 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             ⚽ <?= htmlspecialchars($teamName) ?>
         </h1>
         <h2 style="color: #FFFFFF; font-size: 24px; margin: 10px 0; opacity: 0.85;">
-            League Two 2025/26 · Team Dashboard
+            National League · Team Dashboard
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-two', $currentSubTab ?? 'team-tracker-2'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'team-tracker-2'); ?>
     </div>
 </div>
 
