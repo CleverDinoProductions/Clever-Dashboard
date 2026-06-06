@@ -137,6 +137,28 @@ if (!function_exists('football_stats_get_team_colors')) {
     }
 }
 
+if (!function_exists('football_stats_get_best_text_color')) {
+    function football_stats_get_best_text_color($primary, $secondary, $bg = '#2e3136') {
+        $lum = function($hex) {
+            $hex = ltrim($hex, '#');
+            if (strlen($hex) === 3) {
+                $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            }
+            $r = hexdec(substr($hex, 0, 2)) / 255;
+            $g = hexdec(substr($hex, 2, 2)) / 255;
+            $b = hexdec(substr($hex, 4, 2)) / 255;
+            $toLinear = function($c) { return $c <= 0.03928 ? $c / 12.92 : pow(($c + 0.055) / 1.055, 2.4); };
+            return 0.2126 * $toLinear($r) + 0.7152 * $toLinear($g) + 0.0722 * $toLinear($b);
+        };
+        $bgL  = $lum($bg) + 0.05;
+        $priL = $lum($primary) + 0.05;
+        $secL = $lum($secondary) + 0.05;
+        $priContrast = max($priL, $bgL) / min($priL, $bgL);
+        $secContrast = max($secL, $bgL) / min($secL, $bgL);
+        return $secContrast >= $priContrast ? $secondary : $primary;
+    }
+}
+
 if (!function_exists('football_stats_get_tracker_team')) {
     function football_stats_get_tracker_team($standings, $defaultTeamName = null) {
         $requestedTeam = isset($_GET['tracker_team']) ? trim($_GET['tracker_team']) : null;

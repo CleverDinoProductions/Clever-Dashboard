@@ -17,6 +17,7 @@ $teamName      = $team['team_name'];
 $teamColors    = football_stats_get_team_colors($teamName);
 $teamPrimary   = $teamColors['primary'];
 $teamSecondary = $teamColors['secondary'];
+$teamTextColor = football_stats_get_best_text_color($teamPrimary, $teamSecondary);
 
 // Halfway calculations
 $halfway_point = 19;
@@ -167,7 +168,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">CURRENT POINTS</h3>
-        <div style="font-size: 64px; font-weight: bold; color: <?= $teamSecondary ?>;">
+        <div style="font-size: 64px; font-weight: bold; color: <?= $teamTextColor ?>;">
             <?= $current_points ?>
         </div>
         <p style="color: #dcddde; font-size: 16px; margin: 10px 0 0 0;">
@@ -213,7 +214,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         </p>
         <?php if ($games_to_halfway > 0): ?>
             <div style="background: rgba(255,205,0,0.2); padding: 10px; border-radius: 6px; margin-top: 15px; display: inline-block;">
-                <span style="color: <?= $teamSecondary ?>; font-weight: bold; font-size: 18px;">
+                <span style="color: <?= $teamTextColor ?>; font-weight: bold; font-size: 18px;">
                     ⏰ <?= $games_to_halfway ?> game<?= $games_to_halfway > 1 ? 's' : '' ?> remaining to halfway!
                 </span>
             </div>
@@ -232,7 +233,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         <!-- 75% RULE (MINIMUM SURVIVAL TARGET) -->
         <div style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; border: 3px solid <?= $status_75_color ?>;">
             <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="color: <?= $teamSecondary ?>; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
+                <h3 style="color: <?= $teamTextColor ?>; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
                     MINIMUM TARGET
                 </h3>
                 <h2 style="color: white; font-size: 32px; margin: 0;">
@@ -316,7 +317,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         <!-- 100% RULE (IDEAL TARGET) -->
         <div style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; border: 3px solid <?= $status_100_color ?>;">
             <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="color: <?= $teamSecondary ?>; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
+                <h3 style="color: <?= $teamTextColor ?>; font-size: 14px; margin: 0 0 5px 0; letter-spacing: 1px;">
                     IDEAL TARGET
                 </h3>
                 <h2 style="color: white; font-size: 32px; margin: 0;">
@@ -400,7 +401,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <!-- COMPARISON FOOTER -->
     <div style="margin-top: 25px; padding: 20px; background: rgba(255,205,0,0.1); border-radius: 8px; border: 2px solid <?= $teamSecondary ?>;">
-        <h3 style="color: <?= $teamSecondary ?>; margin: 0 0 15px 0; text-align: center;">
+        <h3 style="color: <?= $teamTextColor ?>; margin: 0 0 15px 0; text-align: center;">
             📊 What This Means For <?= htmlspecialchars($teamName) ?>
         </h3>
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -428,7 +429,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- FULL SEASON PROJECTION -->
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>;">📈 Full Season Projection</h2>
+    <h2 style="color: <?= $teamTextColor ?>;">📈 Full Season Projection</h2>
     <p style="color: #888; font-size: 13px; margin-bottom: 20px;">
         Based on current form (<?= number_format($ppg, 2) ?> PPG)
     </p>
@@ -467,19 +468,19 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <!-- Projection context -->
     <div style="margin-top: 20px; padding: 15px; background: #40444b; border-radius: 8px; border-left: 4px solid #5865F2;">
-        <h4 style="color: <?= $teamSecondary ?>; margin: 0 0 10px 0;">💡 Context</h4>
+        <h4 style="color: <?= $teamTextColor ?>; margin: 0 0 10px 0;">💡 Context</h4>
         <ul style="color: #dcddde; line-height: 2; margin: 0; padding-left: 20px;">
             <li><strong style="color: #43b581;">38 points</strong> is historically the "safe" threshold (80-85% survival)</li>
             <li><strong style="color: #faa61a;">35-37 points</strong> is the danger zone (50-70% survival)</li>
             <li><strong style="color: #f04747;">Below 35 points</strong> typically leads to relegation</li>
-            <li>Leeds needs <strong style="color: <?= $teamSecondary ?>;"><?= number_format($ppg_needed_safety, 2) ?> PPG</strong> in remaining games to hit 38</li>
+            <li>Leeds needs <strong style="color: <?= $teamTextColor ?>;"><?= number_format($ppg_needed_safety, 2) ?> PPG</strong> in remaining games to hit 38</li>
         </ul>
     </div>
 </div>
 
 <!-- DETAILED STATS -->
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>;">📊 Season Statistics</h2>
+    <h2 style="color: <?= $teamTextColor ?>;">📊 Season Statistics</h2>
     
     <table>
         <tr>
@@ -534,7 +535,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         </tr>
         <tr style="background: rgba(255, 205, 0, 0.1);">
             <td><strong>Points</strong></td>
-            <td><strong style="color: <?= $teamSecondary ?>; font-size: 18px;"><?= $team['points'] ?></strong></td>
+            <td><strong style="color: <?= $teamTextColor ?>; font-size: 18px;"><?= $team['points'] ?></strong></td>
             <td>~20</td>
             <td><?= $team['points'] >= 20 ? '✅' : ($team['points'] >= 15 ? '⚠️' : '🚨') ?></td>
         </tr>
@@ -549,7 +550,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- LEAGUE CONTEXT -->
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
+    <h2 style="color: <?= $teamTextColor ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">
         Teams around <?= htmlspecialchars($teamName) ?> in the standings
     </p>
@@ -591,7 +592,11 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             <td><strong><?= $tableRow['position'] ?></strong></td>
             <td>
                 <?php if ($is_selected_row): ?>
+<<<<<<< HEAD
                     <strong style="color: <?= $teamPrimary ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
+=======
+                    <strong style="color: <?= $teamTextColor ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
+>>>>>>> origin/claude/kind-dijkstra-Z4AgP
                 <?php else: ?>
                     <?= htmlspecialchars($tableRow['team_name']) ?>
                 <?php endif; ?>
@@ -617,7 +622,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     
     <div style="margin-top: 15px; padding: 15px; background: #40444b; border-radius: 8px;">
         <div style="display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; justify-content: center;">
-            <div><span style="color: <?= $teamSecondary ?>;">■</span> Leeds United </div>
+            <div><span style="color: <?= $teamTextColor ?>;">■</span> Leeds United </div>
             <div><span style="color: #f04747;">■</span> Relegation Zone (18th-20th)</div>
         </div>
     </div>
@@ -625,7 +630,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- KEY INSIGHTS -->
 <div class="panel" style="background: #2e3136; border-left: 4px solid <?= $teamSecondary ?>;">
-    <h3 style="color: <?= $teamSecondary ?>;">💡 Key Insights</h3>
+    <h3 style="color: <?= $teamTextColor ?>;">💡 Key Insights</h3>
     <ul style="color: #dcddde; line-height: 2;">
         <li><strong>Current Status:</strong> <?= $team['position'] ?>th place with <?= $current_points ?> points from <?= $games_played ?> games</li>
         <li><strong>Gap to Safety:</strong> <?= $gap_to_relegation > 0 ? '+' : '' ?><?= $gap_to_relegation ?> points clear of 18th place (relegation zone)</li>
