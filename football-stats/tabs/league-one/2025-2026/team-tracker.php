@@ -953,6 +953,57 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
     </div>
 </div>
 
+<!-- League Position Battle -->
+<?php
+$_ctx_pos = (int)$team['position'];
+$_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_ctx_pos) {
+    $pos = (int)$teamRow['position'];
+    return $pos >= max(1, $_ctx_pos - 3) && $pos <= $_ctx_pos + 3;
+}));
+?>
+<div class="panel">
+    <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📍 League Position Battle</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        <?= htmlspecialchars($teamName) ?> and the teams around them
+    </p>
+    <table>
+        <tr>
+            <th>Pos</th>
+            <th>Team</th>
+            <th>P</th>
+            <th>GD</th>
+            <th>Pts</th>
+            <th>Points Gap</th>
+            <th>Projection</th>
+        </tr>
+        <?php foreach ($_ctx_teams as $_ctx_teamRow): ?>
+        <?php
+        $_ctx_selected = ($_ctx_teamRow['team_name'] === $teamName);
+        $_ctx_gap = (int)$_ctx_teamRow['points'] - (int)$team['points'];
+        $_ctx_ppg = $_ctx_teamRow['played'] > 0 ? $_ctx_teamRow['points'] / $_ctx_teamRow['played'] : 0;
+        $_ctx_projection = round($_ctx_ppg * 46, 1);
+        ?>
+        <tr style="<?php echo $_ctx_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamSecondary . ';' : ''; ?>">
+            <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $_ctx_teamRow['position']; ?></strong></td>
+            <td style="<?php echo $_ctx_selected ? 'color: ' . $teamSecondary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
+                <?php echo $_ctx_selected ? '⭐ ' : ''; ?><?php echo htmlspecialchars($_ctx_teamRow['team_name']); ?>
+            </td>
+            <td style="color: #FFFFFF; font-weight: bold;"><?php echo $_ctx_teamRow['played']; ?></td>
+            <td style="color: <?php echo $_ctx_teamRow['gd'] >= 0 ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
+                <?php echo ($_ctx_teamRow['gd'] > 0 ? '+' : '') . $_ctx_teamRow['gd']; ?>
+            </td>
+            <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $_ctx_teamRow['points']; ?></strong></td>
+            <td style="color: <?php echo $_ctx_gap > 0 ? '#f04747' : ($_ctx_gap < 0 ? '#43b581' : '#FFFFFF'); ?>; font-weight: bold;">
+                <?php echo $_ctx_gap > 0 ? '+' : ''; echo $_ctx_gap; ?>
+            </td>
+            <td style="color: <?php echo $_ctx_projection >= 46 ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
+                <?php echo $_ctx_projection; ?> pts
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+
 <!-- Relegation Battle Comparison -->
 <div class="panel">
     <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">⚔️ Relegation Battle - Bottom 6 Comparison</h2>
