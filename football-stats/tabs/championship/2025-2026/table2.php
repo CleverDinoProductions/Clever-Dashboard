@@ -11,6 +11,9 @@ $halfway_games = 23; // Halfway point in season (Championship = 46 games, half =
 $safety_target_halfway = 20; // Points needed by game 23 to stay safe
 $total_games = 46; // Total games in season
 $max_regular_mw = 46; // Playoff matches have matchweek > 46
+if (isset($tableView['active_matchweek'])) {
+    $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
+}
 
 // Quarter boundaries: Q1 GW 1-12, Q2 GW 13-23, Q3 GW 24-35, Q4 GW 36-46
 $quarter_boundaries = [12, 23, 35];

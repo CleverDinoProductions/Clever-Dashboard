@@ -10,6 +10,9 @@ $last_update = $tableView['last_update'];
 $halfway_games = 23;
 $total_games = 46;
 $max_regular_mw = 46; // Playoff matches have matchweek > 46
+if (isset($tableView['active_matchweek'])) {
+    $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
+}
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
