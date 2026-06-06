@@ -549,7 +549,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- LEAGUE CONTEXT -->
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
+    <h2 style="color: <?= $teamPrimary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">
         Teams around <?= htmlspecialchars($teamName) ?> in the standings
     </p>
@@ -578,7 +578,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
             $row_style = '';
             if ($is_selected_row) {
-                $row_style = 'background: rgba(0,0,0,0.35); border-left: 4px solid ' . $teamSecondary . ';';
+                $row_style = 'background: rgba(0,0,0,0.35); border-left: 4px solid ' . $teamPrimary . ';';
             } elseif ($is_relegation) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             }

@@ -964,7 +964,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 }));
 ?>
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📍 League Position Battle</h2>
+    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📍 League Position Battle</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         <?= htmlspecialchars($teamName) ?> and the teams around them
     </p>
@@ -985,9 +985,9 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         $_ctx_ppg = $_ctx_teamRow['played'] > 0 ? $_ctx_teamRow['points'] / $_ctx_teamRow['played'] : 0;
         $_ctx_projection = round($_ctx_ppg * 46, 1);
         ?>
-        <tr style="<?php echo $_ctx_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamSecondary . ';' : ''; ?>">
+        <tr style="<?php echo $_ctx_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $_ctx_teamRow['position']; ?></strong></td>
-            <td style="<?php echo $_ctx_selected ? 'color: ' . $teamSecondary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
+            <td style="<?php echo $_ctx_selected ? 'color: ' . $teamPrimary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
                 <?php echo $_ctx_selected ? '⭐ ' : ''; ?><?php echo htmlspecialchars($_ctx_teamRow['team_name']); ?>
             </td>
             <td style="color: #FFFFFF; font-weight: bold;"><?php echo $_ctx_teamRow['played']; ?></td>
@@ -1008,7 +1008,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 
 <!-- Relegation Battle Comparison -->
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">⚔️ Relegation Battle - Bottom 6 Comparison</h2>
+    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">⚔️ Relegation Battle - Bottom 6 Comparison</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Teams fighting for survival
     </p>
@@ -1029,9 +1029,9 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         $team_ppg = $teamRow['played'] > 0 ? $teamRow['points'] / $teamRow['played'] : 0;
         $team_projection = round($team_ppg * 38, 1);
         ?>
-        <tr style="<?php echo $is_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamSecondary . ';' : ''; ?>">
+        <tr style="<?php echo $is_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $teamRow['position']; ?></strong></td>
-            <td style="<?php echo $is_selected ? 'color: ' . $teamSecondary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
+            <td style="<?php echo $is_selected ? 'color: ' . $teamPrimary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
                 <?php echo $is_selected ? '⭐ ' : ''; ?>
                 <?php echo htmlspecialchars($teamRow['team_name']); ?>
             </td>

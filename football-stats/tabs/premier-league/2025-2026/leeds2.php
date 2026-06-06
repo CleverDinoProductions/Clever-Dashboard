@@ -578,7 +578,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
             $row_style = '';
             if ($is_selected_row) {
-                $row_style = 'background: rgba(0,0,0,0.35); border-left: 4px solid ' . $teamSecondary . ';';
+                $row_style = 'background: rgba(0,0,0,0.35); border-left: 4px solid ' . $teamPrimary . ';';
             } elseif ($is_relegation) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             }
@@ -591,7 +591,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             <td><strong><?= $tableRow['position'] ?></strong></td>
             <td>
                 <?php if ($is_selected_row): ?>
-                    <strong style="color: <?= $teamSecondary ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
+                    <strong style="color: <?= $teamPrimary ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
                 <?php else: ?>
                     <?= htmlspecialchars($tableRow['team_name']) ?>
                 <?php endif; ?>

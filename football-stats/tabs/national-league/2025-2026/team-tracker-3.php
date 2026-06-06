@@ -233,7 +233,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             ?>
             <tr style="<?= $_ctx_sel3 ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$_ctx_row3['position'] ?></strong></td>
-                <td style="<?= $_ctx_sel3 ? 'color:' . $teamSecondary . ';font-weight:bold;' : '' ?>">
+                <td style="<?= $_ctx_sel3 ? 'color:' . $teamPrimary . ';font-weight:bold;' : '' ?>">
                     <?= $_ctx_sel3 ? '⭐ ' : '' ?><?= htmlspecialchars($_ctx_row3['team_name']) ?>
                 </td>
                 <td><?= (int)$_ctx_row3['played'] ?></td>
@@ -274,7 +274,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             ?>
             <tr style="<?= $isSelected ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$teamRow['position'] ?></strong></td>
-                <td style="<?= $isSelected ? 'color:' . $teamSecondary . ';font-weight:bold;' : '' ?>">
+                <td style="<?= $isSelected ? 'color:' . $teamPrimary . ';font-weight:bold;' : '' ?>">
                     <?= htmlspecialchars($teamRow['team_name']) ?>
                 </td>
                 <td><?= (int)$teamRow['played'] ?></td>

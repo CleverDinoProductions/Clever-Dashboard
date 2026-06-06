@@ -549,7 +549,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- LEAGUE CONTEXT -->
 <div class="panel">
-    <h2 style="color: <?= $teamSecondary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
+    <h2 style="color: <?= $teamPrimary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">
         Teams around <?= htmlspecialchars($teamName) ?> in the standings
     </p>
@@ -591,7 +591,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             <td><strong><?= $tableRow['position'] ?></strong></td>
             <td>
                 <?php if ($is_selected_row): ?>
-                    <strong style="color: <?= $teamSecondary ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
+                    <strong style="color: <?= $teamPrimary ?>;">⭐ <?= htmlspecialchars($tableRow['team_name']) ?></strong>
                 <?php else: ?>
                     <?= htmlspecialchars($tableRow['team_name']) ?>
                 <?php endif; ?>
