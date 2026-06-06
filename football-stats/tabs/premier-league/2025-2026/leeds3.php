@@ -22,6 +22,7 @@ $teamName      = $team['team_name'];
 $teamColors    = football_stats_get_team_colors($teamName);
 $teamPrimary   = $teamColors['primary'];
 $teamSecondary = $teamColors['secondary'];
+$teamTextColor = football_stats_get_best_text_color($teamPrimary, $teamSecondary);
 
 // Unpack stats
 $teamPosition = (int)$team['position'];
@@ -82,7 +83,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
                            background:linear-gradient(135deg,<?= $teamPrimary ?> 0,#2e3136 100%)">
     <div style="text-align:center">
         <h1 style="color:#FFFFFF;font-size:48px;margin:0"><?= htmlspecialchars($teamName) ?></h1>
-        <h2 style="color:<?= $teamSecondary ?>;font-size:32px;margin:10px 0">
+        <h2 style="color:<?= $teamTextColor ?>;font-size:32px;margin:10px 0">
             Survival Tracker
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
@@ -104,7 +105,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
 
     <!-- Current Position -->
     <div class="panel" style="background:#40444b;border-left:4px solid <?= $statusColor ?>;">
-        <h3 style="color:<?= $teamSecondary ?>;font-size:16px;margin-bottom:10px">Current Position</h3>
+        <h3 style="color:<?= $teamTextColor ?>;font-size:16px;margin-bottom:10px">Current Position</h3>
         <div style="font-size:64px;font-weight:bold;color:<?= $statusColor ?>;text-align:center">
             <?= $teamPosition ?>th
         </div>
@@ -116,7 +117,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
 
     <!-- Current Points -->
     <div class="panel" style="background:#40444b;border-left:4px solid #5865F2;">
-        <h3 style="color:<?= $teamSecondary ?>;font-size:16px;margin-bottom:10px">Current Points</h3>
+        <h3 style="color:<?= $teamTextColor ?>;font-size:16px;margin-bottom:10px">Current Points</h3>
         <div style="font-size:64px;font-weight:bold;color:#5865F2;text-align:center">
             <?= $teamPoints ?>
         </div>
@@ -127,7 +128,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
 
     <!-- Points to Safety -->
     <div class="panel" style="background:#40444b;border-left:4px solid #faa61a;">
-        <h3 style="color:<?= $teamSecondary ?>;font-size:16px;margin-bottom:10px">Points to Safety</h3>
+        <h3 style="color:<?= $teamTextColor ?>;font-size:16px;margin-bottom:10px">Points to Safety</h3>
         <div style="font-size:64px;font-weight:bold;color:#faa61a;text-align:center">
             <?= $pointsToSafety ?>
         </div>
@@ -138,7 +139,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
 
     <!-- Games Remaining -->
     <div class="panel" style="background:#40444b;border-left:4px solid #43b581;">
-        <h3 style="color:<?= $teamSecondary ?>;font-size:16px;margin-bottom:10px">Games Remaining</h3>
+        <h3 style="color:<?= $teamTextColor ?>;font-size:16px;margin-bottom:10px">Games Remaining</h3>
         <div style="font-size:64px;font-weight:bold;color:#43b581;text-align:center">
             <?= $gamesRemaining ?>
         </div>
@@ -233,7 +234,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             ?>
             <tr style="<?= $_ctx_sel3 ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$_ctx_row3['position'] ?></strong></td>
-                <td style="<?= $_ctx_sel3 ? 'color:' . $teamSecondary . ';font-weight:bold;' : '' ?>">
+                <td style="<?= $_ctx_sel3 ? 'color:' . $teamTextColor . ';font-weight:bold;' : '' ?>">
                     <?= $_ctx_sel3 ? '⭐ ' : '' ?><?= htmlspecialchars($_ctx_row3['team_name']) ?>
                 </td>
                 <td><?= (int)$_ctx_row3['played'] ?></td>
@@ -274,7 +275,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             ?>
             <tr style="<?= $isSelected ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$teamRow['position'] ?></strong></td>
-                <td style="<?= $isSelected ? 'color:' . $teamSecondary . ';font-weight:bold;' : '' ?>">
+                <td style="<?= $isSelected ? 'color:' . $teamTextColor . ';font-weight:bold;' : '' ?>">
                     <?= $isSelected ? '⭐ ' : '' ?><?= htmlspecialchars($teamRow['team_name']) ?>
                 </td>
                 <td><?= (int)$teamRow['played'] ?></td>
