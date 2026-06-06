@@ -175,11 +175,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         <h1 style="color: #FFFFFF; font-size: 48px; margin: 0; text-shadow: 2px 2px 8px rgba(0,0,0,0.8);">
             ⚽ <?= htmlspecialchars($teamName) ?>
         </h1>
-<<<<<<< HEAD
-        <h2 style="color: <?= $teamPrimary ?>; font-size: 32px; margin: 10px 0; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">
-=======
         <h2 style="color: <?= $teamTextColor ?>; font-size: 32px; margin: 10px 0; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
             Survival Tracker
         </h2>
         <div style="background: <?php echo $status_color; ?>; display: inline-block; padding: 15px 40px; border-radius: 8px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
@@ -228,11 +224,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- Season Progress Indicator -->
 <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📅 Season Progress</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📅 Season Progress</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
         <div style="text-align: center; flex: 1; min-width: 100px;">
             <div style="font-size: 14px; color: #FFFFFF; font-weight: bold;">Games Played</div>
@@ -271,11 +263,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 <div class="grid">
     <!-- Current Position -->
     <div class="panel" style="background: #40444b; border-left: 4px solid <?php echo $status_color; ?>;">
-<<<<<<< HEAD
-        <h3 style="color: <?= $teamPrimary ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Current Position</h3>
-=======
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Current Position</h3>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <div style="font-size: 64px; font-weight: bold; color: <?php echo $status_color; ?>; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $team['position']; ?>th
         </div>
@@ -287,11 +275,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
     <!-- Current Points -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #5865F2;">
-<<<<<<< HEAD
-        <h3 style="color: <?= $teamPrimary ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Current Points</h3>
-=======
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Current Points</h3>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <div style="font-size: 64px; font-weight: bold; color: #5865F2; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $team['points']; ?>
         </div>
@@ -329,11 +313,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- 75% Rule Progress Bar -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Halfway Point Progress (20-Point Target)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Halfway Point Progress (20-Point Target)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         The <strong style="color: <?= $teamTextColor ?>;">75% Rule</strong>: Teams with 15+ points (75% of 20) at halfway have an 85-90% survival rate
     </p>
@@ -391,11 +371,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- 38 pts progress bars -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Full Season Safety Progress (38-Point Target)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Full Season Safety Progress (38-Point Target)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Target: 38 points for full season safety (historically 95%+ survival rate)
     </p> 
@@ -445,11 +421,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- 40 pt Progress Bar -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Extended Safety Target Progress (40-Point Target)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Extended Safety Target Progress (40-Point Target)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Extended target: 40 points for extra safety margin (historically 98%+ survival rate)
     </p>
@@ -498,11 +470,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- 42 pt Progress Bar -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Guaranteed Safety Target Progress (42-Point Target)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Guaranteed Safety Target Progress (42-Point Target)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Guaranteed target: 42 points for guaranteed safety margin (historically 99%+ survival rate)
     </p>
@@ -550,11 +518,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- 45 pt Progress Bar -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Mathematical Safety Target Progress (45-Point Target)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Mathematical Safety Target Progress (45-Point Target)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Mathematical target: 45 points for Mathematical safety margin (historically 100% survival rate)
     </p>
@@ -603,11 +567,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 <?php if ($is_first_half && $games_to_halfway > 0): ?>
 <!-- Scenarios to Halfway (Next Games) -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 Scenarios for Next <?php echo $games_to_halfway; ?> Games (To Halfway)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 Scenarios for Next <?php echo $games_to_halfway; ?> Games (To Halfway)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Current: <?php echo $team['points']; ?> points | Target at game 19: 20 points (100%) or 15 points (75%)
     </p>
@@ -721,11 +681,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 <!-- Projection -->
 <div class="grid">
     <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-        <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🔮 Season Projection</h2>
-=======
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🔮 Season Projection</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <div style="background: #40444b; padding: 20px; border-radius: 8px; margin-top: 15px; border: 2px solid #5865F2;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div style="flex: 1; min-width: 150px;">
@@ -775,11 +731,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- What If Scenarios (Next 3 Games) -->
     <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-        <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 3 Games)</h2>
-=======
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 3 Games)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <?php
         $three_game_scenarios = [
             ['wins' => 3, 'draws' => 0, 'label' => '3 wins'],
@@ -814,11 +766,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- What If Scenarios (Next 2 Games) -->
 <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 2 Games)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 2 Games)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <?php
     $two_game_scenarios = [
             ['wins' => 2, 'draws' => 0, 'label' => '2 wins'],
@@ -852,11 +800,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- What If Scenarios (Next Game) -->
 <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next Game)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next Game)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <?php
         $next_game_scenarios = [
             ['result' => 'win', 'points' => 3, 'label' => 'Win'],
@@ -886,11 +830,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- What If Scenarios (Full Season based on PPG for points between 0.0 and 0.9) -->
 <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <?php
     $season_scenarios = [
         ['ppg' => 0.9, 'label' => '0.9 PPG (39 pts)'],
@@ -932,11 +872,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- What If Scenarios (Full Season based on PPG for points between 1.0 and 2.0) -->
 <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <?php
     $season_scenarios = [
         ['ppg' => 2.0, 'label' => '2.0 PPG (70 pts)'],
@@ -979,11 +915,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 
 <!-- What If Scenarios (Full Season based on PPG for points between 2.0 and 3.0) -->
 <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <?php
     $season_scenarios = [
         ['ppg' => 3.0, 'label' => '3.0 PPG (78 pts)'],
@@ -1033,11 +965,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 }));
 ?>
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📍 League Position Battle</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📍 League Position Battle</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         <?= htmlspecialchars($teamName) ?> and the teams around them
     </p>
@@ -1060,11 +988,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         ?>
         <tr style="<?php echo $_ctx_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $_ctx_teamRow['position']; ?></strong></td>
-<<<<<<< HEAD
-            <td style="<?php echo $_ctx_selected ? 'color: ' . $teamPrimary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
-=======
             <td style="<?php echo $_ctx_selected ? 'color: ' . $teamTextColor . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
                 <?php echo $_ctx_selected ? '⭐ ' : ''; ?><?php echo htmlspecialchars($_ctx_teamRow['team_name']); ?>
             </td>
             <td style="color: #FFFFFF; font-weight: bold;"><?php echo $_ctx_teamRow['played']; ?></td>
@@ -1085,11 +1009,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 
 <!-- Relegation Battle Comparison -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">⚔️ Relegation Battle - Bottom 6 Comparison</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">⚔️ Relegation Battle - Bottom 6 Comparison</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Teams fighting for survival
     </p>
@@ -1112,11 +1032,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         ?>
         <tr style="<?php echo $is_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $teamRow['position']; ?></strong></td>
-<<<<<<< HEAD
-            <td style="<?php echo $is_selected ? 'color: ' . $teamPrimary . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
-=======
             <td style="<?php echo $is_selected ? 'color: ' . $teamTextColor . '; font-weight: bold;' : 'color: #FFFFFF; font-weight: bold;'; ?>">
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
                 <?php echo $is_selected ? '⭐ ' : ''; ?>
                 <?php echo htmlspecialchars($teamRow['team_name']); ?>
             </td>
@@ -1139,11 +1055,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 <!-- Team Stats Summary -->
 <div class="grid">
     <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-        <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Attack</h2>
-=======
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Attack</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <div style="text-align: center;">
             <div style="font-size: 48px; font-weight: bold; color: #43b581; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
                 <?php echo $team['gf']; ?>
@@ -1156,11 +1068,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
     </div>
 
     <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-        <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🛡️ Defense</h2>
-=======
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🛡️ Defense</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <div style="text-align: center;">
             <div style="font-size: 48px; font-weight: bold; color: #f04747; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
                 <?php echo $team['ga']; ?>
@@ -1173,11 +1081,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
     </div>
 
     <div class="panel" style="background: #2e3136;">
-<<<<<<< HEAD
-        <h2 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📈 Form</h2>
-=======
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📈 Form</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         <div style="text-align: center;">
             <div style="font-size: 48px; font-weight: bold; color: #5865F2; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
                 W<?php echo $team['won']; ?>
@@ -1194,15 +1098,9 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 
 <!-- 75% Rule Explainer -->
 <div class="panel" style="background: #2e3136; border-left: 4px solid #5865F2;">
-<<<<<<< HEAD
-    <h3 style="color: <?= $teamPrimary ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📚 The 75% Rule for Survival</h3>
-    <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">
-        <strong style="color: <?= $teamPrimary ?>;">Historical Analysis:</strong> Teams with <strong style="color: #43b581;">15+ points at halfway</strong> 
-=======
     <h3 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📚 The 75% Rule for Survival</h3>
     <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">
         <strong style="color: <?= $teamTextColor ?>;">Historical Analysis:</strong> Teams with <strong style="color: #43b581;">15+ points at halfway</strong> 
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
         (75% of 20-point target) have an <strong style="color: #43b581;">85-90% survival rate</strong>.
     </p>
     <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">

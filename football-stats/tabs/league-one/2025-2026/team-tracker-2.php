@@ -550,11 +550,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
 <!-- LEAGUE CONTEXT -->
 <div class="panel">
-<<<<<<< HEAD
-    <h2 style="color: <?= $teamPrimary ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
-=======
     <h2 style="color: <?= $teamTextColor ?>;">📍 <?= htmlspecialchars($teamName) ?> in the League Table</h2>
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
     <p style="color: #888; font-size: 13px; margin-bottom: 15px;">
         Teams around <?= htmlspecialchars($teamName) ?> in the standings
     </p>

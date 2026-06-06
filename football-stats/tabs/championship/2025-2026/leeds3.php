@@ -234,11 +234,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             ?>
             <tr style="<?= $_ctx_sel3 ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$_ctx_row3['position'] ?></strong></td>
-<<<<<<< HEAD
-                <td style="<?= $_ctx_sel3 ? 'color:' . $teamPrimary . ';font-weight:bold;' : '' ?>">
-=======
                 <td style="<?= $_ctx_sel3 ? 'color:' . $teamTextColor . ';font-weight:bold;' : '' ?>">
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
                     <?= $_ctx_sel3 ? '⭐ ' : '' ?><?= htmlspecialchars($_ctx_row3['team_name']) ?>
                 </td>
                 <td><?= (int)$_ctx_row3['played'] ?></td>
@@ -279,11 +275,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             ?>
             <tr style="<?= $isSelected ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$teamRow['position'] ?></strong></td>
-<<<<<<< HEAD
-                <td style="<?= $isSelected ? 'color:' . $teamPrimary . ';font-weight:bold;' : '' ?>">
-=======
                 <td style="<?= $isSelected ? 'color:' . $teamTextColor . ';font-weight:bold;' : '' ?>">
->>>>>>> origin/claude/kind-dijkstra-Z4AgP
                     <?= htmlspecialchars($teamRow['team_name']) ?>
                 </td>
                 <td><?= (int)$teamRow['played'] ?></td>
