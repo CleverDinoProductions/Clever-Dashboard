@@ -202,6 +202,56 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
     </div>
 </div>
 
+<!-- League Position Battle -->
+<?php
+$_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($teamPosition) {
+    $pos = (int)$teamRow['position'];
+    return $pos >= max(1, $teamPosition - 3) && $pos <= $teamPosition + 3;
+}));
+?>
+<div class="panel">
+    <h2>📍 League Position Battle</h2>
+    <p style="color:#888;font-size:13px;margin-bottom:15px">
+        <?= htmlspecialchars($teamName) ?> and the teams around them
+    </p>
+    <table>
+        <tr>
+            <th>Pos</th>
+            <th>Team</th>
+            <th>P</th>
+            <th>GD</th>
+            <th>Pts</th>
+            <th>Points Gap</th>
+            <th>Projection</th>
+        </tr>
+        <?php foreach ($_ctx_teams3 as $_ctx_row3): ?>
+            <?php
+            $_ctx_sel3  = ($_ctx_row3['team_name'] === $teamName);
+            $_ctx_gap3  = (int)$_ctx_row3['points'] - $teamPoints;
+            $_ctx_ppg3  = $_ctx_row3['played'] > 0 ? $_ctx_row3['points'] / $_ctx_row3['played'] : 0;
+            $_ctx_proj3 = round($_ctx_ppg3 * 38, 1);
+            ?>
+            <tr style="<?= $_ctx_sel3 ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
+                <td><strong><?= (int)$_ctx_row3['position'] ?></strong></td>
+                <td style="<?= $_ctx_sel3 ? 'color:' . $teamSecondary . ';font-weight:bold;' : '' ?>">
+                    <?= $_ctx_sel3 ? '⭐ ' : '' ?><?= htmlspecialchars($_ctx_row3['team_name']) ?>
+                </td>
+                <td><?= (int)$_ctx_row3['played'] ?></td>
+                <td style="color:<?= (int)$_ctx_row3['gd'] >= 0 ? '#43b581' : '#f04747' ?>">
+                    <?= (int)$_ctx_row3['gd'] >= 0 ? '+' . (int)$_ctx_row3['gd'] : (int)$_ctx_row3['gd'] ?>
+                </td>
+                <td><strong><?= (int)$_ctx_row3['points'] ?></strong></td>
+                <td style="color:<?= $_ctx_gap3 <= 0 ? '#43b581' : '#f04747' ?>">
+                    <?= $_ctx_gap3 === 0 ? '–' : ($_ctx_gap3 < 0 ? abs($_ctx_gap3) . ' behind' : '+' . $_ctx_gap3 . ' ahead') ?>
+                </td>
+                <td style="color:<?= $_ctx_proj3 >= 38 ? '#43b581' : '#f04747' ?>">
+                    <?= $_ctx_proj3 ?> pts
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+
 <!-- Relegation Battle Comparison (Bottom 6) -->
 <div class="panel">
     <h2>Relegation Battle – Bottom 6 Comparison</h2>

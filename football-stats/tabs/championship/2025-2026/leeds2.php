@@ -562,6 +562,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             <th>GD</th>
             <th>Pts</th>
             <th>Gap</th>
+            <th>Projection</th>
         </tr>
         <?php
         $selected_pos = (int)$team['position'];
@@ -582,7 +583,9 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             }
 
-            $row_gap = (int)$tableRow['points'] - $selected_pts;
+            $row_gap  = (int)$tableRow['points'] - $selected_pts;
+            $row_ppg2 = $tableRow['played'] > 0 ? $tableRow['points'] / $tableRow['played'] : 0;
+            $row_proj2 = round($row_ppg2 * 46, 1);
         ?>
         <tr style="<?= $row_style ?>">
             <td><strong><?= $tableRow['position'] ?></strong></td>
@@ -604,6 +607,9 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                 <?php else: ?>
                     -
                 <?php endif; ?>
+            </td>
+            <td style="color: <?= $row_proj2 >= 46 ? '#43b581' : '#f04747' ?>; font-weight: bold;">
+                <?= $row_proj2 ?> pts
             </td>
         </tr>
         <?php endforeach; ?>
