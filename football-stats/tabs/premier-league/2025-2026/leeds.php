@@ -1081,6 +1081,19 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
     </div>
 
     <div class="panel" style="background: #2e3136;">
+        <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">⚽️ Goal Difference</h2>
+        <div style="text-align: center;">
+            <div style="font-size: 48px; font-weight: bold; color: #5865F2; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+                <?php echo number_format($team['gd'], 0); ?>
+            </div>
+            <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goal Difference</p>
+            <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                <?php echo number_format($team['gd'] / $team['played'], 2); ?> per game
+            </p>
+        </div>
+    </div>
+
+    <div class="panel" style="background: #2e3136;">
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📈 Form</h2>
         <div style="text-align: center;">
             <div style="font-size: 48px; font-weight: bold; color: #5865F2; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
@@ -1090,7 +1103,15 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo round(($team['won'] / $team['played']) * 100, 1); ?>% win rate
+                <?php echo $team['won'] + $team['drawn'] ?> undefeated games<br>
+            </p>
+            <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
+            <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                <?php echo round((($team['won'] + $team['drawn']) / $team['played']) * 100, 1); ?>% undefeated rate<br>
+                <?php echo round(($team['won'] / $team['played']) * 100, 1); ?>% win rate<br>
+                <?php echo round(($team['drawn'] / $team['played']) * 100, 1); ?>% draw rate<br>
+                <?php echo round(($team['lost'] / $team['played']) * 100, 1); ?>% loss rate
+                
             </p>
         </div>
     </div>
