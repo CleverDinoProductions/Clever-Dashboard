@@ -173,7 +173,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 <div class="panel" style="border: 3px solid <?= $teamSecondary ?>; background: linear-gradient(135deg, <?= $teamPrimary ?> 0%, #2e3136 100%);">
     <div style="text-align: center;">
         <h1 style="color: #FFFFFF; font-size: 48px; margin: 0; text-shadow: 2px 2px 8px rgba(0,0,0,0.8);">
-            ⚽ <?= htmlspecialchars($teamName) ?>
+            <img src="<?= htmlspecialchars($team['team_crest']) ?>" style="height: 48px; vertical-align: middle;"> <?= htmlspecialchars($teamName) ?>
         </h1>
         <h2 style="color: <?= $teamTextColor ?>; font-size: 32px; margin: 10px 0; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">
             Survival Tracker
