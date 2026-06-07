@@ -265,7 +265,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
     <div class="panel" style="background: #40444b; border-left: 4px solid <?php echo $status_color; ?>;">
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Current Position</h3>
         <div style="font-size: 64px; font-weight: bold; color: <?php echo $status_color; ?>; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
-            <?php echo $team['position']; ?>th
+            #<?php echo $team['position']; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             <?php echo abs($gap_to_18th); ?> points 
