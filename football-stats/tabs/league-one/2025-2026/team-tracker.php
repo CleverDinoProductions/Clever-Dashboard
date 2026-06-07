@@ -138,25 +138,25 @@ $bottom_six = array_values(array_filter($standings, function ($teamRow) {
     return (int) $teamRow['position'] >= 15;
 }));
 
-$eighteenth = null;
+$twentyfirst = null;
 foreach ($standings as $teamRow) {
-    if ((int) $teamRow['position'] === 18) {
-        $eighteenth = $teamRow;
+    if ((int) $teamRow['position'] === 21) {
+        $twentyfirst = $teamRow;
         break;
     }
 }
-$gap_to_18th = (int) $team['points'] - (int) ($eighteenth['points'] ?? 0);
+$gap_to_21st = (int) $team['points'] - (int) ($twentyfirst['points'] ?? 0);
 
 // Survival status
-if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
+if ($team['position'] <= 20 && $team['points'] >= $safety_target) {
     $survival_status = 'SAFE';
     $status_color = '#43b581';
     $status_icon = '✅';
-} elseif ($team['position'] <= 17 && $halfway_progress_pct >= 75) {
+} elseif ($team['position'] <= 20 && $halfway_progress_pct >= 75) {
     $survival_status = 'ON TRACK';
     $status_color = '#43b581';
     $status_icon = '⚠️';
-} elseif ($team['position'] <= 17) {
+} elseif ($team['position'] <= 20) {
     $survival_status = 'FIGHTING';
     $status_color = '#faa61a';
     $status_icon = '⚠️';
@@ -265,11 +265,11 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
     <div class="panel" style="background: #40444b; border-left: 4px solid <?php echo $status_color; ?>;">
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Current Position</h3>
         <div style="font-size: 64px; font-weight: bold; color: <?php echo $status_color; ?>; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
-            <?php echo $team['position']; ?>th
+            #<?php echo $team['position']; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
-            <?php echo abs($gap_to_18th); ?> points 
-            <?php echo $gap_to_18th >= 0 ? 'above' : 'below'; ?> relegation zone
+            <?php echo abs($gap_to_21st); ?> points
+            <?php echo $gap_to_21st >= 0 ? 'above' : 'below'; ?> relegation zone
         </p>
     </div>
 
@@ -1162,7 +1162,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             echo "🏆 EXCEPTIONAL FORM! KEEP IT UP $tn!";
         } elseif ($halfway_progress_pct >= 75 && $is_first_half) {
             echo "💪 OUTSTANDING POSITION! KEEP GOING $tn!";
-        } elseif ($team['position'] >= 18) {
+        } elseif ($team['position'] >= 21) {
             echo "🚨 IN THE FIGHT! KEEP PUSHING $tn!";
         } elseif ($points_to_safety <= 5) {
             echo "💪 ALMOST THERE! PUSH ON $tn!";
