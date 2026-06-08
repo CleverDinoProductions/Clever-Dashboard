@@ -1192,7 +1192,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goals Scored</p>
             <p style="color: #5865F2; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['gf'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['gf'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1205,7 +1205,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goals Conceded</p>
             <p style="color: #faa61a; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['ga'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['ga'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1218,7 +1218,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goal Difference</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['gd'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['gd'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1237,10 +1237,10 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </p>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo round(($team['won'] / $team['played']) * 100, 1); ?>% win rate<br>
-                <?php echo round(($team['drawn'] / $team['played']) * 100, 1); ?>% draw rate<br>
-                <?php echo round(($team['lost'] / $team['played']) * 100, 1); ?>% loss rate<br>
-                <?php echo round((($team['won'] + $team['drawn']) / $team['played']) * 100, 1); ?>% undefeated rate
+                <?php echo ($games_played > 0 ? round(($team['won'] / $games_played) * 100, 1) : 0); ?>% win rate<br>
+                <?php echo ($games_played > 0 ? round(($team['drawn'] / $games_played) * 100, 1) : 0); ?>% draw rate<br>
+                <?php echo ($games_played > 0 ? round(($team['lost'] / $games_played) * 100, 1) : 0); ?>% loss rate<br>
+                <?php echo ($games_played > 0 ? round((($team['won'] + $team['drawn']) / $games_played) * 100, 1) : 0); ?>% undefeated rate
             </p>
         </div>
     </div>
