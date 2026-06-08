@@ -10,8 +10,8 @@ $season = '2025-2026';
 $competition_code = 'ELC';
 $live_table = 'league_table_ELC';
 
-// Get all available matchweeks (including 0 for pre-season)
-$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? ORDER BY matchweek ASC");
+// Get available matchweeks (include MW0 for pre-season, exclude playoff rounds MW>46)
+$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek <= 46 ORDER BY matchweek ASC");
 $mw_stmt->execute([$competition_code, $season]);
 $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 

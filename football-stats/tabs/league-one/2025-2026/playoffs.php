@@ -17,8 +17,8 @@ if (!in_array($selectedSeason, $allSeasons, true)) {
     $selectedSeason = $defaultSeason;
 }
 
-// TheSportsDB returns intRound=0 for playoff rounds; also catch any legacy matchweek>threshold data
-$stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND (matchweek = 0 OR matchweek > ?) ORDER BY match_date ASC, id ASC");
+// Playoffs are stored at MW47+ (intRound=0 from TheSportsDB is remapped to MW47+ during sync)
+$stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek > ? ORDER BY match_date ASC, id ASC");
 $stmt->execute([$competitionCode, $selectedSeason, $regularSeasonMw]);
 $playoffMatches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

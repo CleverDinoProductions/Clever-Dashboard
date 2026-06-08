@@ -119,6 +119,26 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
         $mw_buckets = []; $running_stats = [];
 
+        // Pre-process: remap intRound=0 (TheSportsDB playoff sentinel) to MW47+ by date order.
+        // MW0 is reserved for the pre-season blank table. Matches already at intRound>46 are kept as-is.
+        $playoff_zero_date_map = [];
+        {
+            $zero_dates = [];
+            foreach ($fixtures['events'] as $e) {
+                if ((int)$e['intRound'] === 0 && !empty($e['dateEvent'])) {
+                    $zero_dates[$e['dateEvent']] = true;
+                }
+            }
+            if (!empty($zero_dates)) {
+                ksort($zero_dates);
+                $mw_counter = 47;
+                foreach (array_keys($zero_dates) as $d) {
+                    $playoff_zero_date_map[$d] = $mw_counter++;
+                }
+                echo "  [Remapped " . count($zero_dates) . " playoff date(s) from MW0 to MW47+]\n";
+            }
+        }
+
         foreach ($fixtures['events'] as $e) {
             // New Badge Injection Point: Grabbing badges directly from the event payload
             if (!empty($e['strHomeTeamBadge'])) $crest_map[$e['strHomeTeam']] = $e['strHomeTeamBadge'];
@@ -128,6 +148,10 @@ function sync_league($db, $BASE_URL, $code, $id) {
             if (!isset($running_stats[$e['strAwayTeam']])) $running_stats[$e['strAwayTeam']] = ['p'=>0,'w'=>0,'d'=>0,'l'=>0,'gf'=>0,'ga'=>0,'pts'=>0];
 
             $mw = (int)$e['intRound'];
+            // Apply playoff remap: intRound=0 → MW47+ based on date
+            if ($mw === 0 && !empty($e['dateEvent']) && isset($playoff_zero_date_map[$e['dateEvent']])) {
+                $mw = $playoff_zero_date_map[$e['dateEvent']];
+            }
             $hg = ($e['intHomeScore'] !== null) ? (int)$e['intHomeScore'] : null;
             $ag = ($e['intAwayScore'] !== null) ? (int)$e['intAwayScore'] : null;
 
@@ -159,6 +183,21 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
         ksort($mw_buckets);
         $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        // Always insert blank pre-season snapshot at MW0 (reserved for pre-season; playoffs remapped to MW47+)
+        if (!empty($running_stats)) {
+            $pre_teams = array_keys($running_stats);
+            sort($pre_teams);
+            $pos = 1;
+            foreach ($pre_teams as $name) {
+                $badge = $crest_map[$name] ?? '';
+                $vals = [$code, $season, 0, $badge, $name, $pos++, 0, 0, 0, 0, 0, 0, 0, 0, $timestamp, $timestamp];
+                foreach ($vals as $i => $v) $s_ins->bindValue($i+1, $v);
+                $s_ins->execute();
+            }
+            echo "  [Pre-season MW0 table created for $season]\n";
+        }
+
         foreach ($mw_buckets as $mw => $m_list) {
             foreach ($m_list as $m) {
                 $h = &$running_stats[$m['h']]; $a = &$running_stats[$m['a']];

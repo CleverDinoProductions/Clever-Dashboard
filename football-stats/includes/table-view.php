@@ -111,7 +111,13 @@ if (!function_exists('football_stats_get_table_view')) {
         }
 
         // 4. Get available weeks for the requested season
-        $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? ORDER BY matchweek DESC');
+        // For leagues with playoffs, exclude MW0 (playoff rounds from API) and MW>46 from the selector
+        $playoffLeagues = ['ELC', 'L1', 'L2', 'NL'];
+        if (in_array($competitionCode, $playoffLeagues, true)) {
+            $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= 46 ORDER BY matchweek DESC');
+        } else {
+            $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? ORDER BY matchweek DESC');
+        }
         $snapshotWeeksStmt->execute([$competitionCode, $requestedSeasonLabel]);
         $availableMatchweeks = array_map('intval', $snapshotWeeksStmt->fetchAll(PDO::FETCH_COLUMN));
 
