@@ -727,6 +727,136 @@ if ($team['position'] <= 20 && $team['points'] >= $safety_target) {
     </div>
 </div>
 
+<!-- What If Scenarios (Next 6 Games) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 6 Games)</h2>
+    <?php
+    $six_game_scenarios = [
+        ['wins' => 6, 'draws' => 0, 'label' => '6 wins'],
+        ['wins' => 5, 'draws' => 1, 'label' => '5 wins, 1 draw'],
+        ['wins' => 5, 'draws' => 0, 'label' => '5 wins, 1 loss'],
+        ['wins' => 4, 'draws' => 2, 'label' => '4 wins, 2 draws'],
+        ['wins' => 4, 'draws' => 1, 'label' => '4 wins, 1 draw, 1 loss'],
+        ['wins' => 4, 'draws' => 0, 'label' => '4 wins, 2 losses'],
+        ['wins' => 3, 'draws' => 3, 'label' => '3 wins, 3 draws'],
+        ['wins' => 3, 'draws' => 2, 'label' => '3 wins, 2 draws, 1 loss'],
+        ['wins' => 3, 'draws' => 1, 'label' => '3 wins, 1 draw, 2 losses'],
+        ['wins' => 3, 'draws' => 0, 'label' => '3 wins, 3 losses'],
+        ['wins' => 2, 'draws' => 4, 'label' => '2 wins, 4 draws'],
+        ['wins' => 2, 'draws' => 2, 'label' => '2 wins, 2 draws, 2 losses'],
+        ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 4 losses'],
+        ['wins' => 1, 'draws' => 5, 'label' => '1 win, 5 draws'],
+        ['wins' => 1, 'draws' => 2, 'label' => '1 win, 2 draws, 3 losses'],
+        ['wins' => 1, 'draws' => 0, 'label' => '1 win, 5 losses'],
+        ['wins' => 0, 'draws' => 6, 'label' => '6 draws'],
+        ['wins' => 0, 'draws' => 3, 'label' => '3 draws, 3 losses'],
+        ['wins' => 0, 'draws' => 0, 'label' => '6 losses'],
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($six_game_scenarios as $scenario): ?>
+            <?php
+            $scenario_points = $team['points'] + ($scenario['wins'] * 3) + $scenario['draws'];
+            $scenario_gap = $scenario_points - $safety_target;
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- What If Scenarios (Next 5 Games) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 5 Games)</h2>
+    <?php
+    $five_game_scenarios = [
+        ['wins' => 5, 'draws' => 0, 'label' => '5 wins'],
+        ['wins' => 4, 'draws' => 1, 'label' => '4 wins, 1 draw'],
+        ['wins' => 4, 'draws' => 0, 'label' => '4 wins, 1 loss'],
+        ['wins' => 3, 'draws' => 2, 'label' => '3 wins, 2 draws'],
+        ['wins' => 3, 'draws' => 1, 'label' => '3 wins, 1 draw, 1 loss'],
+        ['wins' => 3, 'draws' => 0, 'label' => '3 wins, 2 losses'],
+        ['wins' => 2, 'draws' => 3, 'label' => '2 wins, 3 draws'],
+        ['wins' => 2, 'draws' => 1, 'label' => '2 wins, 1 draw, 2 losses'],
+        ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 3 losses'],
+        ['wins' => 1, 'draws' => 4, 'label' => '1 win, 4 draws'],
+        ['wins' => 1, 'draws' => 2, 'label' => '1 win, 2 draws, 2 losses'],
+        ['wins' => 1, 'draws' => 0, 'label' => '1 win, 4 losses'],
+        ['wins' => 0, 'draws' => 5, 'label' => '5 draws'],
+        ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 3 losses'],
+        ['wins' => 0, 'draws' => 0, 'label' => '5 losses'],
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($five_game_scenarios as $scenario): ?>
+            <?php
+            $scenario_points = $team['points'] + ($scenario['wins'] * 3) + $scenario['draws'];
+            $scenario_gap = $scenario_points - $safety_target;
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<!-- What If Scenarios (Next 4 Games) -->
+<div class="panel" style="background: #2e3136;">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 4 Games)</h2>
+    <?php
+    $four_game_scenarios = [
+        ['wins' => 4, 'draws' => 0, 'label' => '4 wins'],
+        ['wins' => 3, 'draws' => 1, 'label' => '3 wins, 1 draw'],
+        ['wins' => 3, 'draws' => 0, 'label' => '3 wins, 1 loss'],
+        ['wins' => 2, 'draws' => 2, 'label' => '2 wins, 2 draws'],
+        ['wins' => 2, 'draws' => 1, 'label' => '2 wins, 1 draw, 1 loss'],
+        ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 2 losses'],
+        ['wins' => 1, 'draws' => 3, 'label' => '1 win, 3 draws'],
+        ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw, 2 losses'],
+        ['wins' => 1, 'draws' => 0, 'label' => '1 win, 3 losses'],
+        ['wins' => 0, 'draws' => 4, 'label' => '4 draws'],
+        ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 2 losses'],
+        ['wins' => 0, 'draws' => 0, 'label' => '4 losses'],
+    ];
+    ?>
+    <div style="margin-top: 15px;">
+        <?php foreach ($four_game_scenarios as $scenario): ?>
+            <?php
+            $scenario_points = $team['points'] + ($scenario['wins'] * 3) + $scenario['draws'];
+            $scenario_gap = $scenario_points - $safety_target;
+            ?>
+            <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid #5865F2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-weight: bold; color: #FFFFFF;"><?php echo $scenario['label']; ?></span>
+                    <span style="font-size: 24px; font-weight: bold; color: <?php echo $scenario_gap >= 0 ? '#43b581' : '#faa61a'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                        <?php echo $scenario_points; ?> pts
+                    </span>
+                </div>
+                <div style="color: #FFFFFF; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <?php echo abs($scenario_gap); ?> points <?php echo $scenario_gap >= 0 ? 'above' : 'to'; ?> target
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+
 <!-- What If Scenarios (Next 3 Games) -->
     <div class="panel" style="background: #2e3136;">
         <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Next 3 Games)</h2>
@@ -737,7 +867,10 @@ if ($team['position'] <= 20 && $team['points'] >= $safety_target) {
             ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 1 loss'],
             ['wins' => 1, 'draws' => 2, 'label' => '1 win, 2 draws'],
             ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw, 1 loss'],
+            ['wins' => 1, 'draws' => 0, 'label' => '1 win, 2 losses'],
             ['wins' => 0, 'draws' => 3, 'label' => '3 draws'],
+            ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 1 loss'],
+            ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 2 losses'],
             ['wins' => 0, 'draws' => 0, 'label' => '3 losses']
         ];
         ?>
@@ -1060,7 +1193,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goals Scored</p>
             <p style="color: #5865F2; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['gf'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['gf'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1073,7 +1206,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goals Conceded</p>
             <p style="color: #faa61a; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['ga'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['ga'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1086,7 +1219,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goal Difference</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['gd'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['gd'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1105,10 +1238,10 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </p>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo round(($team['won'] / $team['played']) * 100, 1); ?>% win rate<br>
-                <?php echo round(($team['drawn'] / $team['played']) * 100, 1); ?>% draw rate<br>
-                <?php echo round(($team['lost'] / $team['played']) * 100, 1); ?>% loss rate<br>
-                <?php echo round((($team['won'] + $team['drawn']) / $team['played']) * 100, 1); ?>% undefeated rate
+                <?php echo ($games_played > 0 ? round(($team['won'] / $games_played) * 100, 1) : 0); ?>% win rate<br>
+                <?php echo ($games_played > 0 ? round(($team['drawn'] / $games_played) * 100, 1) : 0); ?>% draw rate<br>
+                <?php echo ($games_played > 0 ? round(($team['lost'] / $games_played) * 100, 1) : 0); ?>% loss rate<br>
+                <?php echo ($games_played > 0 ? round((($team['won'] + $team['drawn']) / $games_played) * 100, 1) : 0); ?>% undefeated rate
             </p>
         </div>
     </div>
