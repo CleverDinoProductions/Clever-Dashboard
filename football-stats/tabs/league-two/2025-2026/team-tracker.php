@@ -869,7 +869,10 @@ if ($team['position'] <= 22 && $team['points'] >= $safety_target) {
             ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 1 loss'],
             ['wins' => 1, 'draws' => 2, 'label' => '1 win, 2 draws'],
             ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw, 1 loss'],
+            ['wins' => 1, 'draws' => 0, 'label' => '1 win, 2 losses'],
             ['wins' => 0, 'draws' => 3, 'label' => '3 draws'],
+            ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 1 loss'],
+            ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 2 losses'],
             ['wins' => 0, 'draws' => 0, 'label' => '3 losses']
         ];
         ?>
