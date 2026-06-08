@@ -111,10 +111,11 @@ if (!function_exists('football_stats_get_table_view')) {
         }
 
         // 4. Get available weeks for the requested season
-        // For leagues with playoffs, exclude MW0 (playoff rounds from API) and MW>46 from the selector
+        // Playoffs are remapped to MW47+, so MW0 is exclusively pre-season for all leagues.
+        // For playoff leagues, exclude MW47+ (playoffs shown separately) but include MW0.
         $playoffLeagues = ['ELC', 'L1', 'L2', 'NL'];
         if (in_array($competitionCode, $playoffLeagues, true)) {
-            $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= 46 ORDER BY matchweek DESC');
+            $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek <= 46 ORDER BY matchweek DESC');
         } else {
             $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? ORDER BY matchweek DESC');
         }
@@ -713,7 +714,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             }
                         ?>
                             <option value="<?php echo htmlspecialchars($mwUrl); ?>" <?php echo ($isSnapshot && (int)$tableView['active_matchweek'] === (int)$mw) ? 'selected' : ''; ?>>
-                                    Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' [' . htmlspecialchars($mwDate) . ']'; ?>
+                                    <?php if ((int)$mw === 0): ?>Pre-season<?php else: ?>Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' [' . htmlspecialchars($mwDate) . ']'; ?><?php endif; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
