@@ -22,7 +22,7 @@ if (!in_array($selectedSeason, $availableSeasons, true)) {
 }
 
 // Get matchweeks for the selected season
-$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY matchweek ASC");
+$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= 46 ORDER BY matchweek ASC");
 $mw_stmt->execute(['L2', $selectedSeason]);
 $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 

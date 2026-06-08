@@ -159,6 +159,22 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
         ksort($mw_buckets);
         $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        // Insert blank pre-season snapshot at MW0 if no played MW0 fixtures exist
+        // MW0 from TheSportsDB indicates playoff rounds; if none exist, MW0 = pre-season start
+        if (!isset($mw_buckets[0]) && !empty($running_stats)) {
+            $pre_teams = array_keys($running_stats);
+            sort($pre_teams);
+            $pos = 1;
+            foreach ($pre_teams as $name) {
+                $badge = $crest_map[$name] ?? '';
+                $vals = [$code, $season, 0, $badge, $name, $pos++, 0, 0, 0, 0, 0, 0, 0, 0, $timestamp, $timestamp];
+                foreach ($vals as $i => $v) $s_ins->bindValue($i+1, $v);
+                $s_ins->execute();
+            }
+            echo "  [Pre-season MW0 table created for $season]\n";
+        }
+
         foreach ($mw_buckets as $mw => $m_list) {
             foreach ($m_list as $m) {
                 $h = &$running_stats[$m['h']]; $a = &$running_stats[$m['a']];
