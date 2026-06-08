@@ -42,6 +42,8 @@ $whatif_counts = [6, 5, 4, 3, 2, 1];
             <th>Played</th>
             <th>Max Pts (All Win)</th>
             <th>Max Pts (All Draw)</th>
+            <th>~Half W+D</th>
+            <th>All Losses</th>
             <th>Next <?= $n ?> Opponents</th>
         </tr>
         <?php foreach ($standings as $team): ?>
@@ -57,6 +59,8 @@ $whatif_counts = [6, 5, 4, 3, 2, 1];
             <td><?= $team['played'] ?></td>
             <td><?= $max_pts_win ?></td>
             <td><?= $max_pts_draw ?></td>
+            <td><?= $team['points'] + intdiv($n, 2) * 3 + ($n - intdiv($n, 2)) ?></td>
+            <td><?= $team['points'] ?></td>
             <td>
                 <?php if ($next_matches): ?>
                     <?php foreach ($next_matches as $m): ?>
