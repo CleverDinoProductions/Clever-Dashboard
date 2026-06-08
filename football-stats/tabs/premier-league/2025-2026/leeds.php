@@ -848,7 +848,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
     <div style="margin-top: 15px;">
         <?php foreach ($season_scenarios as $scenario): ?>
             <?php 
-            $scenario_points = $team['points'] * $scenario['ppg'];
+            $scenario_points = round($scenario['ppg'] * 38);
             $scenario_gap = $scenario_points - $safety_target;
             $team_comparison = $scenario_points - $team['points'];
             ?>
