@@ -100,8 +100,12 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $check->bindValue(1, $code); $check->bindValue(2, $season);
         $res = $check->execute()->fetchArray(SQLITE3_ASSOC);
 
+        $mw0_check = $db->prepare("SELECT 1 FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek = 0 LIMIT 1");
+        $mw0_check->bindValue(1, $code); $mw0_check->bindValue(2, $season);
+        $has_mw0 = $mw0_check->execute()->fetchArray(SQLITE3_ASSOC) !== false;
+
         $is_current = ($season === $current_season || $season === $date_based_season);
-        if (!$is_current && $res !== false && !empty($res['team_crest'])) {
+        if (!$is_current && $res !== false && !empty($res['team_crest']) && $has_mw0) {
             echo "  -> Season $season: Cached. Skipping.\n";
             continue;
         }
