@@ -752,6 +752,8 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ['wins' => 1, 'draws' => 0, 'label' => '1 win, 5 losses'],
         ['wins' => 0, 'draws' => 6, 'label' => '6 draws'],
         ['wins' => 0, 'draws' => 3, 'label' => '3 draws, 3 losses'],
+        ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 4 losses'],
+        ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 5 losses'],
         ['wins' => 0, 'draws' => 0, 'label' => '6 losses'],
     ];
     ?>
@@ -792,9 +794,13 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ['wins' => 2, 'draws' => 0, 'label' => '2 wins, 3 losses'],
         ['wins' => 1, 'draws' => 4, 'label' => '1 win, 4 draws'],
         ['wins' => 1, 'draws' => 2, 'label' => '1 win, 2 draws, 2 losses'],
+        ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw, 3 losses'],
         ['wins' => 1, 'draws' => 0, 'label' => '1 win, 4 losses'],
         ['wins' => 0, 'draws' => 5, 'label' => '5 draws'],
+        ['wins' => 0, 'draws' => 4, 'label' => '4 draws, 1 loss'],
+        ['wins' => 0, 'draws' => 3, 'label' => '3 draws, 2 losses'],
         ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 3 losses'],
+        ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 4 losses'],
         ['wins' => 0, 'draws' => 0, 'label' => '5 losses'],
     ];
     ?>
@@ -834,7 +840,9 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ['wins' => 1, 'draws' => 1, 'label' => '1 win, 1 draw, 2 losses'],
         ['wins' => 1, 'draws' => 0, 'label' => '1 win, 3 losses'],
         ['wins' => 0, 'draws' => 4, 'label' => '4 draws'],
+        ['wins' => 0, 'draws' => 3, 'label' => '3 draws, 1 loss'],
         ['wins' => 0, 'draws' => 2, 'label' => '2 draws, 2 losses'],
+        ['wins' => 0, 'draws' => 1, 'label' => '1 draw, 3 losses'],
         ['wins' => 0, 'draws' => 0, 'label' => '4 losses'],
     ];
     ?>
