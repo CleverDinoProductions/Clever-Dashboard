@@ -1,10 +1,13 @@
 <?php
 /**
- * fetch-worldfootball-badge-injector.php
- * REVISED SMART VERSION:
- * - Payload Optimized: Uses new trimmed v1/v2 eventsseason.php fields.
- * - Auto-Crest Discovery: Grabs badges directly from fixture events.
- * - Efficient Reconstruction: Skips stable historical data, updates current season.
+ * fetch-englishfootball.php
+ * Syncs all available historical English football seasons from TheSportsDB.
+ * Covers PL/Championship/L1/L2/NL including pre-1992 eras:
+ *   PL(4328)  → First Division before 1992
+ *   ELC(4329) → Second Division before 1992
+ *   L1(4396)  → Third Division before 1992 / First Division (new) 1992-2004
+ *   L2(4397)  → Fourth Division before 1992 / Second Division (new) 1992-2004
+ * Matches are stored with matchweek (intRound) for all available seasons.
  */
 
 ini_set('display_errors', 1);
@@ -34,9 +37,28 @@ foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
 }
 
-// Add missing columns to existing matches tables (no-op if already present)
-foreach (['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT'] as $colDef) {
+// Add missing columns to existing tables (no-op if already present)
+foreach (['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT', 'competition_name TEXT'] as $colDef) {
     try { $db->exec("ALTER TABLE matches ADD COLUMN $colDef"); } catch (Exception $e) {}
+}
+foreach (['competition_name TEXT'] as $colDef) {
+    try { $db->exec("ALTER TABLE league_table_snapshots ADD COLUMN $colDef"); } catch (Exception $e) {}
+    try { $db->exec("ALTER TABLE league_table_snapshots_by_date ADD COLUMN $colDef"); } catch (Exception $e) {}
+}
+
+/**
+ * Returns the era-correct competition name for a given code and season start year.
+ * TheSportsDB uses a single league ID across eras; we label them appropriately.
+ */
+function era_name(string $code, int $year): string {
+    return match($code) {
+        'PL'  => $year < 1992 ? 'Football League First Division'  : 'Premier League',
+        'ELC' => $year < 1992 ? 'Football League Second Division' : ($year < 2004 ? 'Football League First Division' : 'Championship'),
+        'L1'  => $year < 1992 ? 'Football League Third Division'  : ($year < 2004 ? 'Football League Second Division' : 'League One'),
+        'L2'  => $year < 1992 ? 'Football League Fourth Division' : ($year < 2004 ? 'Football League Third Division'  : 'League Two'),
+        'NL'  => 'National League',
+        default => $code,
+    };
 }
 
 // --- 2. Core League Processing ---
@@ -89,13 +111,12 @@ function sync_league($db, $BASE_URL, $code, $id) {
     if (!$seasons_json || !isset($seasons_json['seasons'])) return;
 
     foreach (array_reverse($seasons_json['seasons']) as $s_obj) {
-        $season = $s_obj['strSeason'];
-        if ((int)substr($season, 0, 4) < 1987) continue;
+        $season      = $s_obj['strSeason'];
+        $season_year = (int)substr($season, 0, 4);
+        $comp_name   = era_name($code, $season_year);
 
-        // Optimization: Only skip if badges exist AND it's not the current season.
-        // Always re-fetch both the API-reported current season AND the date-inferred one
-        // so that end-of-season playoff results are picked up even when the live table
-        // has rolled over.
+        // Optimization: Only skip if snapshots exist AND it's not the current season.
+        // Always re-fetch the current season to pick up playoff/late results.
         $check = $db->prepare("SELECT team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? LIMIT 1");
         $check->bindValue(1, $code); $check->bindValue(2, $season);
         $res = $check->execute()->fetchArray(SQLITE3_ASSOC);
@@ -104,13 +125,14 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $mw0_check->bindValue(1, $code); $mw0_check->bindValue(2, $season);
         $has_mw0 = $mw0_check->execute()->fetchArray(SQLITE3_ASSOC) !== false;
 
-        $is_current = ($season === $current_season || $season === $date_based_season);
-        if (!$is_current && $res !== false && !empty($res['team_crest']) && $has_mw0) {
-            echo "  -> Season $season: Cached. Skipping.\n";
+        $is_current  = ($season === $current_season || $season === $date_based_season);
+        // Historical seasons (pre-1992) often have no badge data; treat presence of any snapshot row as cached.
+        $is_historic = $season_year < 1992;
+        if (!$is_current && $res !== false && $has_mw0 && (!empty($res['team_crest']) || $is_historic)) {
+            echo "  -> Season $season [$comp_name]: Cached. Skipping.\n";
             continue;
         }
-
-        echo "  -> " . ($res === false ? "Reconstructing" : "Updating") . " Season: $season... ";
+        echo "  -> " . ($res === false ? "Reconstructing" : "Updating") . " Season: $season [$comp_name]... ";
 
         $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=" . urlencode($season)), true);
         if (!$fixtures || empty($fixtures['events'])) { echo "No data.\n"; continue; }
@@ -119,7 +141,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $db->exec("DELETE FROM matches WHERE competition_code = '$code' AND season_label = '$season'");
         $db->exec("DELETE FROM league_table_snapshots WHERE competition_code = '$code' AND season_label = '$season'");
 
-        $m_ins = $db->prepare("INSERT INTO matches (competition_code, season_label, matchweek, match_date, home_team, away_team, home_goals, away_goals, status, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $m_ins = $db->prepare("INSERT INTO matches (competition_code, competition_name, season_label, matchweek, match_date, home_team, away_team, home_goals, away_goals, status, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         $mw_buckets = []; $running_stats = [];
 
@@ -173,11 +195,11 @@ function sync_league($db, $BASE_URL, $code, $id) {
                 $matchStatus = 'scheduled';
             }
 
-            $m_ins->bindValue(1, $code); $m_ins->bindValue(2, $season); $m_ins->bindValue(3, $mw);
-            $m_ins->bindValue(4, $e['dateEvent']); $m_ins->bindValue(5, $e['strHomeTeam']);
-            $m_ins->bindValue(6, $e['strAwayTeam']); $m_ins->bindValue(7, $hg);
-            $m_ins->bindValue(8, $ag); $m_ins->bindValue(9, $matchStatus);
-            $m_ins->bindValue(10, 'tsdb_v2_optimized');
+            $m_ins->bindValue(1, $code); $m_ins->bindValue(2, $comp_name); $m_ins->bindValue(3, $season); $m_ins->bindValue(4, $mw);
+            $m_ins->bindValue(5, $e['dateEvent']); $m_ins->bindValue(6, $e['strHomeTeam']);
+            $m_ins->bindValue(7, $e['strAwayTeam']); $m_ins->bindValue(8, $hg);
+            $m_ins->bindValue(9, $ag); $m_ins->bindValue(10, $matchStatus);
+            $m_ins->bindValue(11, 'tsdb_v2_optimized');
             $m_ins->execute();
 
             if ($hg !== null && $ag !== null) {
