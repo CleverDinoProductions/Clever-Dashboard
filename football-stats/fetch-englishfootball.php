@@ -57,7 +57,7 @@ $migrate = [
 ];
 foreach ($migrate as $tbl => $cols) {
     foreach ($cols as $col) {
-        try { $db->exec("ALTER TABLE $tbl ADD COLUMN $col"); } catch (Exception $e) {}
+        @$db->exec("ALTER TABLE $tbl ADD COLUMN $col");
     }
 }
 
