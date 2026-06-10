@@ -28,8 +28,8 @@ $tables = [
     "league_table_L2" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_NL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, home_pens INTEGER, away_pens INTEGER, status TEXT, source TEXT",
-    "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
-    "league_table_snapshots_by_date" => "competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)",
+    "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
+    "league_table_snapshots_by_date" => "competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT, PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
 ];
 
@@ -37,7 +37,6 @@ foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
 }
 
-<<<<<<< HEAD
 // Migrate existing tables (no-op if column already present)
 $migrate = [
     'matches'                         => ['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT', 'competition_name TEXT'],
@@ -48,21 +47,6 @@ foreach ($migrate as $tbl => $cols) {
     foreach ($cols as $col) {
         @$db->exec("ALTER TABLE $tbl ADD COLUMN $col");
     }
-}
-
-// ─── 2. Pure functions ────────────────────────────────────────────────────────
-
-function season_str(int $year): string {
-    return $year . '-' . sprintf('%02d', ($year + 1) % 100);
-=======
-// Add missing columns to existing tables (no-op if already present)
-foreach (['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT', 'competition_name TEXT'] as $colDef) {
-    try { $db->exec("ALTER TABLE matches ADD COLUMN $colDef"); } catch (Exception $e) {}
-}
-foreach (['competition_name TEXT'] as $colDef) {
-    try { $db->exec("ALTER TABLE league_table_snapshots ADD COLUMN $colDef"); } catch (Exception $e) {}
-    try { $db->exec("ALTER TABLE league_table_snapshots_by_date ADD COLUMN $colDef"); } catch (Exception $e) {}
->>>>>>> parent of eb3c3b2 (Switch English football match source from TheSportsDB to openfootball)
 }
 
 /**
@@ -227,7 +211,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
         }
 
         ksort($mw_buckets);
-        $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         // Always insert blank pre-season snapshot at MW0 (reserved for pre-season; playoffs remapped to MW47+)
         if (!empty($running_stats)) {
@@ -236,7 +220,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
             $pos = 1;
             foreach ($pre_teams as $name) {
                 $badge = $crest_map[$name] ?? '';
-                $vals = [$code, $season, 0, $badge, $name, $pos++, 0, 0, 0, 0, 0, 0, 0, 0, $timestamp, $timestamp];
+                $vals = [$code, $season, 0, $badge, $name, $pos++, 0, 0, 0, 0, 0, 0, 0, 0, $timestamp, $timestamp, $comp_name];
                 foreach ($vals as $i => $v) $s_ins->bindValue($i+1, $v);
                 $s_ins->execute();
             }
@@ -262,7 +246,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
             $pos = 1;
             foreach ($temp_table as $name => $s) {
                 $badge = $crest_map[$name] ?? '';
-                $vals = [$code, $season, $mw, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp];
+                $vals = [$code, $season, $mw, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp, $comp_name];
                 foreach ($vals as $i => $v) $s_ins->bindValue($i+1, $v);
                 $s_ins->execute();
             }
@@ -287,7 +271,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
         }
 
         $date_running_stats = [];
-        $ds_ins = $db->prepare("INSERT INTO league_table_snapshots_by_date VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $ds_ins = $db->prepare("INSERT INTO league_table_snapshots_by_date VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         foreach ($date_buckets as $snap_date => $matches) {
             foreach ($matches as $m) {
                 if (!isset($date_running_stats[$m['h']])) $date_running_stats[$m['h']] = ['p'=>0,'w'=>0,'d'=>0,'l'=>0,'gf'=>0,'ga'=>0,'pts'=>0];
@@ -308,7 +292,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
             $pos = 1;
             foreach ($temp_date as $name => $s) {
                 $badge = $crest_map[$name] ?? '';
-                $vals = [$code, $season, $snap_date, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp];
+                $vals = [$code, $season, $snap_date, $badge, $name, $pos++, $s['p'], $s['w'], $s['d'], $s['l'], $s['gf'], $s['ga'], $s['gf']-$s['ga'], $s['pts'], $timestamp, $timestamp, $comp_name];
                 foreach ($vals as $i => $v) $ds_ins->bindValue($i+1, $v);
                 $ds_ins->execute();
             }
