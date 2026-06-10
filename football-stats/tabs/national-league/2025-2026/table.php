@@ -27,38 +27,9 @@ if ($table_filter !== 'all') {
 $homeStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'home', $halfway_games, 'league_table_NL', $max_regular_mw);
 $awayStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'away', $halfway_games, 'league_table_NL', $max_regular_mw);
 
-$team_info = [
-    'Aldershot Town' => ['name' => 'Aldershot Town', 'common_name' => 'Aldershot', 'nickname' => 'The Shots', 'short' => 'ALD', 'color' => '#E30613'],
-    'Altrincham' => ['name' => 'Altrincham', 'common_name' => 'Alty', 'nickname' => 'The Robins', 'short' => 'ALT', 'color' => '#E30613'],
-    'Barnet' => ['name' => 'Barnet', 'common_name' => 'Barnet', 'nickname' => 'The Bees', 'short' => 'BRN', 'color' => '#FDBE11'],
-    'Braintree Town' => ['name' => 'Braintree Town', 'common_name' => 'Braintree', 'nickname' => 'The Iron', 'short' => 'BRA', 'color' => '#FDBE11'],
-    'Dagenham & Redbridge' => ['name' => 'Dagenham & Redbridge', 'common_name' => 'Daggers', 'nickname' => 'The Daggers', 'short' => 'DAG', 'color' => '#E30613'],
-    'Eastleigh' => ['name' => 'Eastleigh', 'common_name' => 'Eastleigh', 'nickname' => 'The Spitfires', 'short' => 'EAS', 'color' => '#005DAA'],
-    'Ebbsfleet United' => ['name' => 'Ebbsfleet United', 'common_name' => 'Ebbsfleet', 'nickname' => 'The Fleet', 'short' => 'EBB', 'color' => '#E30613'],
-    'FC Halifax Town' => ['name' => 'FC Halifax Town', 'common_name' => 'Halifax', 'nickname' => 'The Shaymen', 'short' => 'HAL', 'color' => '#005DAA'],
-    'Forest Green Rovers' => ['name' => 'Forest Green Rovers', 'common_name' => 'Forest Green', 'nickname' => 'The Green', 'short' => 'FGR', 'color' => '#00FF00'],
-    'Gateshead' => ['name' => 'Gateshead', 'common_name' => 'Gateshead', 'nickname' => 'The Heed', 'short' => 'GAT', 'color' => '#FFFFFF'],
-    'Hartlepool United' => ['name' => 'Hartlepool United', 'common_name' => 'Hartlepool', 'nickname' => 'The Monkey Hangers', 'short' => 'HAR', 'color' => '#005DAA'],
-    'Maidenhead United' => ['name' => 'Maidenhead United', 'common_name' => 'Maidenhead', 'nickname' => 'The Magpies', 'short' => 'MAI', 'color' => '#000000'],
-    'Oldham Athletic' => ['name' => 'Oldham Athletic', 'common_name' => 'Oldham', 'nickname' => 'The Latics', 'short' => 'OLD', 'color' => '#005DAA'],
-    'Rochdale' => ['name' => 'Rochdale', 'common_name' => 'Rochdale', 'nickname' => 'The Dale', 'short' => 'ROC', 'color' => '#005DAA'],
-    'Solihull Moors' => ['name' => 'Solihull Moors', 'common_name' => 'Solihull', 'nickname' => 'The Moors', 'short' => 'SOL', 'color' => '#FFD200'],
-    'Southend United' => ['name' => 'Southend United', 'common_name' => 'Southend', 'nickname' => 'The Shrimpers', 'short' => 'SOU', 'color' => '#002D56'],
-    'Sutton United' => ['name' => 'Sutton United', 'common_name' => 'Sutton', 'nickname' => 'The Yellows', 'short' => 'SUT', 'color' => '#FFD200'],
-    'Tamworth' => ['name' => 'Tamworth', 'common_name' => 'Tamworth', 'nickname' => 'The Lambs', 'short' => 'TAM', 'color' => '#E30613'],
-    'Wealdstone' => ['name' => 'Wealdstone', 'common_name' => 'Wealdstone', 'nickname' => 'The Stones', 'short' => 'WEA', 'color' => '#0000FF'],
-    'Woking' => ['name' => 'Woking', 'common_name' => 'Woking', 'nickname' => 'The Cards', 'short' => 'WOK', 'color' => '#E30613'],
-    'Yeovil Town' => ['name' => 'Yeovil Town', 'common_name' => 'Yeovil', 'nickname' => 'The Glovers', 'short' => 'YEO', 'color' => '#008000'],
-    'York City' => ['name' => 'York City', 'common_name' => 'York', 'nickname' => 'The Minstermen', 'short' => 'YOR', 'color' => '#E30613'],
-];
+require_once dirname(__DIR__, 3) . '/includes/team-info.php';
+$team_info = $team_info_NL;
 
-function getTeamInfo($team_name, $team_info) {
-    if (isset($team_info[$team_name])) return $team_info[$team_name];
-    foreach ($team_info as $key => $info) {
-        if (stripos($team_name, $key) !== false) return $info;
-    }
-    return ['name' => $team_name, 'common_name' => $team_name, 'nickname' => 'Unknown', 'short' => strtoupper(substr($team_name, 0, 3)), 'color' => '#888888'];
-}
 ?>
 
 <style>

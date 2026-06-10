@@ -37,42 +37,9 @@ $safety_target_low = 34; // Low safety target
 $safety_target_recent_low = 27; // Recent low safety target
 
 // Team nicknames, abbreviations, and COMMON NAMES
-$team_info = [
-    'Birmingham City' => ['name' => 'Birmingham City', 'common_name' => 'Birmingham', 'nickname' => 'The Blues', 'short' => 'BIR', 'color' => '#0000FF'],
-    'Blackburn Rovers' => ['name' => 'Blackburn Rovers', 'common_name' => 'Blackburn', 'nickname' => 'Rovers', 'short' => 'BLB', 'color' => '#0054A6'],
-    'Bristol City' => ['name' => 'Bristol City', 'common_name' => 'Bristol City', 'nickname' => 'The Robins', 'short' => 'BRC', 'color' => '#BC0000'],
-    'Charlton Athletic' => ['name' => 'Charlton Athletic', 'common_name' => 'Charlton', 'nickname' => 'The Addicks', 'short' => 'CHA', 'color' => '#E30613'],
-    'Coventry City' => ['name' => 'Coventry City', 'common_name' => 'Coventry', 'nickname' => 'The Sky Blues', 'short' => 'COV', 'color' => '#87CEEB'],
-    'Derby County' => ['name' => 'Derby County', 'common_name' => 'Derby', 'nickname' => 'The Rams', 'short' => 'DER', 'color' => '#000000'],
-    'Hull City' => ['name' => 'Hull City', 'common_name' => 'Hull', 'nickname' => 'The Tigers', 'short' => 'HUL', 'color' => '#F5A100'],
-    'Ipswich Town' => ['name' => 'Ipswich Town', 'common_name' => 'Ipswich', 'nickname' => 'The Tractor Boys', 'short' => 'IPS', 'color' => '#0033FF'],
-    'Leicester City' => ['name' => 'Leicester City', 'common_name' => 'Leicester', 'nickname' => 'The Foxes', 'short' => 'LEI', 'color' => '#003090'],
-    'Leeds United' => ['name' => 'Leeds United', 'common_name' => 'Leeds', 'nickname' => 'The Whites / Peacocks', 'short' => 'LEE', 'color' => '#FFFFFF'],
-    'Middlesbrough' => ['name' => 'Middlesbrough', 'common_name' => 'Boro', 'nickname' => 'The Smoggies', 'short' => 'MID', 'color' => '#E21B23'],
-    'Millwall' => ['name' => 'Millwall', 'common_name' => 'Millwall', 'nickname' => 'The Lions', 'short' => 'MIL', 'color' => '#00254B'],
-    'Norwich City' => ['name' => 'Norwich City', 'common_name' => 'Norwich', 'nickname' => 'The Canaries', 'short' => 'NOR', 'color' => '#FFF200'],
-    'Oxford United' => ['name' => 'Oxford United', 'common_name' => 'Oxford', 'nickname' => "The U's", 'short' => 'OXF', 'color' => '#FFFF00'],
-    'Portsmouth' => ['name' => 'Portsmouth', 'common_name' => 'Pompey', 'nickname' => 'Pompey', 'short' => 'POR', 'color' => '#001489'],
-    'Preston North End' => ['name' => 'Preston North End', 'common_name' => 'Preston', 'nickname' => 'The Lilywhites', 'short' => 'PNE', 'color' => '#FFFFFF'],
-    'Queens Park Rangers' => ['name' => 'Queens Park Rangers', 'common_name' => 'QPR', 'nickname' => 'The Hoops', 'short' => 'QPR', 'color' => '#0000FF'],
-    'Sheffield United' => ['name' => 'Sheffield United', 'common_name' => 'Sheff Utd', 'nickname' => 'The Blades', 'short' => 'SHU', 'color' => '#EE2737'],
-    'Sheffield Wednesday' => ['name' => 'Sheffield Wednesday', 'common_name' => 'Sheff Wed', 'nickname' => 'The Owls', 'short' => 'SHW', 'color' => '#0000FF'],
-    'Southampton' => ['name' => 'Southampton', 'common_name' => 'Saints', 'nickname' => 'The Saints', 'short' => 'SOU', 'color' => '#D71920'],
-    'Stoke City' => ['name' => 'Stoke City', 'common_name' => 'Stoke', 'nickname' => 'The Potters', 'short' => 'STK', 'color' => '#E03A3E'],
-    'Swansea City' => ['name' => 'Swansea City', 'common_name' => 'Swansea', 'nickname' => 'The Swans', 'short' => 'SWA', 'color' => '#FFFFFF'],
-    'Watford' => ['name' => 'Watford', 'common_name' => 'Watford', 'nickname' => 'The Hornets', 'short' => 'WAT', 'color' => '#FBEE23'],
-    'West Bromwich Albion' => ['name' => 'West Brom', 'common_name' => 'West Brom', 'nickname' => 'The Baggies', 'short' => 'WBA', 'color' => '#122F67'],
-    'Wrexham' => ['name' => 'Wrexham', 'common_name' => 'Wrexham', 'nickname' => 'The Red Dragons', 'short' => 'WRE', 'color' => '#FF0000'],
-];
+require_once dirname(__DIR__, 3) . '/includes/team-info.php';
+$team_info = $team_info_ELC;
 
-// Helper function to get team info
-function getTeamInfo($team_name, $team_info) {
-    if (isset($team_info[$team_name])) return $team_info[$team_name];
-    foreach ($team_info as $key => $info) {
-        if (stripos($team_name, $key) !== false) return $info;
-    }
-    return ['name' => $team_name, 'common_name' => $team_name, 'nickname' => 'Unknown', 'short' => strtoupper(substr($team_name, 0, 3)), 'color' => '#888888'];
-}
 ?>
 
 <!-- Custom CSS -->

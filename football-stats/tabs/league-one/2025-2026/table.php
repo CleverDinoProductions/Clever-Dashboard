@@ -28,35 +28,9 @@ $homeStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_se
 $awayStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'away', $halfway_games, 'league_table_L1', $max_regular_mw);
 
 // Team metadata
-$team_info = [
-    'Barnsley' => ['name' => 'Barnsley', 'common_name' => 'Barnsley', 'nickname' => 'The Tykes', 'short' => 'BAR', 'color' => '#E81734'],
-    'Bolton Wanderers' => ['name' => 'Bolton Wanderers', 'common_name' => 'Bolton', 'nickname' => 'The Trotters', 'short' => 'BOL', 'color' => '#FFFFFF'],
-    'Blackpool' => ['name' => 'Blackpool', 'common_name' => 'Blackpool', 'nickname' => 'The Seasiders', 'short' => 'BLP', 'color' => '#F68712'],
-    'Burton Albion' => ['name' => 'Burton Albion', 'common_name' => 'Burton', 'nickname' => 'The Brewers', 'short' => 'BUR', 'color' => '#FFD200'],
-    'Cambridge United' => ['name' => 'Cambridge United', 'common_name' => 'Cambridge', 'nickname' => 'The U\'s', 'short' => 'CAM', 'color' => '#FFD200'],
-    'Exeter City' => ['name' => 'Exeter City', 'common_name' => 'Exeter', 'nickname' => 'The Grecians', 'short' => 'EXE', 'color' => '#E81734'],
-    'Huddersfield Town' => ['name' => 'Huddersfield Town', 'common_name' => 'Huddersfield', 'nickname' => 'The Terriers', 'short' => 'HUD', 'color' => '#0072CE'],
-    'Leyton Orient' => ['name' => 'Leyton Orient', 'common_name' => 'Orient', 'nickname' => 'The O\'s', 'short' => 'LEY', 'color' => '#E81734'],
-    'Lincoln City' => ['name' => 'Lincoln City', 'common_name' => 'Lincoln', 'nickname' => 'The Imps', 'short' => 'LIN', 'color' => '#D11241'],
-    'Mansfield Town' => ['name' => 'Mansfield Town', 'common_name' => 'Mansfield', 'nickname' => 'The Stags', 'short' => 'MAN', 'color' => '#FDBE11'],
-    'Northampton Town' => ['name' => 'Northampton Town', 'common_name' => 'Northampton', 'nickname' => 'The Cobblers', 'short' => 'NOR', 'color' => '#7B1639'],
-    'Peterborough United' => ['name' => 'Peterborough United', 'common_name' => 'Peterborough', 'nickname' => 'The Posh', 'short' => 'PET', 'color' => '#0054A6'],
-    'Reading' => ['name' => 'Reading', 'common_name' => 'Reading', 'nickname' => 'The Royals', 'short' => 'REA', 'color' => '#004494'],
-    'Rotherham United' => ['name' => 'Rotherham United', 'common_name' => 'Rotherham', 'nickname' => 'The Millers', 'short' => 'ROT', 'color' => '#D00027'],
-    'Shrewsbury Town' => ['name' => 'Shrewsbury Town', 'common_name' => 'Shrewsbury', 'nickname' => 'The Shrews', 'short' => 'SHR', 'color' => '#FFC20E'],
-    'Stevenage' => ['name' => 'Stevenage', 'common_name' => 'Stevenage', 'nickname' => 'The Boro', 'short' => 'STE', 'color' => '#E30613'],
-    'Stockport County' => ['name' => 'Stockport County', 'common_name' => 'Stockport', 'nickname' => 'The Hatters', 'short' => 'STP', 'color' => '#004A99'],
-    'Wigan Athletic' => ['name' => 'Wigan Athletic', 'common_name' => 'Wigan', 'nickname' => 'The Latics', 'short' => 'WIG', 'color' => '#0033A0'],
-    'Wycombe Wanderers' => ['name' => 'Wycombe Wanderers', 'common_name' => 'Wycombe', 'nickname' => 'The Chairboys', 'short' => 'WYC', 'color' => '#002D56'],
-];
+require_once dirname(__DIR__, 3) . '/includes/team-info.php';
+$team_info = $team_info_L1;
 
-function getTeamInfo($team_name, $team_info) {
-    if (isset($team_info[$team_name])) return $team_info[$team_name];
-    foreach ($team_info as $key => $info) {
-        if (stripos($team_name, $key) !== false) return $info;
-    }
-    return ['name' => $team_name, 'common_name' => $team_name, 'nickname' => 'Unknown', 'short' => strtoupper(substr($team_name, 0, 3)), 'color' => '#888888'];
-}
 ?>
 
 <style>
