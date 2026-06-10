@@ -27,41 +27,9 @@ if ($table_filter !== 'all') {
 $homeStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'home', $halfway_games, 'league_table_L2', $max_regular_mw);
 $awayStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'away', $halfway_games, 'league_table_L2', $max_regular_mw);
 
-$team_info = [
-    'Accrington Stanley' => ['name' => 'Accrington Stanley', 'common_name' => 'Accrington', 'nickname' => 'Stanley', 'short' => 'ACC', 'color' => '#D11241'],
-    'Barnet' => ['name' => 'Barnet', 'common_name' => 'Barnet', 'nickname' => 'The Barons', 'short' => 'BAR', 'color' => '#000000'],
-    'Barrow' => ['name' => 'Barrow', 'common_name' => 'Barrow', 'nickname' => 'The Bluebirds', 'short' => 'BRW', 'color' => '#005DAA'],
-    'Bromley' => ['name' => 'Blomley', 'common_name' => 'Blomley', 'nickname' => 'The Bombers', 'short' => 'BLO', 'color' => '#FFB81C'],
-    'Bristol Rovers' => ['name' => 'Bristol Rovers', 'common_name' => 'Bristol', 'nickname' => 'The Rovers', 'short' => 'BRS', 'color' => '#FFCD00'],
-    'Bromley' => ['name' => 'Bromley', 'common_name' => 'Bromley', 'nickname' => 'The Bombers', 'short' => 'BRW', 'color' => '#FFB81C'],
-    'Cambridge United' => ['name' => 'Cambridge United', 'common_name' => 'Cambridge', 'nickname' => 'The U\'s', 'short' => 'CAM', 'color' => '#FFD200'],
-    'Cheltenham Town' => ['name' => 'Cheltenham Town', 'common_name' => 'Cheltenham', 'nickname' => 'The Tows', 'short' => 'CHT', 'color' => '#FFCD00'],
-    'Chesterfield' => ['name' => 'Chesterfield', 'common_name' => 'Chesterfield', 'nickname' => 'The Spireites', 'short' => 'CHS', 'color' => '#0054A6'],
-    'Colchester United' => ['name' => 'Colchester United', 'common_name' => 'Colchester', 'nickname' => 'The U\'s', 'short' => 'COL', 'color' => '#FFD200'],
-    'Crawley Town' => ['name' => 'Crawley Town', 'common_name' => 'Crawley', 'nickname' => 'The Town', 'short' => 'CRA', 'color' => '#FFCD00'],
-    'Crewe Alexandra' => ['name' => 'Crewe Alexandra', 'common_name' => 'Crewe', 'nickname' => 'The Alexandra', 'short' => 'CRE', 'color' => '#000000'],
-    'Fleetwood Town' => ['name' => 'Fleetwood Town', 'common_name' => 'Fleetwood', 'nickname' => 'The Town', 'short' => 'FLE', 'color' => '#FFCD00'],
-    'Gillingham' => ['name' => 'Gillingham', 'common_name' => 'Gillingham', 'nickname' => 'The Gills', 'short' => 'GIL', 'color' => '#FFCD00'],
-    'Grimsby Town' => ['name' => 'Grimsby Town', 'common_name' => 'Grimsby', 'nickname' => 'The Town', 'short' => 'GRM', 'color' => '#FFCD00'],
-    'Harrogate Town' => ['name' => 'Harrogate Town', 'common_name' => 'Harrogate', 'nickname' => 'The Town', 'short' => 'HAR', 'color' => '#FFCD00'],
-    'Milton Keynes Dons' => ['name' => 'Milton Keynes Dons', 'common_name' => 'MK Dons', 'nickname' => 'The Dons', 'short' => 'MKD', 'color' => '#FFCD00'],
-    'Newport County' => ['name' => 'Newport County', 'common_name' => 'Newport', 'nickname' => 'The County', 'short' => 'NEW', 'color' => '#FFCD00'],
-    'Notts County' => ['name' => 'Notts County', 'common_name' => 'Notts', 'nickname' => 'The County', 'short' => 'NOT', 'color' => '#FFCD00'],
-    'Oldham Athletic' => ['name' => 'Oldham Athletic', 'common_name' => 'Oldham', 'nickname' => 'The Athletics', 'short' => 'OLD', 'color' => '#FFCD00'],
-    'Salford City' => ['name' => 'Salford City', 'common_name' => 'Salford', 'nickname' => 'The City', 'short' => 'SAL', 'color' => '#FFCD00'],
-    'Shrewsbury Town' => ['name' => 'Shrewsbury Town', 'common_name' => 'Shrewsbury', 'nickname' => 'The Shrews', 'short' => 'SHR', 'color' => '#FFCD00'],
-    'Swindon Town' => ['name' => 'Swindon Town', 'common_name' => 'Swindon', 'nickname' => 'The Town', 'short' => 'SWI', 'color' => '#FFCD00'],
-    'Tranmere Rovers' => ['name' => 'Tranemere Rovers', 'common_name' => 'Tranmere', 'nickname' => 'The Rovers', 'short' => 'TRA', 'color' => '#FFCD00'],
-    'Walsall' => ['name' => 'Walsall', 'common_name' => 'Walsall', 'nickname' => 'The Wals', 'short' => 'WAL', 'color' => '#FFCD00'],
-];
+require_once dirname(__DIR__, 3) . '/includes/team-info.php';
+$team_info = $team_info_L2;
 
-function getTeamInfo($team_name, $team_info) {
-    if (isset($team_info[$team_name])) return $team_info[$team_name];
-    foreach ($team_info as $key => $info) {
-        if (stripos($team_name, $key) !== false) return $info;
-    }
-    return ['name' => $team_name, 'common_name' => $team_name, 'nickname' => 'Unknown', 'short' => strtoupper(substr($team_name, 0, 3)), 'color' => '#888888'];
-}
 ?>
 
 <style>

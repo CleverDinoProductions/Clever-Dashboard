@@ -32,39 +32,9 @@ $safety_target_low = 34;
 $safety_target_recent_low = 27;
 
 // Team metadata
-$team_info = [
-    'Accrington Stanley' => ['name' => 'Accrington Stanley', 'common_name' => 'Accrington', 'nickname' => 'Stanley', 'short' => 'ACC', 'color' => '#D11241'],
-    'AFC Wimbledon' => ['name' => 'AFC Wimbledon', 'common_name' => 'Wimbledon', 'nickname' => 'The Dons', 'short' => 'WIM', 'color' => '#213D8A'],
-    'Barrow' => ['name' => 'Barrow', 'common_name' => 'Barrow', 'nickname' => 'The Bluebirds', 'short' => 'BRW', 'color' => '#005DAA'],
-    'Bradford City' => ['name' => 'Bradford City', 'common_name' => 'Bradford', 'nickname' => 'The Bantams', 'short' => 'BRA', 'color' => '#FFB81C'],
-    'Carlisle United' => ['name' => 'Carlisle United', 'common_name' => 'Carlisle', 'nickname' => 'The Cumbrians', 'short' => 'CAR', 'color' => '#004A99'],
-    'Cheltenham Town' => ['name' => 'Cheltenham Town', 'common_name' => 'Cheltenham', 'nickname' => 'The Robins', 'short' => 'CHE', 'color' => '#E30613'],
-    'Chesterfield' => ['name' => 'Chesterfield', 'common_name' => 'Chesterfield', 'nickname' => 'The Spireites', 'short' => 'CHS', 'color' => '#0054A6'],
-    'Colchester United' => ['name' => 'Colchester United', 'common_name' => 'Colchester', 'nickname' => 'The U\'s', 'short' => 'COL', 'color' => '#0000FF'],
-    'Crewe Alexandra' => ['name' => 'Crewe Alexandra', 'common_name' => 'Crewe', 'nickname' => 'The Railwaymen', 'short' => 'CRE', 'color' => '#D00027'],
-    'Doncaster Rovers' => ['name' => 'Doncaster Rovers', 'common_name' => 'Doncaster', 'nickname' => 'Donny', 'short' => 'DON', 'color' => '#E30613'],
-    'Fleetwood Town' => ['name' => 'Fleetwood Town', 'common_name' => 'Fleetwood', 'nickname' => 'The Cod Army', 'short' => 'FLE', 'color' => '#E30613'],
-    'Gillingham' => ['name' => 'Gillingham', 'common_name' => 'Gillingham', 'nickname' => 'The Gills', 'short' => 'GIL', 'color' => '#0000FF'],
-    'Grimsby Town' => ['name' => 'Grimsby Town', 'common_name' => 'Grimsby', 'nickname' => 'The Mariners', 'short' => 'GRI', 'color' => '#000000'],
-    'Harrogate Town' => ['name' => 'Harrogate Town', 'common_name' => 'Harrogate', 'nickname' => 'The Town', 'short' => 'HAR', 'color' => '#FFD200'],
-    'MK Dons' => ['name' => 'Milton Keynes Dons', 'common_name' => 'MK Dons', 'nickname' => 'The Dons', 'short' => 'MKD', 'color' => '#FFFFFF'],
-    'Morecambe' => ['name' => 'Morecambe', 'common_name' => 'Morecambe', 'nickname' => 'The Shrimps', 'short' => 'MOR', 'color' => '#E30613'],
-    'Newport County' => ['name' => 'Newport County', 'common_name' => 'Newport', 'nickname' => 'The Exiles', 'short' => 'NEW', 'color' => '#FFB81C'],
-    'Notts County' => ['name' => 'Notts County', 'common_name' => 'Notts Co', 'nickname' => 'The Magpies', 'short' => 'NTC', 'color' => '#000000'],
-    'Port Vale' => ['name' => 'Port Vale', 'common_name' => 'Port Vale', 'nickname' => 'The Valiants', 'short' => 'PVL', 'color' => '#FFFFFF'],
-    'Salford City' => ['name' => 'Salford City', 'common_name' => 'Salford', 'nickname' => 'The Ammies', 'short' => 'SAL', 'color' => '#E30613'],
-    'Swindon Town' => ['name' => 'Swindon Town', 'common_name' => 'Swindon', 'nickname' => 'The Robins', 'short' => 'SWI', 'color' => '#E30613'],
-    'Tranmere Rovers' => ['name' => 'Tranmere Rovers', 'common_name' => 'Tranmere', 'nickname' => 'The Rovers', 'short' => 'TRA', 'color' => '#FFFFFF'],
-    'Walsall' => ['name' => 'Walsall', 'common_name' => 'Walsall', 'nickname' => 'The Saddlers', 'short' => 'WAL', 'color' => '#E30613'],
-];
+require_once dirname(__DIR__, 3) . '/includes/team-info.php';
+$team_info = $team_info_L2;
 
-function getTeamInfo($team_name, $team_info) {
-    if (isset($team_info[$team_name])) return $team_info[$team_name];
-    foreach ($team_info as $key => $info) {
-        if (stripos($team_name, $key) !== false) return $info;
-    }
-    return ['name' => $team_name, 'common_name' => $team_name, 'nickname' => 'Unknown', 'short' => strtoupper(substr($team_name, 0, 3)), 'color' => '#888888'];
-}
 ?>
 
 <style>
