@@ -49,6 +49,41 @@ if ($is_first_half) {
     $games_label = $games_remaining . " games remaining";
 }
 
+// === SEASON POINT SAFETY CALCULATIONS ===
+
+$full_season_safety_target = 46;
+$full_season_points_to_safety = max(0, $full_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $full_season_ppg_needed = round($full_season_points_to_safety / $games_remaining, 2);
+} else {
+    $full_season_ppg_needed = 0;
+}
+
+$extended_season_safety_target = 51;
+$extended_season_points_to_safety = max(0, $extended_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $extended_season_ppg_needed = round($extended_season_points_to_safety / $games_remaining, 2);
+} else {
+    $extended_season_ppg_needed = 0;
+}
+
+$guaranteed_season_safety_target = 54;
+$guaranteed_season_points_to_safety = max(0, $guaranteed_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $guaranteed_season_ppg_needed = round($guaranteed_season_points_to_safety / $games_remaining, 2);
+} else {
+    $guaranteed_season_ppg_needed = 0;
+}
+
+
+$mathematical_season_safety_target = 57;
+$mathematical_season_points_to_safety = max(0, $mathematical_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $mathematical_season_ppg_needed = round($mathematical_season_points_to_safety / $games_remaining, 2);
+} else {
+    $mathematical_season_ppg_needed = 0;
+}
+
 // Calculate 75% rule metrics
 $halfway_progress_pct = ($team['points'] / 23) * 100;
 $target_75pct = 17; // 75% of 23
@@ -297,16 +332,81 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         </p>
     </div>
 
-    <!-- Games Remaining (to target) -->
+    <!-- Points to Full Season Target-->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $full_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $full_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Extented Season Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Extended Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $extended_season_points_to_safety; ?>
+        </div>
+            <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $extended_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Guaranteed Season Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Guaranteed Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $guaranteed_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $guaranteed_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Mathematical Season Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Mathematical Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $mathematical_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $mathematical_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Games Remaining (to halfway) -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php echo $is_first_half ? "Games to Halfway" : "Games Remaining"; ?>
+            Games to Halfway
         </h3>
         <div style="font-size: 64px; font-weight: bold; color: #43b581; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
-            <?php echo $is_first_half ? $games_to_halfway : $games_remaining; ?>
+            <?php echo $games_to_halfway ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             PPG needed: <?php echo $ppg_needed; ?>
+        </p>
+    </div>
+
+    <!-- Games Remaining (to target) -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            Games remaining</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #43b581; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $games_remaining; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Full Season: <?php echo $full_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Extended Season: <?php echo $extended_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Guaranteed Season: <?php echo $guaranteed_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Mathematical Season: <?php echo $mathematical_season_ppg_needed; ?>
         </p>
     </div>
 </div>

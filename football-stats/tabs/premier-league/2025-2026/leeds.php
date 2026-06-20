@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+date_default_timezone_set('UTC');
 // TEAM SURVIVAL TRACKER (Premier League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 
@@ -48,6 +51,42 @@ if ($is_first_half) {
     $target_label = "38 pts for Full Season Safety";
     $games_label = $games_remaining . " games remaining";
 }
+
+// === SEASON POINT SAFETY CALCULATIONS ===
+
+$full_season_safety_target = 38;
+$full_season_points_to_safety = max(0, $full_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $full_season_ppg_needed = round($full_season_points_to_safety / $games_remaining, 2);
+} else {
+    $full_season_ppg_needed = 0;
+}
+
+$extended_season_safety_target = 40;
+$extended_season_points_to_safety = max(0, $extended_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $extended_season_ppg_needed = round($extended_season_points_to_safety / $games_remaining, 2);
+} else {
+    $extended_season_ppg_needed = 0;
+}
+
+$guaranteed_season_safety_target = 42;
+$guaranteed_season_points_to_safety = max(0, $guaranteed_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $guaranteed_season_ppg_needed = round($guaranteed_season_points_to_safety / $games_remaining, 2);
+} else {
+    $guaranteed_season_ppg_needed = 0;
+}
+
+
+$mathematical_season_safety_target = 45;
+$mathematical_season_points_to_safety = max(0, $mathematical_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $mathematical_season_ppg_needed = round($mathematical_season_points_to_safety / $games_remaining, 2);
+} else {
+    $mathematical_season_ppg_needed = 0;
+}
+
 
 // Calculate 75% rule metrics
 $halfway_progress_pct = ($team['points'] / 20) * 100;
@@ -297,16 +336,81 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         </p>
     </div>
 
-    <!-- Games Remaining (to target) -->
+    <!-- Points to Full Season Target-->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $full_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $full_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Extented Season Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Extended Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $extended_season_points_to_safety; ?>
+        </div>
+            <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $extended_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Guaranteed Season Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Guaranteed Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $guaranteed_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $guaranteed_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Mathematical Season Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Mathematical Season Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $mathematical_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $mathematical_season_safety_target; ?> points
+        </p>
+    </div>
+
+    <!-- Games Remaining (to halfway) -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php echo $is_first_half ? "Games to Halfway" : "Games Remaining"; ?>
+            Games to Halfway
         </h3>
         <div style="font-size: 64px; font-weight: bold; color: #43b581; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
-            <?php echo $is_first_half ? $games_to_halfway : $games_remaining; ?>
+            <?php echo $games_to_halfway ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             PPG needed: <?php echo $ppg_needed; ?>
+        </p>
+    </div>
+
+    <!-- Games Remaining (to target) -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            Games remaining</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #43b581; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $games_remaining; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Full Season: <?php echo $full_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Extended Season: <?php echo $extended_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Guaranteed Season: <?php echo $guaranteed_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Mathematical Season: <?php echo $mathematical_season_ppg_needed; ?>
         </p>
     </div>
 </div>
@@ -1203,7 +1307,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goals Scored</p>
             <p style="color: #5865F2; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['gf'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['gf'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1216,7 +1320,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goals Conceded</p>
             <p style="color: #faa61a; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['ga'] / $team['played'], 2); ?> per game
+                <?php echo number_format($games_played > 0 ? $team['ga'] / $games_played : 0, 2); ?> per game
             </p>
         </div>
     </div>
@@ -1229,8 +1333,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goal Difference</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo number_format($team['gd'] / $team['played'], 2); ?> per game
-            </p>
+                <?php echo number_format($games_played > 0 ? $team['gd'] / $games_played : 0, 2); ?> per game
         </div>
     </div>
 
@@ -1248,11 +1351,10 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </p>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo round((($team['won'] + $team['drawn']) / $team['played']) * 100, 1); ?>% undefeated rate<br>
-                <?php echo round(($team['won'] / $team['played']) * 100, 1); ?>% win rate<br>
-                <?php echo round(($team['drawn'] / $team['played']) * 100, 1); ?>% draw rate<br>
-                <?php echo round(($team['lost'] / $team['played']) * 100, 1); ?>% loss rate
-                
+                <?php echo ($games_played > 0 ? round(($team['won'] / $games_played) * 100, 1) : 0); ?>% win rate<br>
+                <?php echo ($games_played > 0 ? round(($team['drawn'] / $games_played) * 100, 1) : 0); ?>% draw rate<br>
+                <?php echo ($games_played > 0 ? round(($team['lost'] / $games_played) * 100, 1) : 0); ?>% loss rate<br>
+                <?php echo ($games_played > 0 ? round((($team['won'] + $team['drawn']) / $games_played) * 100, 1) : 0); ?>% undefeated rate
             </p>
         </div>
     </div>
