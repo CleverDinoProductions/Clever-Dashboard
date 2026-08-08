@@ -3,7 +3,9 @@
  * World Cup 2026 – Monte Carlo Tournament Simulation
  *
  * Uses a Poisson goal model to estimate each team's probability of reaching
- * every knockout round, based on current group-stage performance.
+ * every knockout round, based on current group-stage performance. Also tracks
+ * the full knockout bracket: round-by-round matchup frequencies and each
+ * team's single most likely path to the title.
  *
  * Requires: $world_cup_db (PDO), sim_poisson_random() from simulation-engine.php
  */
@@ -95,6 +97,22 @@ $wc_fifa_rankings = [
     'Indonesia'           => 48,
 ];
 
+// ── Round encoding (shared across the whole file) ─────────────────────────────
+// 0 = group exit, 1 = R32 exit, 2 = R16 exit, 3 = QF exit, 4 = SF exit,
+// 5 = finalist (runner-up), 6 = champion.
+// "round_num" passed into wc_sim_match()/bracket loop refers to the round a
+// team ADVANCES INTO if they win the match at that bracket level, i.e. the
+// match being played at bracket level $round_num - 1 determines whether a
+// team reaches $round_num.
+$wc_round_names = [
+    1 => 'Round of 32',
+    2 => 'Round of 16',
+    3 => 'Quarter-Final',
+    4 => 'Semi-Final',
+    5 => 'Final',
+    6 => 'Champion',
+];
+
 // ── Simulation helpers ────────────────────────────────────────────────────────
 
 if (!function_exists('wc_fifa_strength')) {
@@ -167,7 +185,8 @@ if (!function_exists('wc_sim_strengths')) {
 
 if (!function_exists('wc_sim_match')) {
     /**
-     * Simulate one match. If $knockout=true, coin-flip breaks draws (penalties).
+     * Simulate one match. Knockout ties are broken by a weighted penalty
+     * coin-flip (slight edge to the team with the better attack rating).
      * Returns [$goals_a, $goals_b].
      */
     function wc_sim_match(string $a, string $b, array $s, float $avg): array {
@@ -216,7 +235,7 @@ if (!function_exists('wc_sim_group')) {
         for ($r = $played; $r < 3; $r++) {
             foreach ($sched[$r] as [$ia, $ib]) {
                 if (!isset($n[$ia], $n[$ib])) continue;
-                [$ga, $gb] = wc_sim_match($n[$ia], $n[$ib], $s, $avg, false);
+                [$ga, $gb] = wc_sim_match($n[$ia], $n[$ib], $s, $avg);
                 $gf[$ia] += $ga; $gd[$ia] += $ga - $gb;
                 $gf[$ib] += $gb; $gd[$ib] += $gb - $ga;
                 if      ($ga > $gb) { $pts[$ia] += 3; }
@@ -242,15 +261,15 @@ if (!function_exists('wc_sim_group')) {
 
 if (!function_exists('wc_sim_tournament')) {
     /**
-     * Simulate one complete World Cup tournament.
+     * Simulate one complete World Cup tournament: group stage + full
+     * knockout bracket (R32 → R16 → QF → SF → Final).
      *
-     * Round encoding for each team:
-     *   0 = group stage exit      1 = R32 exit
-     *   2 = R16 exit              3 = QF exit
-     *   4 = SF exit               5 = finalist (runner-up)
-     *   6 = champion
-     *
-     * Returns team_name => round (int).
+     * Returns an array with two parts:
+     *   'round'   => team_name => deepest round reached (0..6, see encoding above)
+     *   'matches' => list of every knockout match played, each as
+     *                ['round' => 1..5, 'a' => team, 'b' => team, 'winner' => team]
+     *                round here is the BRACKET LEVEL the match was played at
+     *                (1 = R32, 2 = R16, 3 = QF, 4 = SF, 5 = Final).
      */
     function wc_sim_tournament(array $groupData, array $s, float $avg): array {
         // Initialise all teams as group-stage exit
@@ -301,22 +320,31 @@ if (!function_exists('wc_sim_tournament')) {
             return $b['pts'] !== $a['pts'] ? $b['pts'] - $a['pts'] : $b['gd'] - $a['gd'];
         });
 
-        $bracket   = array_column($qualifiers, 'team');
-        $round_num = 2; // winners of current round advance to this value
+        $bracket    = array_column($qualifiers, 'team');
+        $round_num  = 2; // winners of current round advance to this value
+        $bracket_lv = 1; // 1=R32, 2=R16, 3=QF, 4=SF, 5=Final
+        $matches    = [];
 
         while (count($bracket) > 1) {
             $next = [];
             for ($i = 0; $i + 1 < count($bracket); $i += 2) {
-                [$ga, $gb] = wc_sim_match($bracket[$i], $bracket[$i + 1], $s, $avg, true);
+                [$ga, $gb] = wc_sim_match($bracket[$i], $bracket[$i + 1], $s, $avg);
                 $winner  = $ga > $gb ? $bracket[$i] : $bracket[$i + 1];
                 $round[$winner] = $round_num;
+                $matches[] = [
+                    'round'  => $bracket_lv,
+                    'a'      => $bracket[$i],
+                    'b'      => $bracket[$i + 1],
+                    'winner' => $winner,
+                ];
                 $next[] = $winner;
             }
             $bracket = $next;
             $round_num++;
+            $bracket_lv++;
         }
 
-        return $round;
+        return ['round' => $round, 'matches' => $matches];
     }
 }
 
@@ -351,11 +379,58 @@ foreach (array_keys($all_team_meta) as $team) {
     $round_counts[$team] = array_fill(0, 7, 0);
 }
 
+// Knockout matchup tracking: matchup_counts[bracket_level]["TeamA|TeamB"] = ['count'=>n, 'a_wins'=>n, 'b_wins'=>n]
+// Teams within a pairing key are kept in a stable (sorted) order so the same
+// pairing accumulates correctly regardless of which side they land on.
+$matchup_counts = [1 => [], 2 => [], 3 => [], 4 => [], 5 => []];
+
+// Per-team per-round opponent tally, used to build each team's "most likely path":
+// path_opponents[team][bracket_level][opponent] = count (only counted in sims
+// where the team actually reached that bracket level).
+$path_opponents = [];
+foreach (array_keys($all_team_meta) as $team) {
+    $path_opponents[$team] = [1 => [], 2 => [], 3 => [], 4 => [], 5 => []];
+}
+// path_advance[team][bracket_level] = count of sims where team won that match
+$path_advance = [];
+foreach (array_keys($all_team_meta) as $team) {
+    $path_advance[$team] = array_fill(1, 5, 0);
+}
+
 if ($has_data) {
     for ($i = 0; $i < $n_sims; $i++) {
-        $result = wc_sim_tournament($groupData, $strengths, $avg_goals);
-        foreach ($result as $team => $r) {
+        $sim = wc_sim_tournament($groupData, $strengths, $avg_goals);
+
+        foreach ($sim['round'] as $team => $r) {
             if (isset($round_counts[$team][$r])) $round_counts[$team][$r]++;
+        }
+
+        foreach ($sim['matches'] as $m) {
+            $lvl = $m['round'];
+            $a   = $m['a'];
+            $b   = $m['b'];
+
+            // Stable pairing key so "A vs B" and "B vs A" merge together
+            if (strcmp($a, $b) <= 0) { $t1 = $a; $t2 = $b; }
+            else                     { $t1 = $b; $t2 = $a; }
+            $key = $t1 . '|' . $t2;
+
+            if (!isset($matchup_counts[$lvl][$key])) {
+                $matchup_counts[$lvl][$key] = ['t1' => $t1, 't2' => $t2, 'count' => 0, 't1_wins' => 0, 't2_wins' => 0];
+            }
+            $matchup_counts[$lvl][$key]['count']++;
+            if ($m['winner'] === $t1) $matchup_counts[$lvl][$key]['t1_wins']++;
+            else                      $matchup_counts[$lvl][$key]['t2_wins']++;
+
+            // Per-team path tracking (from both sides of the match)
+            if (isset($path_opponents[$a][$lvl])) {
+                $path_opponents[$a][$lvl][$b] = ($path_opponents[$a][$lvl][$b] ?? 0) + 1;
+                if ($m['winner'] === $a) $path_advance[$a][$lvl]++;
+            }
+            if (isset($path_opponents[$b][$lvl])) {
+                $path_opponents[$b][$lvl][$a] = ($path_opponents[$b][$lvl][$a] ?? 0) + 1;
+                if ($m['winner'] === $b) $path_advance[$b][$lvl]++;
+            }
         }
     }
 }
@@ -388,6 +463,49 @@ uasort($team_display, function ($a, $b) {
     }
     return 0;
 });
+
+/**
+ * Build a team's "most likely path": for each bracket level, the most
+ * frequent opponent they faced (conditional on reaching that level) and
+ * the probability of beating that specific opponent in this simulation set.
+ * Stops as soon as a level was never reached.
+ */
+function wc_build_likely_path(string $team, array $path_opponents, array $path_advance): array {
+    $path = [];
+    foreach ([1, 2, 3, 4, 5] as $lvl) {
+        $opps = $path_opponents[$team][$lvl] ?? [];
+        if (empty($opps)) break;
+        arsort($opps);
+        $top_opp   = array_key_first($opps);
+        $appear_ct = $opps[$top_opp];
+        $total_ct  = array_sum($opps);
+        $path[] = [
+            'round'        => $lvl,
+            'opponent'     => $top_opp,
+            'opp_share'    => $total_ct > 0 ? $appear_ct / $total_ct : 0, // how often this specific opponent shows up vs others at this level
+            'level_reach_pct' => $total_ct, // raw count of sims team reached this level (any opponent)
+        ];
+    }
+    return $path;
+}
+
+$likely_paths = [];
+foreach (array_keys($all_team_meta) as $team) {
+    $likely_paths[$team] = wc_build_likely_path($team, $path_opponents, $path_advance);
+}
+
+/**
+ * Build the most probable single bracket: for each level, pick the highest
+ * sim-count matchup. This is illustrative only (a "if chalk mostly holds"
+ * snapshot) — it does not attempt to resolve a fully consistent single
+ * bracket across levels, since qualifier identity itself varies sim-to-sim.
+ */
+$top_matchups_by_level = [];
+foreach ($matchup_counts as $lvl => $pairs) {
+    if (empty($pairs)) { $top_matchups_by_level[$lvl] = []; continue; }
+    uasort($pairs, fn($a, $b) => $b['count'] - $a['count']);
+    $top_matchups_by_level[$lvl] = array_slice($pairs, 0, 8, true); // up to 8 most common pairings per level
+}
 
 // ── Display helpers ───────────────────────────────────────────────────────────
 function wc_esc(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
@@ -446,6 +564,14 @@ $round_labels = [
                       border-radius:999px; background:rgba(88,101,242,0.18);
                       border:1px solid rgba(88,101,242,0.35); color:#c7d2fe; font-weight:600; font-size:12px; }
 
+.wc-sim-tabs        { display:flex; gap:8px; margin-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.08); }
+.wc-sim-tab-btn      { padding:9px 16px; background:none; border:none; color:#8e9297; font-size:13px; font-weight:600;
+                      cursor:pointer; border-bottom:2px solid transparent; }
+.wc-sim-tab-btn.active { color:#fff; border-bottom-color:#5865F2; }
+.wc-sim-tab-btn:hover  { color:#dcddde; }
+.wc-sim-tabpane      { display:none; }
+.wc-sim-tabpane.active { display:block; }
+
 .wc-sim-table       { width:100%; border-collapse:collapse; font-size:13px; }
 .wc-sim-table th    { background:#222; color:#fff; padding:9px 10px; white-space:nowrap;
                       border-bottom:2px solid #444; position:sticky; top:0; z-index:10; }
@@ -464,12 +590,42 @@ $round_labels = [
 .wc-legend-dot      { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
 
 .wc-highlight-eng td { background:rgba(67,181,129,0.06) !important; }
+
+/* Bracket round columns */
+.wc-bracket-rounds   { display:flex; gap:18px; overflow-x:auto; padding-bottom:8px; }
+.wc-bracket-col      { min-width:240px; flex:1; }
+.wc-bracket-col-title{ color:#fff; font-size:13px; font-weight:700; text-transform:uppercase;
+                      letter-spacing:.5px; margin-bottom:10px; padding-bottom:6px;
+                      border-bottom:2px solid rgba(255,255,255,0.1); }
+.wc-bracket-card     { background:#2f3136; border:1px solid rgba(255,255,255,0.08); border-radius:8px;
+                      padding:10px 12px; margin-bottom:10px; }
+.wc-bracket-pair     { display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+.wc-bracket-team     { color:#dcddde; }
+.wc-bracket-team.fav { color:#43b581; font-weight:700; }
+.wc-bracket-pct      { font-size:11px; color:#888; font-weight:600; }
+.wc-bracket-freq     { margin-top:6px; font-size:11px; color:#72767d; }
+
+/* Team path lookup */
+.wc-path-select      { padding:9px 12px; border-radius:8px; background:#2f3136; border:1px solid rgba(255,255,255,0.1);
+                      color:#dcddde; font-size:13px; min-width:220px; margin-bottom:16px; }
+.wc-path-step        { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#2f3136;
+                      border:1px solid rgba(255,255,255,0.08); border-radius:8px; margin-bottom:8px; }
+.wc-path-round-tag    { min-width:110px; font-size:11px; font-weight:700; text-transform:uppercase;
+                      color:#99aab5; letter-spacing:.5px; }
+.wc-path-arrow       { color:#555; }
+.wc-path-empty       { color:#888; font-size:13px; padding:20px; text-align:center; }
+
+/* Methodology note */
+.wc-sim-table   { width:100%; border-collapse:collapse; font-size:13px; }
+
+.wc-sim-tab-content-wrap { display:none; }
 </style>
 
 <div class="panel">
     <h2>🎲 World Cup 2026 – Monte Carlo Tournament Simulation</h2>
     <p class="update-info" style="margin-top:6px;">
-        Simulates the full tournament <?= number_format($n_sims) ?> times using a Poisson goal model.
+        Simulates the full tournament <?= number_format($n_sims) ?> times using a Poisson goal model,
+        including the full knockout bracket (R32 → R16 → QF → SF → Final).
         Team strength is derived from current group-stage performance (goals scored/conceded per match).
     </p>
 
@@ -515,7 +671,15 @@ $round_labels = [
         </div>
     <?php else: ?>
 
-    <!-- Results table -->
+    <!-- Sub-tabs: Probabilities / Bracket / Team Path -->
+    <div class="wc-sim-tabs">
+        <button type="button" class="wc-sim-tab-btn active" data-wcpane="probs">Win Probabilities</button>
+        <button type="button" class="wc-sim-tab-btn" data-wcpane="bracket">Most Likely Bracket</button>
+        <button type="button" class="wc-sim-tab-btn" data-wcpane="path">Team Path Explorer</button>
+    </div>
+
+    <!-- ── PANE 1: Probabilities table (unchanged) ─────────────────────────── -->
+    <div class="wc-sim-tabpane active" data-wcpane-content="probs">
     <div class="table-container">
     <table class="wc-sim-table">
         <thead>
@@ -576,7 +740,6 @@ $round_labels = [
             <?php endforeach; ?>
 
             <!-- Win probability (most prominent column) -->
-            <?php $pwin_col = wc_pct_color($t['p_win']); ?>
             <td style="text-align:center;">
                 <span style="color:<?= $t['p_win'] > 0 ? '#FFD700' : '#444' ?>; font-weight:700; font-size:14px;">
                     <?= wc_pct($t['p_win']) ?>
@@ -620,6 +783,97 @@ $round_labels = [
             💡 Hover distribution bars for exact percentages
         </div>
     </div>
+    </div><!-- /pane: probs -->
+
+    <!-- ── PANE 2: Most Likely Bracket ──────────────────────────────────────── -->
+    <div class="wc-sim-tabpane" data-wcpane-content="bracket">
+        <p style="color:#888; font-size:12px; margin-bottom:14px;">
+            For each knockout round, the pairings that occurred most often across all <?= number_format($n_sims) ?> simulations,
+            with the favourite's win rate <em>in that specific matchup</em>. Because qualifiers themselves vary sim-to-sim,
+            this is a snapshot of the most common collisions — not a single deterministic bracket.
+        </p>
+        <div class="wc-bracket-rounds">
+            <?php foreach ([1,2,3,4,5] as $lvl):
+                $pairs = $top_matchups_by_level[$lvl];
+            ?>
+            <div class="wc-bracket-col">
+                <div class="wc-bracket-col-title"><?= htmlspecialchars($wc_round_names[$lvl]) ?></div>
+                <?php if (empty($pairs)): ?>
+                    <div class="wc-path-empty">No matches simulated at this round.</div>
+                <?php else: foreach ($pairs as $p):
+                    $t1 = $p['t1']; $t2 = $p['t2'];
+                    $t1_rate = $p['count'] > 0 ? $p['t1_wins'] / $p['count'] : 0;
+                    $t2_rate = $p['count'] > 0 ? $p['t2_wins'] / $p['count'] : 0;
+                    $t1_fav  = $t1_rate >= $t2_rate;
+                    $freq_pct = $n_sims > 0 ? ($p['count'] / $n_sims * 100) : 0;
+                ?>
+                <div class="wc-bracket-card">
+                    <div class="wc-bracket-pair">
+                        <span class="wc-bracket-team <?= $t1_fav ? 'fav' : '' ?>"><?= htmlspecialchars($t1) ?></span>
+                        <span class="wc-bracket-pct"><?= wc_pct($t1_rate) ?></span>
+                    </div>
+                    <div class="wc-bracket-pair" style="margin-top:4px;">
+                        <span class="wc-bracket-team <?= !$t1_fav ? 'fav' : '' ?>"><?= htmlspecialchars($t2) ?></span>
+                        <span class="wc-bracket-pct"><?= wc_pct($t2_rate) ?></span>
+                    </div>
+                    <div class="wc-bracket-freq">Occurred in <?= number_format($freq_pct, 1) ?>% of sims</div>
+                </div>
+                <?php endforeach; endif; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div><!-- /pane: bracket -->
+
+    <!-- ── PANE 3: Team Path Explorer ───────────────────────────────────────── -->
+    <div class="wc-sim-tabpane" data-wcpane-content="path">
+        <p style="color:#888; font-size:12px; margin-bottom:10px;">
+            Pick a team to see its single most likely route through the knockout stage: the opponent it faces most
+            often at each round (conditional on reaching that round), and its win rate against that specific opponent.
+        </p>
+        <select id="wc-team-path-select" class="wc-path-select">
+            <option value="">— Select a team —</option>
+            <?php foreach ($team_display as $team => $t): ?>
+                <option value="<?= htmlspecialchars($team, ENT_QUOTES, 'UTF-8') ?>" <?= $team === 'England' ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($team, ENT_QUOTES, 'UTF-8') ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <div id="wc-team-path-results">
+            <?php
+            $data_for_js = [];
+            foreach ($likely_paths as $team => $steps) {
+                $rows = [];
+                foreach ($steps as $step) {
+                    $lvl   = $step['round'];
+                    $opp   = $step['opponent'];
+                    $share = $step['opp_share'];
+                    $reach_count = $step['level_reach_pct'];
+                    $reach_pct   = $n_sims > 0 ? $reach_count / $n_sims : 0;
+                    // win rate of $team vs this specific $opp at this level
+                    $key = strcmp($team, $opp) <= 0 ? ($team.'|'.$opp) : ($opp.'|'.$team);
+                    $mp  = $matchup_counts[$lvl][$key] ?? null;
+                    $win_rate = null;
+                    if ($mp) {
+                        $win_rate = ($mp['t1'] === $team)
+                            ? ($mp['count'] > 0 ? $mp['t1_wins'] / $mp['count'] : 0)
+                            : ($mp['count'] > 0 ? $mp['t2_wins'] / $mp['count'] : 0);
+                    }
+                    $rows[] = [
+                        'round'      => $wc_round_names[$lvl],
+                        'opponent'   => $opp,
+                        'reach_pct'  => round($reach_pct * 100, 1),
+                        'opp_share'  => round($share * 100, 1),
+                        'win_rate'   => $win_rate !== null ? round($win_rate * 100, 1) : null,
+                    ];
+                }
+                $data_for_js[$team] = $rows;
+            }
+            ?>
+            <script>window.__wcTeamPaths = <?= json_encode($data_for_js, JSON_UNESCAPED_UNICODE) ?>;</script>
+            <div class="wc-path-empty">Select a team above to view their projected path.</div>
+        </div>
+    </div><!-- /pane: path -->
 
     <!-- Methodology note -->
     <div style="margin-top:20px; padding:14px 16px; background:#40444b; border-radius:8px; border-left:4px solid #5865F2;">
@@ -629,6 +883,8 @@ $round_labels = [
             (expected goals = team attack × opponent defence × league average).
             The best 8 third-place teams advance alongside the 24 group qualifiers (top 2 per group).
             Knockout ties are resolved by a weighted penalty coin-flip.
+            Every knockout match across all <?= number_format($n_sims) ?> simulations is recorded — who played whom
+            and who won — which powers the bracket and team-path views above.
             <?php if (!$has_played): ?>
                 <strong style="color:#faa61a;">Pre-tournament mode:</strong>
                 team strengths are derived entirely from the November 2025 FIFA rankings
@@ -642,3 +898,54 @@ $round_labels = [
     </div>
     <?php endif; ?>
 </div>
+
+<script>
+(function() {
+    // Sub-tab switching
+    var tabBtns = document.querySelectorAll('.wc-sim-tab-btn');
+    var panes   = document.querySelectorAll('.wc-sim-tabpane');
+    tabBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var target = btn.getAttribute('data-wcpane');
+            tabBtns.forEach(function(b) { b.classList.remove('active'); });
+            panes.forEach(function(p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            document.querySelector('[data-wcpane-content="' + target + '"]').classList.add('active');
+        });
+    });
+
+    // Team path explorer
+    var select = document.getElementById('wc-team-path-select');
+    var results = document.getElementById('wc-team-path-results');
+    if (!select || !results) return;
+
+    function renderPath(team) {
+        var steps = (window.__wcTeamPaths || {})[team];
+        if (!team || !steps || steps.length === 0) {
+            results.innerHTML = '<div class="wc-path-empty">' +
+                (team ? 'This team did not reach the knockout stage in any simulation.' : 'Select a team above to view their projected path.') +
+                '</div>';
+            return;
+        }
+        var html = '';
+        steps.forEach(function(s) {
+            var winTxt = (s.win_rate !== null) ? (s.win_rate + '% to advance') : '';
+            html += '<div class="wc-path-step">' +
+                '<div class="wc-path-round-tag">' + s.round + '</div>' +
+                '<div style="flex:1;">' +
+                    '<div style="color:#dcddde; font-size:13px; font-weight:600;">vs ' + s.opponent + '</div>' +
+                    '<div style="color:#888; font-size:11px; margin-top:2px;">' +
+                        'Most common opponent in ' + s.opp_share + '% of sims reaching this round &middot; ' +
+                        'Team reached this round in ' + s.reach_pct + '% of all sims' +
+                    '</div>' +
+                '</div>' +
+                (winTxt ? '<div style="color:#43b581; font-weight:700; font-size:13px;">' + winTxt + '</div>' : '') +
+            '</div>';
+        });
+        results.innerHTML = html;
+    }
+
+    select.addEventListener('change', function() { renderPath(this.value); });
+    if (select.value) renderPath(select.value);
+})();
+</script>
