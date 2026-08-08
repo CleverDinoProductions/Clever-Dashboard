@@ -8,20 +8,13 @@ $last_update = $world_cup_db->query("SELECT MAX(updated_at) as ts FROM wc_standi
 
 <style>
     /* 1. Target the header cells specifically */
-th {
-    position: sticky;
-    top: 0;
-    z-index: 10; /* Keeps the header above the scrolling body rows */
-    background-color: #222; /* Use your team/site brand color here */
-    color: white;
-    white-space: nowrap; /* Prevents long titles from breaking the layout */
-    border-bottom: 2px solid #444;
-}
+th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 10px; }
 
 /* 2. Important fix for tables */
-table {
-    border-collapse: collapse; /* Required for sticky borders to show up correctly */
-}
+table { width: 100%; border-collapse: collapse; }
+
+/* 3. All the rest */
+td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 </style>
 
 <div class="panel">
@@ -42,8 +35,8 @@ table {
             <tr>
                 <th>Rank</th>
                 <th>Team</th>
-                <th>Group</th>
-                <th>Pot</th>
+                <th>Stage</th>
+                <th>Rank</th>
                 <th>P</th>
                 <th>W</th>
                 <th>D</th>
