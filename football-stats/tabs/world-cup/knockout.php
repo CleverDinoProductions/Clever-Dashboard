@@ -1,64 +1,230 @@
 <?php
-// ============================================
-// 1. DATABASE CONNECTION & LOGIC
-// ============================================
-// 1. Fetch Knockout Matches
-$knockout_stmt = $world_cup_db->query("SELECT * FROM wc_knockout");
-$knockout_rows = $knockout_stmt->fetchAll(PDO::FETCH_ASSOC);
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+date_default_timezone_set('UTC');
 
-// 3. Index matches by Match Number for easy lookup
-$bracket_data = [];
-foreach ($knockout_rows as $match) {
-    $bracket_data[$match['match_number']] = $match;
+// ============================================================
+// BOOTSTRAP — create lookup tables if missing (wrapped in try/catch
+// in case the DB is mounted read-only, e.g. WSL permission issues)
+// ============================================================
+
+try {
+    $world_cup_db->exec("CREATE TABLE IF NOT EXISTS wc_teams (
+        team_name  TEXT PRIMARY KEY,
+        pot        INTEGER NOT NULL DEFAULT 2,
+        is_host    INTEGER NOT NULL DEFAULT 0,
+        flag_emoji TEXT    NOT NULL DEFAULT '🏴',
+        group_name TEXT
+    )");
+
+    $world_cup_db->exec("INSERT OR IGNORE INTO wc_teams
+        (team_name, pot, is_host, flag_emoji, group_name) VALUES
+        ('Spain',        1, 0, '🇪🇸', 'Group H'),
+        ('France',       1, 0, '🇫🇷', 'Group I'),
+        ('England',      1, 0, '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Group L'),
+        ('Argentina',    1, 0, '🇦🇷', 'Group J'),
+        ('Brazil',       1, 0, '🇧🇷', 'Group C'),
+        ('Portugal',     1, 0, '🇵🇹', 'Group K'),
+        ('Netherlands',  1, 0, '🇳🇱', 'Group F'),
+        ('Belgium',      1, 0, '🇧🇪', 'Group G'),
+        ('Germany',      1, 0, '🇩🇪', 'Group E'),
+        ('United States',          2, 1, '🇺🇸', 'Group D'),
+        ('Mexico',       2, 1, '🇲🇽', 'Group A'),
+        ('Canada',       2, 1, '🇨🇦', 'Group B')
+    ");
+
+    $world_cup_db->exec("CREATE TABLE IF NOT EXISTS wc_bracket_sides (
+        group_name   TEXT PRIMARY KEY,
+        bracket_side TEXT NOT NULL
+    )");
+
+    $world_cup_db->exec("INSERT OR IGNORE INTO wc_bracket_sides
+        (group_name, bracket_side) VALUES
+        ('Group A', 'golden'), ('Group B', 'golden'), ('Group C', 'golden'),
+        ('Group D', 'death'),  ('Group E', 'death'),  ('Group F', 'death'),
+        ('Group G', 'death'),  ('Group H', 'death'),  ('Group I', 'death'),
+        ('Group J', 'golden'), ('Group K', 'golden'), ('Group L', 'golden')
+    ");
+} catch (PDOException $e) {
+    // DB read-only or locked — non-fatal, page still renders with existing data
+    error_log("knockout.php bootstrap write failed (non-fatal): " . $e->getMessage());
 }
 
-// 4. Helper Function to Render a Match
-function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
-    // If we have data for this match number in the DB
-    if (isset($data[$matchNum])) {
-        $m = $data[$matchNum];
-        
-        // Use DB name if available, otherwise default
-        $home = ($m['home_team'] && $m['home_team'] !== 'TBD') ? $m['home_team'] : $defaultHome;
-        $away = ($m['away_team'] && $m['away_team'] !== 'TBD') ? $m['away_team'] : $defaultAway;
-        
+// ============================================================
+// 1. FETCH KNOCKOUT MATCHES
+// ============================================================
+
+$knockout_rows = $world_cup_db->query(
+    "SELECT * FROM wc_knockout ORDER BY match_id ASC"
+)->fetchAll(PDO::FETCH_ASSOC);
+
+$bracket_data = [];
+foreach ($knockout_rows as $match) {
+    $bracket_data[$match['match_id']] = $match;
+}
+
+// Pull match IDs per stage in chronological order so the template can map
+// them onto bracket positions without hardcoding API-assigned IDs.
+$r32_ids   = $world_cup_db->query("SELECT match_id FROM wc_knockout WHERE stage = 'LAST_32'        ORDER BY match_date ASC, match_id ASC")->fetchAll(PDO::FETCH_COLUMN);
+$r16_ids   = $world_cup_db->query("SELECT match_id FROM wc_knockout WHERE stage = 'LAST_16'        ORDER BY match_date ASC, match_id ASC")->fetchAll(PDO::FETCH_COLUMN);
+$qf_ids    = $world_cup_db->query("SELECT match_id FROM wc_knockout WHERE stage = 'QUARTER_FINALS' ORDER BY match_date ASC, match_id ASC")->fetchAll(PDO::FETCH_COLUMN);
+$sf_ids    = $world_cup_db->query("SELECT match_id FROM wc_knockout WHERE stage = 'SEMI_FINALS'    ORDER BY match_date ASC, match_id ASC")->fetchAll(PDO::FETCH_COLUMN);
+$tp_ids    = $world_cup_db->query("SELECT match_id FROM wc_knockout WHERE stage = 'THIRD_PLACE'    ORDER BY match_date ASC, match_id ASC")->fetchAll(PDO::FETCH_COLUMN);
+$final_ids = $world_cup_db->query("SELECT match_id FROM wc_knockout WHERE stage = 'FINAL'          ORDER BY match_date ASC, match_id ASC")->fetchAll(PDO::FETCH_COLUMN);
+
+// Safe accessor — returns null if the round hasn't been assigned an ID yet
+function idAt(array $ids, int $index): ?int
+{
+    return $ids[$index] ?? null;
+}
+
+// ============================================================
+// 2. BRACKET ANALYSIS DATA — reflects who is actually still alive
+// ============================================================
+
+// Step 1: build a set of every team that's been knocked out.
+// A team is eliminated if it appears in a FINISHED knockout match
+// (excluding Third Place and the Final, which don't eliminate anyone
+// from "still competing for the trophy path" in the sense we track here)
+// and didn't have the higher score.
+$eliminated = [];
+
+foreach ($bracket_data as $m) {
+    if ($m['status'] !== 'FINISHED') {
+        continue;
+    }
+    if ($m['home_score'] === null || $m['away_score'] === null) {
+        continue;
+    }
+    if ($m['home_team'] === 'TBD' || $m['away_team'] === 'TBD') {
+        continue;
+    }
+    if (in_array($m['stage'], ['THIRD_PLACE', 'FINAL'], true)) {
+        continue;
+    }
+
+    if ($m['home_score'] > $m['away_score']) {
+        $eliminated[$m['away_team']] = true;
+    } elseif ($m['away_score'] > $m['home_score']) {
+        $eliminated[$m['home_team']] = true;
+    }
+    // A tie after 90 min shouldn't appear as FINISHED in knockout data
+    // (penalties resolve it), but if it does, we don't eliminate either
+    // team — safer to under-report than wrongly mark someone out.
+}
+
+// Step 2: pull pot1/host teams per bracket side and mark survival status
+$bracket_sides = $world_cup_db->query("
+    SELECT bs.group_name, bs.bracket_side,
+           wt.team_name, wt.flag_emoji, wt.pot, wt.is_host
+    FROM   wc_bracket_sides bs
+    LEFT JOIN wc_teams wt ON wt.group_name = bs.group_name
+    WHERE  wt.pot = 1 OR wt.is_host = 1
+    ORDER  BY bs.bracket_side, bs.group_name
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$deathTeams  = [];
+$goldenTeams = [];
+
+foreach ($bracket_sides as $row) {
+    $isOut = isset($eliminated[$row['team_name']]);
+
+    $label = htmlspecialchars($row['flag_emoji'] . ' ' . $row['team_name'])
+           . ' (' . htmlspecialchars($row['group_name']) . ')'
+           . ($row['pot'] == 1    ? ' - Pot 1' : '')
+           . ($row['is_host'] == 1 ? ' - Host'  : '');
+
+    if ($isOut) {
+        $label = '<s style="opacity:0.5;">' . $label . '</s> <span style="color:#f04747;font-size:11px;">❌ Eliminated</span>';
+    } else {
+        $label .= ' <span style="color:#43b581;font-size:11px;">✓ Still in</span>';
+    }
+
+    if ($row['bracket_side'] === 'death')  { $deathTeams[]  = $label; }
+    if ($row['bracket_side'] === 'golden') { $goldenTeams[] = $label; }
+}
+
+$deathTotal   = count(array_filter($bracket_sides, fn($r) => $r['bracket_side'] === 'death'));
+$goldenTotal  = count(array_filter($bracket_sides, fn($r) => $r['bracket_side'] === 'golden'));
+$deathAlive   = count(array_filter($bracket_sides, fn($r) => $r['bracket_side'] === 'death'  && !isset($eliminated[$r['team_name']])));
+$goldenAlive  = count(array_filter($bracket_sides, fn($r) => $r['bracket_side'] === 'golden' && !isset($eliminated[$r['team_name']])));
+
+// ============================================================
+// 3. RENDER HELPERS
+// ============================================================
+
+function renderMatch(?int $matchId, string $defaultHome, string $defaultAway, array $data): array
+{
+    if ($matchId !== null && isset($data[$matchId])) {
+        $m      = $data[$matchId];
+        $home   = ($m['home_team'] && $m['home_team'] !== 'TBD') ? $m['home_team'] : $defaultHome;
+        $away   = ($m['away_team'] && $m['away_team'] !== 'TBD') ? $m['away_team'] : $defaultAway;
         $hScore = $m['home_score'];
         $aScore = $m['away_score'];
-        $status = $m['status']; // SCHEDULED, IN_PLAY, PAUSED, FINISHED
-        
-        // CSS classes for scores
-        $hClass = '';
-        $aClass = '';
-        
-        if ($status == 'FINISHED' && $hScore !== null && $aScore !== null) {
-            if ($hScore > $aScore) $hClass = 'winner';
-            elseif ($aScore > $hScore) $aClass = 'winner';
+        $status = $m['status'];
+
+        $hClass = $aClass = '';
+        if ($status === 'FINISHED' && $hScore !== null && $aScore !== null) {
+            if ($hScore > $aScore)     { $hClass = 'winner'; }
+            elseif ($aScore > $hScore) { $aClass = 'winner'; }
         }
-        
+
+        $isLive = in_array($status, ['IN_PLAY', 'PAUSED', 'EXTRA_TIME', 'PENALTY_SHOOTOUT'], true);
+
         return [
-            'home' => $home,
-            'away' => $away,
-            'h_score' => $hScore,
-            'a_score' => $aScore,
+            'home'    => htmlspecialchars($home),
+            'away'    => htmlspecialchars($away),
+            'h_score' => $hScore ?? '',
+            'a_score' => $aScore ?? '',
             'h_class' => $hClass,
             'a_class' => $aClass,
-            'status_class' => ($status == 'IN_PLAY' || $status == 'PAUSED') ? 'live' : ''
+            'live'    => $isLive,
+            'status'  => $status,
         ];
     }
-    
-    // Fallback if no data yet
+
     return [
-        'home' => $defaultHome,
-        'away' => $defaultAway,
+        'home'    => htmlspecialchars($defaultHome),
+        'away'    => htmlspecialchars($defaultAway),
         'h_score' => '',
         'a_score' => '',
         'h_class' => '',
         'a_class' => '',
-        'status_class' => ''
+        'live'    => false,
+        'status'  => '',
     ];
 }
-?>
 
+function matchCard(?int $matchId, string $defaultHome, string $defaultAway, array $data,
+                   string $stageClass, string $label, string $date, string $note = ''): string
+{
+    $m    = renderMatch($matchId, $defaultHome, $defaultAway, $data);
+    $live = $m['live'] ? ' live' : '';
+
+    $noteHtml   = $note ? '<div class="match-note">' . htmlspecialchars($note) . '</div>' : '';
+    $hScoreHtml = $m['h_score'] !== '' ? '<span>' . (int)$m['h_score'] . '</span>' : '<span></span>';
+    $aScoreHtml = $m['a_score'] !== '' ? '<span>' . (int)$m['a_score'] . '</span>' : '<span></span>';
+    $liveTag    = $m['live']
+        ? '<span style="color:#f04747;font-weight:700;animation:pulse-live 2s infinite;">● LIVE</span>'
+        : '<span>' . htmlspecialchars($date) . '</span>';
+
+    return <<<HTML
+        <div class="bracket-match {$stageClass}{$live}">
+            <div class="match-header">
+                <span>{$label}</span>
+                {$liveTag}
+            </div>
+            <div class="match-team {$m['h_class']}">
+                <span>{$m['home']}</span>{$hScoreHtml}
+            </div>
+            <div class="match-team {$m['a_class']}">
+                <span>{$m['away']}</span>{$aScoreHtml}
+            </div>
+            {$noteHtml}
+        </div>
+    HTML;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -66,9 +232,6 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>World Cup 2026 Bracket</title>
     <style>
-        /* ============================================
-           CSS STYLES
-           ============================================ */
         body {
             background-color: #202225;
             color: #ffffff;
@@ -86,7 +249,7 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
         }
 
         h2, h3 { margin-top: 0; color: #fff; }
-        
+
         .update-info { color: #aaa; font-size: 0.9em; margin-bottom: 15px; }
 
         .badge {
@@ -101,10 +264,9 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             background: #40444b;
         }
         .badge-champions { background: #FFD700; color: #000; }
-        .badge-europa { background: #00ff88; color: #000; }
-        .badge-team { background: #23272a; color: #dcddde; border: 1px solid #40444b; }
-        
-        /* Bracket Layout */
+        .badge-europa    { background: #00ff88; color: #000; }
+        .badge-team      { background: #23272a; color: #dcddde; border: 1px solid #40444b; }
+
         .bracket-container {
             display: flex;
             gap: 20px;
@@ -119,7 +281,7 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             min-width: 280px;
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Space between matches */
+            gap: 15px;
         }
 
         .round-title {
@@ -134,14 +296,12 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             border-bottom: 3px solid #5865F2;
         }
 
-        /* Match Card */
         .bracket-match {
             background: #2c2f33;
             border-radius: 6px;
             padding: 10px;
             border-left: 3px solid #5865F2;
-            transition: all 0.2s ease;
-            position: relative;
+            transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .bracket-match:hover {
@@ -150,25 +310,17 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
-        /* Stage Colors */
-        .bracket-match.r16 { border-left-color: #00ff88; }
-        .bracket-match.qf { border-left-color: #faa61a; }
-        .bracket-match.sf { border-left-color: #f04747; }
-        .bracket-match.final { 
-            border-left-color: #FFCD00; 
-            background: linear-gradient(135deg, #2c2f33 0%, #3a3d42 100%);
-        }
+        .bracket-match.r16         { border-left-color: #00ff88; }
+        .bracket-match.qf          { border-left-color: #faa61a; }
+        .bracket-match.sf          { border-left-color: #f04747; }
+        .bracket-match.final       { border-left-color: #FFCD00; background: linear-gradient(135deg, #2c2f33 0%, #3a3d42 100%); }
         .bracket-match.third-place { border-left-color: #cd7f32; }
 
-        /* LIVE Status Animation */
         @keyframes pulse-live {
-            0% { border-left-color: #f04747; box-shadow: 0 0 5px rgba(240, 71, 71, 0.5); }
-            50% { border-left-color: #ff8888; box-shadow: 0 0 12px rgba(240, 71, 71, 0.8); }
-            100% { border-left-color: #f04747; box-shadow: 0 0 5px rgba(240, 71, 71, 0.5); }
+            0%,100% { border-left-color: #f04747; box-shadow: 0 0 5px rgba(240,71,71,0.5); }
+            50%      { border-left-color: #ff8888; box-shadow: 0 0 12px rgba(240,71,71,0.8); }
         }
-        .bracket-match.live {
-            animation: pulse-live 2s infinite;
-        }
+        .bracket-match.live { animation: pulse-live 2s infinite; }
 
         .match-header {
             font-size: 11px;
@@ -178,6 +330,7 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             text-transform: uppercase;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
         .match-team {
@@ -192,7 +345,6 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             font-size: 13px;
             font-weight: 500;
         }
-
         .match-team:last-of-type { margin-bottom: 0; }
 
         .match-team.winner {
@@ -201,8 +353,6 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             font-weight: 700;
             border-left: 3px solid #FFCD00;
         }
-        
-        /* Final Winner Special Style */
         .final .match-team.winner {
             background: linear-gradient(90deg, #FFCD00 0%, #ffed4a 100%);
             color: #000;
@@ -217,22 +367,20 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
             text-align: center;
         }
 
-        /* Spacers for visual alignment */
-        .bracket-spacer { height: 20px; }
-        .bracket-spacer-large { height: 40px; }
-        .bracket-spacer-xl { height: 80px; }
-        .bracket-spacer-mega { height: 160px; }
+        .bracket-spacer       { height: 20px;  flex-shrink: 0; }
+        .bracket-spacer-large { height: 40px;  flex-shrink: 0; }
+        .bracket-spacer-xl    { height: 80px;  flex-shrink: 0; }
+        .bracket-spacer-mega  { height: 160px; flex-shrink: 0; }
 
-        /* Grid for bottom analysis panel */
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
-        
-        .text-danger { color: #f04747; }
+
+        .text-danger  { color: #f04747; }
         .text-success { color: #43b581; }
-        
+
         ul { padding-left: 20px; margin: 5px 0; font-size: 0.9em; color: #dcddde; }
         li { margin-bottom: 4px; }
     </style>
@@ -241,323 +389,153 @@ function renderMatch($matchNum, $defaultHome, $defaultAway, $data) {
 
 <div class="panel">
     <h2>⚔️ Knockout Stage Bracket</h2>
-    <p class="update-info">Tournament bracket structure - Teams will be determined after group stage (June 27, 2026)</p>
-    
+    <p class="update-info">Tournament bracket — live data from football-data.org</p>
     <div class="bracket-info">
         <span class="badge badge-champions">🏆 Pot 1 Elite</span>
         <span class="badge badge-europa">🌟 Host Nations</span>
-        <span class="badge badge-team">Round of 32: June 28 - July 3</span>
-        <span class="badge badge-team">Round of 16: July 4-7</span>
-        <span class="badge badge-team">Quarterfinals: July 9-11</span>
-        <span class="badge badge-team">Semifinals: July 14-15</span>
-        <span class="badge badge-team">Final: July 19</span>
+        <span class="badge badge-team">Round of 32: Jun 28 – Jul 3</span>
+        <span class="badge badge-team">Round of 16: Jul 4–7</span>
+        <span class="badge badge-team">Quarterfinals: Jul 9–11</span>
+        <span class="badge badge-team">Semifinals: Jul 14–15</span>
+        <span class="badge badge-team">Final: Jul 19</span>
     </div>
 </div>
 
 <div class="bracket-container">
-    
+
+    <!-- ── Round of 32 ─────────────────────────────────────────────── -->
     <div class="bracket-round">
         <h3 class="round-title">Round of 32</h3>
-        
-        <?php $m74 = renderMatch(74, 'Winner Group E', '3rd Grp A/B/C/D/F', $bracket_data); ?>
-        <div class="bracket-match <?= $m74['status_class'] ?>">
-            <div class="match-header"><span>Match 74</span> <span>Jun 29</span></div>
-            <div class="match-team <?= $m74['h_class'] ?>"><span><?= $m74['home'] ?></span><span><?= $m74['h_score'] ?></span></div>
-            <div class="match-team <?= $m74['a_class'] ?>"><span><?= $m74['away'] ?></span><span><?= $m74['a_score'] ?></span></div>
-        </div>
 
-        <?php $m77 = renderMatch(77, 'Winner Group I', '3rd Grp C/D/F/G/H', $bracket_data); ?>
-        <div class="bracket-match <?= $m77['status_class'] ?>">
-            <div class="match-header"><span>Match 77</span> <span>Jun 30</span></div>
-            <div class="match-team <?= $m77['h_class'] ?>"><span><?= $m77['home'] ?></span><span><?= $m77['h_score'] ?></span></div>
-            <div class="match-team <?= $m77['a_class'] ?>"><span><?= $m77['away'] ?></span><span><?= $m77['a_score'] ?></span></div>
-        </div>
+        <?php foreach ($r32_ids as $i => $mid): ?>
+            <?php
+                $m = $bracket_data[$mid] ?? null;
+                $date = $m ? date('M j', strtotime($m['match_date'])) : '';
+            ?>
+            <?= matchCard($mid, 'TBD', 'TBD', $bracket_data, 'r32', "Match $mid", $date) ?>
+            <?php if (in_array($i, [3, 7, 11], true)): ?>
+                <div class="bracket-spacer<?= $i === 7 ? '-large' : '' ?>"></div>
+            <?php endif; ?>
+        <?php endforeach; ?>
 
-        <?php $m73 = renderMatch(73, 'Runner-up Grp A', 'Runner-up Grp B', $bracket_data); ?>
-        <div class="bracket-match <?= $m73['status_class'] ?>">
-            <div class="match-header"><span>Match 73</span> <span>Jun 28</span></div>
-            <div class="match-team <?= $m73['h_class'] ?>"><span><?= $m73['home'] ?></span><span><?= $m73['h_score'] ?></span></div>
-            <div class="match-team <?= $m73['a_class'] ?>"><span><?= $m73['away'] ?></span><span><?= $m73['a_score'] ?></span></div>
-        </div>
-
-        <?php $m75 = renderMatch(75, 'Winner Group F', 'Runner-up Grp C', $bracket_data); ?>
-        <div class="bracket-match <?= $m75['status_class'] ?>">
-            <div class="match-header"><span>Match 75</span> <span>Jun 29</span></div>
-            <div class="match-team <?= $m75['h_class'] ?>"><span><?= $m75['home'] ?></span><span><?= $m75['h_score'] ?></span></div>
-            <div class="match-team <?= $m75['a_class'] ?>"><span><?= $m75['away'] ?></span><span><?= $m75['a_score'] ?></span></div>
-        </div>
-
-        <div class="bracket-spacer"></div>
-
-        <?php $m81 = renderMatch(81, 'Winner Group D', '3rd Grp B/E/F/I/J', $bracket_data); ?>
-        <div class="bracket-match <?= $m81['status_class'] ?>">
-            <div class="match-header"><span>Match 81</span> <span>Jul 1</span></div>
-            <div class="match-team <?= $m81['h_class'] ?>"><span><?= $m81['home'] ?></span><span><?= $m81['h_score'] ?></span></div>
-            <div class="match-team <?= $m81['a_class'] ?>"><span><?= $m81['away'] ?></span><span><?= $m81['a_score'] ?></span></div>
-        </div>
-
-        <?php $m82 = renderMatch(82, 'Winner Group G', '3rd Grp A/E/H/I/J', $bracket_data); ?>
-        <div class="bracket-match <?= $m82['status_class'] ?>">
-            <div class="match-header"><span>Match 82</span> <span>Jul 1</span></div>
-            <div class="match-team <?= $m82['h_class'] ?>"><span><?= $m82['home'] ?></span><span><?= $m82['h_score'] ?></span></div>
-            <div class="match-team <?= $m82['a_class'] ?>"><span><?= $m82['away'] ?></span><span><?= $m82['a_score'] ?></span></div>
-        </div>
-
-        <?php $m83 = renderMatch(83, 'Runner-up Grp K', 'Runner-up Grp L', $bracket_data); ?>
-        <div class="bracket-match <?= $m83['status_class'] ?>">
-            <div class="match-header"><span>Match 83</span> <span>Jul 2</span></div>
-            <div class="match-team <?= $m83['h_class'] ?>"><span><?= $m83['home'] ?></span><span><?= $m83['h_score'] ?></span></div>
-            <div class="match-team <?= $m83['a_class'] ?>"><span><?= $m83['away'] ?></span><span><?= $m83['a_score'] ?></span></div>
-        </div>
-
-        <?php $m84 = renderMatch(84, 'Winner Group H', 'Runner-up Grp J', $bracket_data); ?>
-        <div class="bracket-match <?= $m84['status_class'] ?>">
-            <div class="match-header"><span>Match 84</span> <span>Jul 2</span></div>
-            <div class="match-team <?= $m84['h_class'] ?>"><span><?= $m84['home'] ?></span><span><?= $m84['h_score'] ?></span></div>
-            <div class="match-team <?= $m84['a_class'] ?>"><span><?= $m84['away'] ?></span><span><?= $m84['a_score'] ?></span></div>
-        </div>
-
-        <div class="bracket-spacer-large"></div>
-
-        <?php $m76 = renderMatch(76, 'Winner Group C', 'Runner-up Grp F', $bracket_data); ?>
-        <div class="bracket-match <?= $m76['status_class'] ?>">
-            <div class="match-header"><span>Match 76</span> <span>Jun 29</span></div>
-            <div class="match-team <?= $m76['h_class'] ?>"><span><?= $m76['home'] ?></span><span><?= $m76['h_score'] ?></span></div>
-            <div class="match-team <?= $m76['a_class'] ?>"><span><?= $m76['away'] ?></span><span><?= $m76['a_score'] ?></span></div>
-        </div>
-
-        <?php $m78 = renderMatch(78, 'Runner-up Grp E', 'Runner-up Grp I', $bracket_data); ?>
-        <div class="bracket-match <?= $m78['status_class'] ?>">
-            <div class="match-header"><span>Match 78</span> <span>Jun 30</span></div>
-            <div class="match-team <?= $m78['h_class'] ?>"><span><?= $m78['home'] ?></span><span><?= $m78['h_score'] ?></span></div>
-            <div class="match-team <?= $m78['a_class'] ?>"><span><?= $m78['away'] ?></span><span><?= $m78['a_score'] ?></span></div>
-        </div>
-
-        <?php $m79 = renderMatch(79, 'Winner Group A', '3rd Grp C/E/F/H/I', $bracket_data); ?>
-        <div class="bracket-match <?= $m79['status_class'] ?>">
-            <div class="match-header"><span>Match 79</span> <span>Jun 30</span></div>
-            <div class="match-team <?= $m79['h_class'] ?>"><span><?= $m79['home'] ?></span><span><?= $m79['h_score'] ?></span></div>
-            <div class="match-team <?= $m79['a_class'] ?>"><span><?= $m79['away'] ?></span><span><?= $m79['a_score'] ?></span></div>
-        </div>
-
-        <?php $m80 = renderMatch(80, 'Winner Group L', '3rd Grp E/H/I/J/K', $bracket_data); ?>
-        <div class="bracket-match <?= $m80['status_class'] ?>">
-            <div class="match-header"><span>Match 80</span> <span>Jul 1</span></div>
-            <div class="match-team <?= $m80['h_class'] ?>"><span><?= $m80['home'] ?></span><span><?= $m80['h_score'] ?></span></div>
-            <div class="match-team <?= $m80['a_class'] ?>"><span><?= $m80['away'] ?></span><span><?= $m80['a_score'] ?></span></div>
-        </div>
-
-        <div class="bracket-spacer"></div>
-
-        <?php $m86 = renderMatch(86, 'Winner Group J', 'Runner-up Grp H', $bracket_data); ?>
-        <div class="bracket-match <?= $m86['status_class'] ?>">
-            <div class="match-header"><span>Match 86</span> <span>Jul 3</span></div>
-            <div class="match-team <?= $m86['h_class'] ?>"><span><?= $m86['home'] ?></span><span><?= $m86['h_score'] ?></span></div>
-            <div class="match-team <?= $m86['a_class'] ?>"><span><?= $m86['away'] ?></span><span><?= $m86['a_score'] ?></span></div>
-        </div>
-
-        <?php $m88 = renderMatch(88, 'Runner-up Grp D', 'Runner-up Grp G', $bracket_data); ?>
-        <div class="bracket-match <?= $m88['status_class'] ?>">
-            <div class="match-header"><span>Match 88</span> <span>Jul 3</span></div>
-            <div class="match-team <?= $m88['h_class'] ?>"><span><?= $m88['home'] ?></span><span><?= $m88['h_score'] ?></span></div>
-            <div class="match-team <?= $m88['a_class'] ?>"><span><?= $m88['away'] ?></span><span><?= $m88['a_score'] ?></span></div>
-        </div>
-
-        <?php $m85 = renderMatch(85, 'Winner Group B', '3rd Grp E/F/G/I/J', $bracket_data); ?>
-        <div class="bracket-match <?= $m85['status_class'] ?>">
-            <div class="match-header"><span>Match 85</span> <span>Jul 2</span></div>
-            <div class="match-team <?= $m85['h_class'] ?>"><span><?= $m85['home'] ?></span><span><?= $m85['h_score'] ?></span></div>
-            <div class="match-team <?= $m85['a_class'] ?>"><span><?= $m85['away'] ?></span><span><?= $m85['a_score'] ?></span></div>
-        </div>
-
-        <?php $m87 = renderMatch(87, 'Winner Group K', '3rd Grp D/E/I/J/L', $bracket_data); ?>
-        <div class="bracket-match <?= $m87['status_class'] ?>">
-            <div class="match-header"><span>Match 87</span> <span>Jul 3</span></div>
-            <div class="match-team <?= $m87['h_class'] ?>"><span><?= $m87['home'] ?></span><span><?= $m87['h_score'] ?></span></div>
-            <div class="match-team <?= $m87['a_class'] ?>"><span><?= $m87['away'] ?></span><span><?= $m87['a_score'] ?></span></div>
-        </div>
+        <?php if (empty($r32_ids)): ?>
+            <p style="color:#99aab5;font-size:13px;">No Round of 32 matches found yet — run the fetch script.</p>
+        <?php endif; ?>
     </div>
-    
+
+    <!-- ── Round of 16 ─────────────────────────────────────────────── -->
     <div class="bracket-round">
         <h3 class="round-title">Round of 16</h3>
-        
-        <?php $m89 = renderMatch(89, 'Winner Match 74', 'Winner Match 77', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m89['status_class'] ?>">
-            <div class="match-header"><span>Match 89</span> <span>Jul 4</span></div>
-            <div class="match-team <?= $m89['h_class'] ?>"><span><?= $m89['home'] ?></span><span><?= $m89['h_score'] ?></span></div>
-            <div class="match-team <?= $m89['a_class'] ?>"><span><?= $m89['away'] ?></span><span><?= $m89['a_score'] ?></span></div>
-        </div>
 
-        <?php $m90 = renderMatch(90, 'Winner Match 73', 'Winner Match 75', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m90['status_class'] ?>">
-            <div class="match-header"><span>Match 90</span> <span>Jul 4</span></div>
-            <div class="match-team <?= $m90['h_class'] ?>"><span><?= $m90['home'] ?></span><span><?= $m90['h_score'] ?></span></div>
-            <div class="match-team <?= $m90['a_class'] ?>"><span><?= $m90['away'] ?></span><span><?= $m90['a_score'] ?></span></div>
-        </div>
+        <?php foreach ($r16_ids as $i => $mid): ?>
+            <?php
+                $m = $bracket_data[$mid] ?? null;
+                $date = $m ? date('M j', strtotime($m['match_date'])) : '';
+            ?>
+            <?= matchCard($mid, 'TBD', 'TBD', $bracket_data, 'r16', "Match $mid", $date) ?>
+            <?php if (in_array($i, [1, 3, 5], true)): ?>
+                <div class="bracket-spacer<?= $i === 3 ? '-large' : '' ?>"></div>
+            <?php endif; ?>
+        <?php endforeach; ?>
 
-        <div class="bracket-spacer"></div>
-
-        <?php $m94 = renderMatch(94, 'Winner Match 81', 'Winner Match 82', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m94['status_class'] ?>">
-            <div class="match-header"><span>Match 94</span> <span>Jul 6</span></div>
-            <div class="match-team <?= $m94['h_class'] ?>"><span><?= $m94['home'] ?></span><span><?= $m94['h_score'] ?></span></div>
-            <div class="match-team <?= $m94['a_class'] ?>"><span><?= $m94['away'] ?></span><span><?= $m94['a_score'] ?></span></div>
-        </div>
-
-        <?php $m93 = renderMatch(93, 'Winner Match 83', 'Winner Match 84', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m93['status_class'] ?>">
-            <div class="match-header"><span>Match 93</span> <span>Jul 6</span></div>
-            <div class="match-team <?= $m93['h_class'] ?>"><span><?= $m93['home'] ?></span><span><?= $m93['h_score'] ?></span></div>
-            <div class="match-team <?= $m93['a_class'] ?>"><span><?= $m93['away'] ?></span><span><?= $m93['a_score'] ?></span></div>
-        </div>
-
-        <div class="bracket-spacer-large"></div>
-
-        <?php $m91 = renderMatch(91, 'Winner Match 76', 'Winner Match 78', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m91['status_class'] ?>">
-            <div class="match-header"><span>Match 91</span> <span>Jul 5</span></div>
-            <div class="match-team <?= $m91['h_class'] ?>"><span><?= $m91['home'] ?></span><span><?= $m91['h_score'] ?></span></div>
-            <div class="match-team <?= $m91['a_class'] ?>"><span><?= $m91['away'] ?></span><span><?= $m91['a_score'] ?></span></div>
-        </div>
-
-        <?php $m92 = renderMatch(92, 'Winner Match 79', 'Winner Match 80', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m92['status_class'] ?>">
-            <div class="match-header"><span>Match 92</span> <span>Jul 5</span></div>
-            <div class="match-team <?= $m92['h_class'] ?>"><span><?= $m92['home'] ?></span><span><?= $m92['h_score'] ?></span></div>
-            <div class="match-team <?= $m92['a_class'] ?>"><span><?= $m92['away'] ?></span><span><?= $m92['a_score'] ?></span></div>
-        </div>
-
-        <div class="bracket-spacer"></div>
-
-        <?php $m95 = renderMatch(95, 'Winner Match 86', 'Winner Match 88', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m95['status_class'] ?>">
-            <div class="match-header"><span>Match 95</span> <span>Jul 7</span></div>
-            <div class="match-team <?= $m95['h_class'] ?>"><span><?= $m95['home'] ?></span><span><?= $m95['h_score'] ?></span></div>
-            <div class="match-team <?= $m95['a_class'] ?>"><span><?= $m95['away'] ?></span><span><?= $m95['a_score'] ?></span></div>
-        </div>
-
-        <?php $m96 = renderMatch(96, 'Winner Match 85', 'Winner Match 87', $bracket_data); ?>
-        <div class="bracket-match r16 <?= $m96['status_class'] ?>">
-            <div class="match-header"><span>Match 96</span> <span>Jul 7</span></div>
-            <div class="match-team <?= $m96['h_class'] ?>"><span><?= $m96['home'] ?></span><span><?= $m96['h_score'] ?></span></div>
-            <div class="match-team <?= $m96['a_class'] ?>"><span><?= $m96['away'] ?></span><span><?= $m96['a_score'] ?></span></div>
-        </div>
+        <?php if (empty($r16_ids)): ?>
+            <p style="color:#99aab5;font-size:13px;">Awaiting Round of 32 results.</p>
+        <?php endif; ?>
     </div>
-    
+
+    <!-- ── Quarterfinals ───────────────────────────────────────────── -->
     <div class="bracket-round">
         <h3 class="round-title">Quarterfinals</h3>
-        
-        <?php $m97 = renderMatch(97, 'Winner Match 89', 'Winner Match 90', $bracket_data); ?>
-        <div class="bracket-match qf <?= $m97['status_class'] ?>">
-            <div class="match-header"><span>Match 97</span> <span>Jul 9</span></div>
-            <div class="match-team <?= $m97['h_class'] ?>"><span><?= $m97['home'] ?></span><span><?= $m97['h_score'] ?></span></div>
-            <div class="match-team <?= $m97['a_class'] ?>"><span><?= $m97['away'] ?></span><span><?= $m97['a_score'] ?></span></div>
-        </div>
-        
-        <div class="bracket-spacer"></div>
-        
-        <?php $m98 = renderMatch(98, 'Winner Match 93', 'Winner Match 94', $bracket_data); ?>
-        <div class="bracket-match qf <?= $m98['status_class'] ?>">
-            <div class="match-header"><span>Match 98</span> <span>Jul 10</span></div>
-            <div class="match-team <?= $m98['h_class'] ?>"><span><?= $m98['home'] ?></span><span><?= $m98['h_score'] ?></span></div>
-            <div class="match-team <?= $m98['a_class'] ?>"><span><?= $m98['away'] ?></span><span><?= $m98['a_score'] ?></span></div>
-        </div>
-        
-        <div class="bracket-spacer-xl"></div>
-        
-        <?php $m99 = renderMatch(99, 'Winner Match 91', 'Winner Match 92', $bracket_data); ?>
-        <div class="bracket-match qf <?= $m99['status_class'] ?>">
-            <div class="match-header"><span>Match 99</span> <span>Jul 11</span></div>
-            <div class="match-team <?= $m99['h_class'] ?>"><span><?= $m99['home'] ?></span><span><?= $m99['h_score'] ?></span></div>
-            <div class="match-team <?= $m99['a_class'] ?>"><span><?= $m99['away'] ?></span><span><?= $m99['a_score'] ?></span></div>
-        </div>
-        
-        <div class="bracket-spacer"></div>
-        
-        <?php $m100 = renderMatch(100, 'Winner Match 95', 'Winner Match 96', $bracket_data); ?>
-        <div class="bracket-match qf <?= $m100['status_class'] ?>">
-            <div class="match-header"><span>Match 100</span> <span>Jul 11</span></div>
-            <div class="match-team <?= $m100['h_class'] ?>"><span><?= $m100['home'] ?></span><span><?= $m100['h_score'] ?></span></div>
-            <div class="match-team <?= $m100['a_class'] ?>"><span><?= $m100['away'] ?></span><span><?= $m100['a_score'] ?></span></div>
-        </div>
+
+        <?php foreach ($qf_ids as $i => $mid): ?>
+            <?php
+                $m = $bracket_data[$mid] ?? null;
+                $date = $m ? date('M j', strtotime($m['match_date'])) : '';
+            ?>
+            <?= matchCard($mid, 'TBD', 'TBD', $bracket_data, 'qf', "Match $mid", $date) ?>
+            <?php if ($i === 0): ?><div class="bracket-spacer"></div><?php endif; ?>
+            <?php if ($i === 1): ?><div class="bracket-spacer-xl"></div><?php endif; ?>
+            <?php if ($i === 2): ?><div class="bracket-spacer"></div><?php endif; ?>
+        <?php endforeach; ?>
+
+        <?php if (empty($qf_ids)): ?>
+            <p style="color:#99aab5;font-size:13px;">Awaiting Round of 16 results.</p>
+        <?php endif; ?>
     </div>
-    
+
+    <!-- ── Semifinals ──────────────────────────────────────────────── -->
     <div class="bracket-round">
         <h3 class="round-title">Semifinals</h3>
-        
-        <?php $m101 = renderMatch(101, 'Winner Match 97', 'Winner Match 98', $bracket_data); ?>
-        <div class="bracket-match sf <?= $m101['status_class'] ?>">
-            <div class="match-header"><span>Match 101</span> <span>Jul 14</span></div>
-            <div class="match-team <?= $m101['h_class'] ?>"><span><?= $m101['home'] ?></span><span><?= $m101['h_score'] ?></span></div>
-            <div class="match-team <?= $m101['a_class'] ?>"><span><?= $m101['away'] ?></span><span><?= $m101['a_score'] ?></span></div>
-            <div class="match-note">🔥 Side of Death Winner</div>
-        </div>
-        
-        <div class="bracket-spacer-mega"></div>
-        
-        <?php $m102 = renderMatch(102, 'Winner Match 99', 'Winner Match 100', $bracket_data); ?>
-        <div class="bracket-match sf <?= $m102['status_class'] ?>">
-            <div class="match-header"><span>Match 102</span> <span>Jul 15</span></div>
-            <div class="match-team <?= $m102['h_class'] ?>"><span><?= $m102['home'] ?></span><span><?= $m102['h_score'] ?></span></div>
-            <div class="match-team <?= $m102['a_class'] ?>"><span><?= $m102['away'] ?></span><span><?= $m102['a_score'] ?></span></div>
-            <div class="match-note">✨ Golden Path Winner</div>
-        </div>
+
+        <?php foreach ($sf_ids as $i => $mid): ?>
+            <?php
+                $m = $bracket_data[$mid] ?? null;
+                $date = $m ? date('M j', strtotime($m['match_date'])) : '';
+                $note = $i === 0 ? '🔥 Side of Death Winner' : '✨ Golden Path Winner';
+            ?>
+            <?= matchCard($mid, 'TBD', 'TBD', $bracket_data, 'sf', "Match $mid", $date, $note) ?>
+            <?php if ($i === 0): ?><div class="bracket-spacer-mega"></div><?php endif; ?>
+        <?php endforeach; ?>
+
+        <?php if (empty($sf_ids)): ?>
+            <p style="color:#99aab5;font-size:13px;">Awaiting Quarterfinal results.</p>
+        <?php endif; ?>
     </div>
-    
+
+    <!-- ── Final & Third Place ─────────────────────────────────────── -->
     <div class="bracket-round">
         <h3 class="round-title">Final</h3>
-        
-        <?php $m104 = renderMatch(104, 'Winner SF 1', 'Winner SF 2', $bracket_data); ?>
-        <div class="bracket-match final <?= $m104['status_class'] ?>">
-            <div class="match-header">🏆 Match 104 - July 19, New Jersey</div>
-            <div class="match-team <?= $m104['h_class'] ?>"><span><?= $m104['home'] ?></span><span><?= $m104['h_score'] ?></span></div>
-            <div class="match-team <?= $m104['a_class'] ?>"><span><?= $m104['away'] ?></span><span><?= $m104['a_score'] ?></span></div>
-            <div class="match-note">FIFA World Cup 2026 Champion</div>
-        </div>
-        
+
+        <?php $finalMid = idAt($final_ids, 0); ?>
+        <?php $finalM   = $finalMid ? ($bracket_data[$finalMid] ?? null) : null; ?>
+        <?php $finalLabel = $finalM
+            ? '🏆 Match ' . $finalMid . ' — ' . date('F j', strtotime($finalM['match_date'])) . ', ' . ($finalM['venue'] ?? 'TBD')
+            : '🏆 Final'; ?>
+        <?= matchCard($finalMid, 'Winner SF 1', 'Winner SF 2', $bracket_data, 'final', $finalLabel, '', 'FIFA World Cup 2026 Champion') ?>
+
         <div class="bracket-spacer"></div>
-        
-        <?php $m103 = renderMatch(103, 'Loser SF 1', 'Loser SF 2', $bracket_data); ?>
-        <div class="bracket-match third-place <?= $m103['status_class'] ?>">
-            <div class="match-header">🥉 Match 103 - July 18, Miami</div>
-            <div class="match-team <?= $m103['h_class'] ?>"><span><?= $m103['home'] ?></span><span><?= $m103['h_score'] ?></span></div>
-            <div class="match-team <?= $m103['a_class'] ?>"><span><?= $m103['away'] ?></span><span><?= $m103['a_score'] ?></span></div>
-            <div class="match-note">Third Place Playoff</div>
-        </div>
+
+        <?php $tpMid = idAt($tp_ids, 0); ?>
+        <?php $tpM   = $tpMid ? ($bracket_data[$tpMid] ?? null) : null; ?>
+        <?php $tpLabel = $tpM
+            ? '🥉 Match ' . $tpMid . ' — ' . date('F j', strtotime($tpM['match_date'])) . ', ' . ($tpM['venue'] ?? 'TBD')
+            : '🥉 Third Place'; ?>
+        <?= matchCard($tpMid, 'Loser SF 1', 'Loser SF 2', $bracket_data, 'third-place', $tpLabel, '', 'Third Place Playoff') ?>
     </div>
-    
+
 </div>
 
+<!-- ── Bracket Analysis — now shows who's actually still alive ──────── -->
 <div class="panel">
     <h2>📊 Bracket Structure Analysis</h2>
-    
+    <p class="update-info">Pot 1 / host teams on each side of the draw, with live elimination status</p>
     <div class="grid">
         <div class="panel" style="background: #23272a; margin-bottom: 0;">
             <h3 style="color: #f04747;">🔥 Side of Death (Semi-Final 1)</h3>
             <p><strong>Groups D, E, F, G, H, I</strong></p>
             <ul>
-                <li>🇪🇸 Spain (Group H) - #1 FIFA</li>
-                <li>🇫🇷 France (Group I) - Pot 1</li>
-                <li>🇩🇪 Germany (Group E) - Pot 1</li>
-                <li>🇳🇱 Netherlands (Group F) - Pot 1</li>
-                <li>🇧🇪 Belgium (Group G) - Pot 1</li>
-                <li>🇺🇸 USA (Group D) - Host</li>
+                <?php foreach ($deathTeams as $t): ?>
+                    <li><?= $t ?></li>
+                <?php endforeach; ?>
+                <?php if (empty($deathTeams)): ?>
+                    <li><em>No elite/host teams found — check wc_teams data</em></li>
+                <?php endif; ?>
             </ul>
-            <p class="text-danger"><strong>5 of 9 Pot 1 teams on this side!</strong></p>
+            <p class="text-danger"><strong><?= $deathAlive ?> of <?= $deathTotal ?> Pot 1 / host teams still standing</strong></p>
         </div>
-        
+
         <div class="panel" style="background: #23272a; margin-bottom: 0;">
             <h3 style="color: #43b581;">✨ Golden Path (Semi-Final 2)</h3>
             <p><strong>Groups A, B, C, J, K, L</strong></p>
             <ul>
-                <li>🏴󠁧󠁢󠁥󠁮󠁧󠁿 England (Group L) - Pot 1</li>
-                <li>🇦🇷 Argentina (Group J) - Defending Champs</li>
-                <li>🇵🇹 Portugal (Group K) - Pot 1</li>
-                <li>🇧🇷 Brazil (Group C) - Pot 1</li>
-                <li>🇲🇽 Mexico (Group A) - Host</li>
-                <li>🇨🇦 Canada (Group B) - Host</li>
+                <?php foreach ($goldenTeams as $t): ?>
+                    <li><?= $t ?></li>
+                <?php endforeach; ?>
+                <?php if (empty($goldenTeams)): ?>
+                    <li><em>No elite/host teams found — check wc_teams data</em></li>
+                <?php endif; ?>
             </ul>
-            <p class="text-success"><strong>More balanced distribution!</strong></p>
+            <p class="text-success"><strong><?= $goldenAlive ?> of <?= $goldenTotal ?> Pot 1 / host teams still standing</strong></p>
         </div>
     </div>
 </div>

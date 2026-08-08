@@ -16,6 +16,17 @@ $top_5_7_fifa = ['Brazil', 'Portugal', 'Netherlands'];
 $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
 ?>
 
+<style>
+    .panel { background: #40444b; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #00ff88; }
+    th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
+    .team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
+    .team-cell { display: flex; align-items: center; text-align: left; }
+    .update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
+</style>
+
 <div class="panel">
     <h2>🌍 World Cup 2026 - Group Stage</h2>
     
@@ -92,7 +103,7 @@ $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
         </div>
     <?php else: ?>
         <!-- 12 Groups Display Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px;">
             <?php 
             // Define all 12 groups with host nations
             $all_groups = ['Group A', 'Group B', 'Group C', 'Group D', 'Group E', 'Group F', 
@@ -167,6 +178,8 @@ $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
                                 <th style="width: 30px;">W</th>
                                 <th style="width: 30px;">D</th>
                                 <th style="width: 30px;">L</th>
+                                <th style="width: 35px;">GF</th>
+                                <th style="width: 35px;">GA</th>
                                 <th style="width: 35px;">GD</th>
                                 <th style="width: 35px;">Pts</th>
                             </tr>
@@ -214,7 +227,6 @@ $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
                                         <?= $status_icon ?>
                                     </td>
                                     <td style="font-size: 12px;">
-                                        <?= htmlspecialchars($team['team_name']) ?>
                                         <?php if ($is_host): ?>
                                             <span style="color: #00ff88;" title="Host Nation">★</span>
                                         <?php endif; ?>
@@ -225,11 +237,17 @@ $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
                                         <?php elseif ($is_top_8_12): ?>
                                             <span style="color: #CD7F32;" title="Top 8-12 FIFA Ranked">🔶</span>
                                         <?php endif; ?>
+                                        <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
+                                            alt="<?= htmlspecialchars($info['name']) ?> crest" 
+                                            class="team-crest"
+                                            onerror="this.style.display='none'"><?= htmlspecialchars($team['team_name']) ?>
                                     </td>
                                     <td style="text-align: center;"><?= $team['played'] ?></td>
                                     <td style="text-align: center;"><?= $team['won'] ?></td>
                                     <td style="text-align: center;"><?= $team['drawn'] ?></td>
                                     <td style="text-align: center;"><?= $team['lost'] ?></td>
+                                    <td style="text-align: center;"><?= $team['gf'] ?></td>
+                                    <td style="text-align: center;"><?= $team['ga'] ?></td>
                                     <td style="text-align: center; color: <?= $team['gd'] > 0 ? '#43b581' : ($team['gd'] < 0 ? '#f04747' : '#dcddde') ?>; font-weight: bold;">
                                         <?= $team['gd'] > 0 ? '+' . $team['gd'] : $team['gd'] ?>
                                     </td>
@@ -243,7 +261,7 @@ $top_8_12_fifa = ['Belgium', 'Germany', 'Croatia', 'Morocco', 'Colombia'];
         </div>
         
         <!-- Legend -->
-        <div style="margin-top: 30px; padding: 15px; background: #40444b; border-radius: 8px;">
+        <div style="margin-top: 30px; padding: 10px; background: #40444b; border-radius: 8px;">
             <strong style="color: #00ff88;">Legend:</strong>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; font-size: 12px;">
                 <div>
