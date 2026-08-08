@@ -344,7 +344,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
     <!-- Points to Halfway Safety Target -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Halfway Safety Target</h3>
-        <div style="font-size: 64px; font-weight: bold; color: #43b581; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $half_season_points_to_safety; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
