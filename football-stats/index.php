@@ -10,6 +10,28 @@ $seasonLabels = [
 
 $seasonLeagueConfigs = [
     '2025-2026' => [
+        'division-one' => [
+            'label' => 'Division One',
+            'defaultSubTab' => 'table',
+            'tabs' => [
+                'table' => ['label' => 'Regular Table', 'icon' => '📊', 'file' => 'tabs/division-one/2025-2026/table.php'],
+                'table-2' => ['label' => 'Deep Dive Table', 'icon' => '🔢', 'file' => 'tabs/division-one/2025-2026/table2.php'],
+                'matches' => ['label' => 'Matches', 'icon' => '📅', 'file' => 'tabs/division-one/2025-2026/matches.php'],
+                'compare' => ['label' => 'Compare', 'icon' => '🔀', 'file' => 'tabs/division-one/2025-2026/compare.php'],
+                'blocks-overview' => ['label' => 'Blocks of 4', 'icon' => '🧱', 'file' => 'tabs/division-one/2025-2026/blocks-overview.php'],
+                'blocks-dynamic' => ['label' => 'Live Blocks', 'icon' => '🔥', 'file' => 'tabs/division-one/2025-2026/blocks-dynamic.php'],
+                'blocks-1' => ['label' => 'Block 1', 'icon' => '🏆', 'file' => 'tabs/division-one/2025-2026/blocks-1.php'],
+                'blocks-2' => ['label' => 'Block 2', 'icon' => '🎯', 'file' => 'tabs/division-one/2025-2026/blocks-2.php'],
+                'blocks-3' => ['label' => 'Block 3', 'icon' => '⚖️', 'file' => 'tabs/division-one/2025-2026/blocks-3.php'],
+                'blocks-4' => ['label' => 'Block 4', 'icon' => '⚠️', 'file' => 'tabs/division-one/2025-2026/blocks-4.php'],
+                'blocks-5' => ['label' => 'Block 5', 'icon' => '🎯', 'file' => 'tabs/division-one/2025-2026/blocks-5.php'],
+                'team-tracker' => ['label' => 'Team Tracker', 'icon' => '💛', 'file' => 'tabs/division-one/2025-2026/team-tracker.php'],
+                'team-tracker-2' => ['label' => 'Team Dashboard', 'icon' => '📊', 'file' => 'tabs/division-one/2025-2026/team-tracker-2.php'],
+                'team-tracker-3' => ['label' => 'Team Classic', 'icon' => '🎯', 'file' => 'tabs/division-one/2025-2026/team-tracker-3.php'],
+                'whatifs' => ['label' => 'What-Ifs', 'icon' => '❓', 'file' => 'tabs/division-one/2025-2026/whatifs.php'],
+                'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/division-one/2025-2026/simulation.php'],
+            ],
+        ],
         'premier-league' => [
             'label' => 'Premier League',
             'defaultSubTab' => 'table',
