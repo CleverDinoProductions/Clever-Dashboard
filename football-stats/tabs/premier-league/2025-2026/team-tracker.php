@@ -438,7 +438,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         The <strong style="color: <?= $teamTextColor ?>;">75% Rule</strong>: Teams with 15+ points (75% of 20) at halfway have an 85-90% survival rate
     </p>
     
-    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #5865F2;">
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
         <?php 
         $progress_bar_pct = min(100, $halfway_progress_pct);
         
@@ -502,6 +502,8 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         // Color based on proximity to 30 points
         if ($half_season_progress_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($half_season_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
         } elseif ($half_season_progress_pct >= 50) {
             $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
         } else {
@@ -509,10 +511,10 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         }
         ?>
 
-        <div style="background: <?php echo $bar_color; ?>; width: <?php echo $half_season_progress_pct; ?>%; height: 100%;"></div>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $half_season_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
         
         <!-- 30-point marker line -->
-        <div style="position: absolute; left: 30%; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
             ▼ Halfway Safety (30 pts)
         </div>
@@ -692,7 +694,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Mathematical target: 45 points for Mathematical safety margin (historically 100% survival rate)
     </p>
-    <div style="background: #40444b; border-radius: 6px; overflow: hidden; position: relative; height: 50px;">
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
         <?php 
         $mathematical_target_progress_pct = ($team['points'] / 45) * 100;
 
