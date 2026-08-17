@@ -51,6 +51,14 @@ if ($is_first_half) {
 
 // === SEASON POINT SAFETY CALCULATIONS ===
 
+$half_way_safety_target = 20;
+$half_way_points_to_safety = max(0, $half_way_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $half_way_ppg_needed = round($half_way_points_to_safety / $games_remaining, 2);
+} else {
+    $half_way_ppg_needed = 0;
+}
+
 $half_season_safety_target = 30;
 $half_season_points_to_safety = max(0, $half_season_safety_target - $team['points']);
 if ($games_remaining > 0) {
@@ -82,7 +90,6 @@ if ($games_remaining > 0) {
 } else {
     $guaranteed_season_ppg_needed = 0;
 }
-
 
 $mathematical_season_safety_target = 45;
 $mathematical_season_points_to_safety = max(0, $mathematical_season_safety_target - $team['points']);
@@ -324,7 +331,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             <?php echo $team['points']; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
-            From <?php echo $games_played; ?> games (<?php echo number_format($current_ppg, 2); ?> PPG)
+            PPG needed: <?php echo $ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
         </p>
     </div>
 
@@ -341,6 +348,20 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         </p>
     </div>
 
+    <!-- Points to Halfway Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #5865F2;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Halfway Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #5865F2; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $half_way_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $half_way_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $half_way_ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
+        </p>
+    </div>
+
     <!-- Points to Halfway Safety Target -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
         <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Halfway Safety Target</h3>
@@ -349,6 +370,9 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $half_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $half_season_ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
         </p>
     </div>
 
@@ -361,6 +385,9 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $full_season_safety_target; ?> points
         </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $full_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
     </div>
 
     <!-- Extented Season Target -->
@@ -371,6 +398,9 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         </div>
             <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $extended_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $extended_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
         </p>
     </div>
 
@@ -383,6 +413,9 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $guaranteed_season_safety_target; ?> points
         </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $guaranteed_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
     </div>
 
     <!-- Mathematical Season Target -->
@@ -393,6 +426,9 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $mathematical_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $mathematical_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
         </p>
     </div>
 
