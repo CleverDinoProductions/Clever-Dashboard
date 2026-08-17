@@ -88,19 +88,39 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 $pos_color = '#dcddde'; // Default color for position number
                 $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
                 
-                if ($is_leeds) {
-                    $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
-                    $pos_color = '#FFCD00'; // Yellow for Leeds United
-                } elseif ($pos <= 2) {
-                    $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-                    $pos_color = '#43b581';
-                } elseif ($pos <= 6) {
-                    $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-                    $pos_color = '#5865F2';
-                } elseif ($pos >= 22) {
-                    $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
-                    $pos_color = '#f04747';
+                if ($tableView['active_season_label'] == '2026-2027')
+                {
+                    if ($is_leeds) {
+                        $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
+                        $pos_color = '#FFCD00'; // Yellow for Leeds United
+                    } elseif ($pos <= 2) {
+                        $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
+                        $pos_color = '#43b581';
+                    } elseif ($pos <= 8) {
+                        $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
+                        $pos_color = '#5865F2';
+                    } elseif ($pos >= 22) {
+                        $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
+                        $pos_color = '#f04747';
+                    }
                 }
+                else
+                {
+                    if ($is_leeds) {
+                        $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
+                        $pos_color = '#FFCD00'; // Yellow for Leeds United
+                    } elseif ($pos <= 2) {
+                            $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
+                            $pos_color = '#43b581';
+                    } elseif ($pos <= 6) {
+                            $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
+                            $pos_color = '#5865F2';
+                    } elseif ($pos >= 23) {
+                            $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
+                            $pos_color = '#f04747';
+                    }
+                }
+                    
 
                 $games_remaining = max(0, $total_games - $team['played']);
                 $show_common = ($team['team_name'] !== $info['common_name']);
