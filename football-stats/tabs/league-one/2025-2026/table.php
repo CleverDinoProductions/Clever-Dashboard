@@ -53,7 +53,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 </style>
 
 <div class="panel">
-    <h2>League One Table 2025/26</h2>
+    <h2>League One Table <?= $tableView['active_season_label'] ?></h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'league-one', $currentSubTab ?? 'table'); ?>
     <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', 'league-one', $currentSubTab ?? 'table'); ?>
     <p class="update-info">

@@ -68,7 +68,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 </style>*
 
 <div class="panel">
-    <h2>Championship Table</h2>
+    <h2>Championship Table <?= $tableView['active_season_label']?></h2>
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'table-2'); ?>
     <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', 'championship', $currentSubTab ?? 'table-2', $quarter_boundaries); ?>
     <div class="table-view-custom-nav" style="margin: 18px 0 18px 0;">
