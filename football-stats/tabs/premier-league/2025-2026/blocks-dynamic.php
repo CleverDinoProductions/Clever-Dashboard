@@ -23,19 +23,21 @@ foreach ($allTeams as $team) {
     // Check projected points against historical block thresholds and current position to assign predicted block
     if ($projectedPoints >= 70 ) $predictedBlock = 1; // Title contenders
     elseif ($projectedPoints >= 60) $predictedBlock = 2; // European zone
+    elseif ($projectedPoints >= 50) $predictedBlock = 3; // Mid-table
+    elseif ($projectedPoints >= 40) $predictedBlock = 3; // Danger zone
     elseif ($projectedPoints >= 38) $predictedBlock = 3; // Mid-table
     elseif ($projectedPoints >= 32) $predictedBlock = 4; // Danger zone
     
     // Current block
     if ($team['position'] <= 2) $currentBlock = 1;
-    elseif ($team['position'] <= 7) $currentBlock = 2;
+    elseif ($team['position'] <= 5) $currentBlock = 2;
     elseif ($team['position'] <= 15) $currentBlock = 3;
     elseif ($team['position'] <= 17) $currentBlock = 4;
     elseif ($team['position'] >= 18) $currentBlock = 5;
 
     // Final block based on current position
     if ($team['position'] <= 1) $finalBlock = 1;
-    elseif ($team['position'] <= 7) $finalBlock = 2;
+    elseif ($team['position'] <= 5) $finalBlock = 2;
     elseif ($team['position'] <= 15) $finalBlock = 3;
     elseif ($team['position'] <= 17) $finalBlock = 4;
     elseif ($team['position'] >= 18) $finalBlock = 5;

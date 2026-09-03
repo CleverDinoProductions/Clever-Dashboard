@@ -11,14 +11,14 @@ $blockInfo = [
     'title' => 'Mid-Table Security',
     'emoji' => '⚖️',
     'color' => '#99AAB5',
-    'positions' => '8-14',
+    'positions' => '6-15',
     'description' => 'Mid-Table Comfort Zone'
 ];
 
 $tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
 $calcMode = $tableView['calc_mode'];
 $teams = array_values(array_filter($tableView['standings'], function ($team) {
-    return $team['position'] >= 8 && $team['position'] <= 15;
+    return $team['position'] >= 6 && $team['position'] <= 15;
 }));
 $currentMatchday = $tableView['active_matchweek'] ?? (!empty($tableView['standings']) ? max(array_map('intval', array_column($tableView['standings'], 'played'))) : 1);
 $last_update = $tableView['last_update'];

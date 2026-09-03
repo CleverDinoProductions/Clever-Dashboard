@@ -11,14 +11,14 @@ $blockInfo = [
     'title' => 'European Contenders',
     'emoji' => '🌍',
     'color' => '#5865F2',
-    'positions' => '1-7',
-    'description' => 'Champions League, Europa League & Conference League Qualification Zone'
+    'positions' => '1-5',
+    'description' => 'Champions League & Europa League Qualification Zone'
 ];
 
 $tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');
 $calcMode = $tableView['calc_mode'];
 $teams = array_values(array_filter($tableView['standings'], function ($team) {
-    return $team['position'] >= 1 && $team['position'] <= 7;
+    return $team['position'] >= 1 && $team['position'] <= 5;
 }));
 $currentMatchday = $tableView['active_matchweek'] ?? (!empty($tableView['standings']) ? max(array_map('intval', array_column($tableView['standings'], 'played'))) : 1);
 $last_update = $tableView['last_update'];

@@ -29,7 +29,7 @@ foreach ($allTeams as $team) {
     if ($pos >= 1 && $pos <= 5) {
         $blocks[2]['teams'][] = $team;
     }
-    if ($pos >= 8 && $pos <= 15) {
+    if ($pos >= 6 && $pos <= 15) {
         $blocks[3]['teams'][] = $team;
     }
     if ($pos >= 15 && $pos <= 18) {
