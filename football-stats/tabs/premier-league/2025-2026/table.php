@@ -36,6 +36,36 @@ $safety_target_recent_low = 27; // Recent low safety target
 require_once __DIR__ . '/../../../includes/team-info.php';
 $team_info = $team_info_PL;
 
+/**
+ * Evaluates position highlight classes for min/max thresholds
+ */
+function get_table_row_style(array $team, int $uclMin = 4, int $uclMax = 5, int $uelMin = 5, int $uelMax = 7, int $ueclMax = 8, int $relegationMin = 18): string {
+    $pos = (int)$team['position'];
+    $classes = [];
+
+    // Left Border & Fill (Minimum Guaranteed Spots)
+    if ($pos <= $uclMin) {
+        $classes[] = 'row-ucl-min';
+    } elseif ($pos <= $uelMin) {
+        $classes[] = 'row-uel-min';
+    }
+
+    // Right Border (Maximum Potential Spots via Cup Drop-Downs)
+    if ($pos <= $uclMax) {
+        $classes[] = 'row-ucl';
+    } elseif ($pos <= $uelMax) {
+        $classes[] = 'row-uel';
+    } elseif ($pos <= $ueclMax) {
+        $classes[] = 'row-uecl';
+    }
+
+    // Relegation Check
+    if ($pos >= $relegationMin) {
+        $classes[] = 'row-relegation';
+    }
+
+    return !empty($classes) ? 'class="' . implode(' ', $classes) . '"' : '';
+}
 ?>
 
 <style>
@@ -55,6 +85,26 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
 .team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
 .team-cell { display: flex; align-items: center; text-align: left; }
 .update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
+
+:root {
+  --color-ucl: #006400;       /* Champions League: Dark Green */
+  --color-uel: #5865F2;       /* Europa League: Blurple / Soft Blue */
+  --color-uecl: #FFCD00;      /* Conference League: Gold / Yellow */
+  --color-relegation: #f04747;/* Relegation: Red */
+}
+
+/* Left Borders & Background Fills (Minimum Spots) */
+.row-ucl-min { background: rgba(0, 100, 0, 0.15); border-left: 4px solid var(--color-ucl); }
+.row-uel-min { background: rgba(88, 101, 242, 0.15); border-left: 4px solid var(--color-uel); }
+.row-uecl-min { background: rgba(255, 205, 0, 0.15); border-left: 4px solid var(--color-uecl); }
+
+/* Right Borders (Maximum Potential Spots) */
+.row-ucl { border-right: 4px solid var(--color-ucl); }
+.row-uel { border-right: 4px solid var(--color-uel); }
+.row-uecl { border-right: 4px solid var(--color-uecl); }
+
+/* Relegation */
+.row-relegation { background: rgba(240, 71, 71, 0.15); border-left: 4px solid var(--color-relegation); }
 </style>
 
 <div class="panel">
@@ -83,7 +133,10 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?php foreach ($standings as $team): ?>
         <?php
             // Get team info
-            $info = getTeamInfo($team['team_name'], $team_info);
+            $info = getTeamInfo($team['team_name'], $team_info);    
+            
+            // Dynamic row highlight class (Defaults: UCL 1-4, UEL 5-6, UECL 7, Relegation 18-20)
+            $row_attribute = get_table_row_style($team, 4, 5, 5, 7, 8, 18);
 
             //remaining games
             $games_remaining = max(0, $total_games - $team['played']);
@@ -104,11 +157,8 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             }
             
             // Highlight rows
-            $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
             $row_style = '';
-            if ($is_leeds) {
-                $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;';
-            } elseif ($team['position'] >= 18) {
+            if ($team['position'] >= 18) {
                 $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
             } elseif ($team['position'] <= 5) {
                 $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
@@ -121,29 +171,19 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             // Check if official name differs from common name
             $show_common = ($team['team_name'] !== $info['common_name']);
         ?>
-        <tr style="<?= $row_style ?>">
+        <tr <?= $row_attribute ?>>
             <td><strong><?= $team['position'] ?></strong></td>
             <td>
                 <div class="team-cell">
                     <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
                         alt="<?= htmlspecialchars($info['name']) ?> crest" 
-                        class="team-crest"
-                        onerror="this.style.display='none'"> <span class="team-name">
-                        <span class="team-official">
-                            <?= htmlspecialchars($info['name']) ?>
-                        </span>
+                        class="team-crest" 
+                        onerror="this.style.display='none'">
+                    <span class="team-name">
+                        <span class="team-official"><?= htmlspecialchars($info['name']) ?></span>
                         <?php if ($show_common): ?>
                             <span class="team-common">(<?= $team['team_name'] ?>)</span>
                         <?php endif; ?>
-                
-                        <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
-                            <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
-                                <?= $info['nickname'] ?>
-                            </span>
-                            <span class="tooltip-short">
-                                Abbreviated: <?= $info['short'] ?>
-                            </span>
-                        </span>
                     </span>
                 </div>
             </td>
