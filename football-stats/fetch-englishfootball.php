@@ -20,7 +20,7 @@ $API_KEY  = '876419';
 $BASE_URL = "https://www.thesportsdb.com/api/v1/json/$API_KEY/";
 $db       = new SQLite3('football-stats.sqlite3');
 
-// --- 1. Database Schema (Same as before, ensures consistency) ---
+// --- 1. Database Schema ---
 $tables = [
     "league_table_D1" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_PL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
@@ -38,7 +38,7 @@ foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
 }
 
-// Migrate existing tables (no-op if column already present)
+// Migrate existing tables
 $migrate = [
     'matches'                         => ['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT', 'competition_name TEXT'],
     'league_table_snapshots'          => ['competition_name TEXT'],
@@ -52,7 +52,6 @@ foreach ($migrate as $tbl => $cols) {
 
 /**
  * Returns the era-correct competition name for a given code and season start year.
- * TheSportsDB uses a single league ID across eras; we label them appropriately.
  */
 function era_name(string $code, int $year): string {
     return match($code) {
@@ -65,14 +64,53 @@ function era_name(string $code, int $year): string {
     };
 }
 
+/**
+ * Era-aware English Football Sorting Callback
+ * Implements Goal Average (pre-1976/77) vs Goal Difference & Goals Scored (1976/77 onwards).
+ */
+$sort_league_table = function(array $a, array $b, string $a_name, string $b_name, int $season_year): int {
+    // 1. Points (Descending)
+    if ($a['pts'] !== $b['pts']) {
+        return $b['pts'] <=> $a['pts'];
+    }
+
+    // ERA RULE: Pre-1976/77 uses Goal Average; 1976/77 onwards uses Goal Difference
+    if ($season_year < 1976) {
+        // Goal Average = GF / GA (Zero GA treated as infinite average)
+        $avg_a = $a['ga'] > 0 ? ($a['gf'] / $a['ga']) : ($a['gf'] > 0 ? 99999.0 : 0.0);
+        $avg_b = $b['ga'] > 0 ? ($b['gf'] / $b['ga']) : ($b['gf'] > 0 ? 99999.0 : 0.0);
+
+        if ($avg_a != $avg_b) {
+            return $avg_b <=> $avg_a; // Higher Goal Average wins
+        }
+    } else {
+        // 2. Goal Difference (Descending)
+        $gd_a = $a['gf'] - $a['ga'];
+        $gd_b = $b['gf'] - $b['ga'];
+
+        if ($gd_a !== $gd_b) {
+            return $gd_b <=> $gd_a;
+        }
+
+        // 3. Goals Scored (Descending) - Used from 1976 onwards when GD is level
+        if ($a['gf'] !== $b['gf']) {
+            return $b['gf'] <=> $a['gf'];
+        }
+    }
+
+    // 4. Alphabetical fallback (Ascending) for stable ordering
+    return strcasecmp($a_name, $b_name);
+};
+
 // --- 2. Core League Processing ---
 
 function sync_league($db, $BASE_URL, $code, $id) {
+    global $sort_league_table;
     echo "\n[Syncing $code (ID: $id)]\n";
     $timestamp = round(microtime(true) * 1000);
     $crest_map = [];
     
-    // STEP A: Pre-populate crest map from current search (Good for modern badges)
+    // STEP A: Pre-populate crest map from current search
     $teams_json = json_decode(@file_get_contents("{$BASE_URL}search_all_teams.php?l=" . urlencode($code)), true);
     if ($teams_json && isset($teams_json['teams'])) {
         foreach ($teams_json['teams'] as $t) {
@@ -82,8 +120,6 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
     // STEP B: Update Live View
     $live_data = json_decode(@file_get_contents("{$BASE_URL}lookuptable.php?l=$id"), true);
-    // Derive current season from date so playoff-era fetches aren't skipped if the live
-    // table has already rolled over to next season (TheSportsDB does this at season end).
     $cm = (int)date('n'); $cy = (int)date('Y');
     $date_based_season = $cm >= 7 ? "$cy-" . ($cy + 1) : ($cy - 1) . "-$cy";
     $current_season = $date_based_season;
@@ -119,8 +155,6 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $season_year = (int)substr($season, 0, 4);
         $comp_name   = era_name($code, $season_year);
 
-        // Optimization: Only skip if snapshots exist AND it's not the current season.
-        // Always re-fetch the current season to pick up playoff/late results.
         $check = $db->prepare("SELECT team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? LIMIT 1");
         $check->bindValue(1, $code); $check->bindValue(2, $season);
         $res = $check->execute()->fetchArray(SQLITE3_ASSOC);
@@ -130,7 +164,6 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $has_mw0 = $mw0_check->execute()->fetchArray(SQLITE3_ASSOC) !== false;
 
         $is_current  = ($season === $current_season || $season === $date_based_season);
-        // Historical seasons (pre-1992) often have no badge data; treat presence of any snapshot row as cached.
         $is_historic = $season_year < 1992;
         if (!$is_current && $res !== false && $has_mw0 && (!empty($res['team_crest']) || $is_historic)) {
             echo "  -> Season $season [$comp_name]: Cached. Skipping.\n";
@@ -149,8 +182,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
         $mw_buckets = []; $running_stats = [];
 
-        // Pre-process: remap intRound=0 (TheSportsDB playoff sentinel) to MW47+ by date order.
-        // MW0 is reserved for the pre-season blank table. Matches already at intRound>46 are kept as-is.
+        // Pre-process playoff dates from MW0 to MW47+
         $playoff_zero_date_map = [];
         {
             $zero_dates = [];
@@ -170,7 +202,6 @@ function sync_league($db, $BASE_URL, $code, $id) {
         }
 
         foreach ($fixtures['events'] as $e) {
-            // New Badge Injection Point: Grabbing badges directly from the event payload
             if (!empty($e['strHomeTeamBadge'])) $crest_map[$e['strHomeTeam']] = $e['strHomeTeamBadge'];
             if (!empty($e['strAwayTeamBadge'])) $crest_map[$e['strAwayTeam']] = $e['strAwayTeamBadge'];
 
@@ -178,14 +209,12 @@ function sync_league($db, $BASE_URL, $code, $id) {
             if (!isset($running_stats[$e['strAwayTeam']])) $running_stats[$e['strAwayTeam']] = ['p'=>0,'w'=>0,'d'=>0,'l'=>0,'gf'=>0,'ga'=>0,'pts'=>0];
 
             $mw = (int)$e['intRound'];
-            // Apply playoff remap: intRound=0 → MW47+ based on date
             if ($mw === 0 && !empty($e['dateEvent']) && isset($playoff_zero_date_map[$e['dateEvent']])) {
                 $mw = $playoff_zero_date_map[$e['dateEvent']];
             }
             $hg = ($e['intHomeScore'] !== null) ? (int)$e['intHomeScore'] : null;
             $ag = ($e['intAwayScore'] !== null) ? (int)$e['intAwayScore'] : null;
 
-            // Determine match status from TheSportsDB fields
             $apiStatus = strtolower(trim($e['strStatus'] ?? ''));
             if (!empty($e['strPostponed']) && strtolower($e['strPostponed']) === 'yes') {
                 $matchStatus = 'postponed';
@@ -214,7 +243,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
         ksort($mw_buckets);
         $s_ins = $db->prepare("INSERT INTO league_table_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-        // Always insert blank pre-season snapshot at MW0 (reserved for pre-season; playoffs remapped to MW47+)
+        // Insert pre-season MW0 table
         if (!empty($running_stats)) {
             $pre_teams = array_keys($running_stats);
             sort($pre_teams);
@@ -237,11 +266,10 @@ function sync_league($db, $BASE_URL, $code, $id) {
                 else { $h['d']++; $a['d']++; $h['pts']+=1; $a['pts']+=1; }
             }
 
-            // Sort table for the current matchweek
+            // Correct Era-Aware Sort for Matchweek Snapshots
             $temp_table = $running_stats;
-            uasort($temp_table, function($x, $y) {
-                if ($x['pts'] != $y['pts']) return $y['pts'] - $x['pts'];
-                return ($y['gf'] - $y['ga']) - ($x['gf'] - $x['ga']);
+            uksort($temp_table, function($name_a, $name_b) use ($temp_table, $sort_league_table, $season_year) {
+                return $sort_league_table($temp_table[$name_a], $temp_table[$name_b], $name_a, $name_b, $season_year);
             });
 
             $pos = 1;
@@ -253,7 +281,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
             }
         }
 
-        // --- Date-ordered snapshots (accounts for postponed matches played later) ---
+        // --- Date-ordered snapshots ---
         $db->exec("DELETE FROM league_table_snapshots_by_date WHERE competition_code = '$code' AND season_label = '$season'");
 
         $date_fixtures = [];
@@ -284,10 +312,10 @@ function sync_league($db, $BASE_URL, $code, $id) {
                 else { $h['d']++; $a['d']++; $h['pts']+=1; $a['pts']+=1; }
             }
 
+            // Correct Era-Aware Sort for Date Snapshots
             $temp_date = $date_running_stats;
-            uasort($temp_date, function($x, $y) {
-                if ($x['pts'] != $y['pts']) return $y['pts'] - $x['pts'];
-                return ($y['gf'] - $y['ga']) - ($x['gf'] - $x['ga']);
+            uksort($temp_date, function($name_a, $name_b) use ($temp_date, $sort_league_table, $season_year) {
+                return $sort_league_table($temp_date[$name_a], $temp_date[$name_b], $name_a, $name_b, $season_year);
             });
 
             $pos = 1;
