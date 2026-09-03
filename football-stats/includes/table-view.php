@@ -627,9 +627,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <div class="table-view-group">
                         <label class="table-view-label">Select Game</label>
                         <select class="table-view-select" onchange="window.location.href=this.value;">
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => null])); ?>">
-                                -- Choose Match --
-                            </option>
                             <?php foreach ($availableMatches as $m):
                                 $mId = (int)$m['id'];
                                 $score = ($m['home_goals'] !== null && $m['away_goals'] !== null) ? " ({$m['home_goals']}-{$m['away_goals']})" : ' (vs)';
