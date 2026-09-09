@@ -1,5 +1,5 @@
 <?php
-// TEAM SURVIVAL TRACKER (League Two) - Data queries
+// TEAM SURVIVAL TRACKER (National League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 
 $tableView = football_stats_get_table_view_combined($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');
@@ -11,16 +11,16 @@ $team = football_stats_get_tracker_team($standings);
 if (!$team) {
     echo "<div class='panel' style='border: 2px solid #f04747;'>";
     echo "<h2 style='color: #f04747;'>⚠️ No Team Data Found</h2>";
-    echo "<p>Please check that Championship data has been loaded.</p>";
+    echo "<p>Please check that National League data has been loaded.</p>";
     $teams = array_column($standings, 'team_name');
     echo "<pre>" . implode("\n", $teams) . "</pre>";
     echo "</div>";
     return;
 }
 
-$teamName    = $team['team_name'];
-$teamColors  = football_stats_get_team_colors($teamName);
-$teamPrimary = $teamColors['primary'];
+$teamName      = $team['team_name'];
+$teamColors    = football_stats_get_team_colors($teamName);
+$teamPrimary   = $teamColors['primary'];
 $teamSecondary = $teamColors['secondary'];
 $teamTextColor = football_stats_get_best_text_color($teamPrimary, $teamSecondary);
 
@@ -41,7 +41,7 @@ if ($is_first_half) {
     $target_label = "23 pts by Halfway (Game 23)";
     $games_label = $games_to_halfway . " games to halfway";
 } else {
-    // SECOND HALF: Target is 46 points for full season safety based on 38 points over games played so far hence minimum of 1.0 ppg
+    // SECOND HALF: Target is 46 points for full season safety based on 46 points over games played so far hence minimum of 1.0 ppg
     $safety_target = 46;
     $points_to_safety = max(0, $safety_target - $team['points']);
     $ppg_needed = $games_remaining > 0 ? round($points_to_safety / $games_remaining, 2) : 0;
@@ -50,6 +50,22 @@ if ($is_first_half) {
 }
 
 // === SEASON POINT SAFETY CALCULATIONS ===
+
+$half_way_safety_target = 23;
+$half_way_points_to_safety = max(0, $half_way_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $half_way_ppg_needed = round($half_way_points_to_safety / $games_remaining, 2);
+} else {
+    $half_way_ppg_needed = 0;
+}
+
+$half_season_safety_target = 37;
+$half_season_points_to_safety = max(0, $half_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $half_season_ppg_needed = round($half_season_points_to_safety / $games_remaining, 2);
+} else {
+    $half_season_ppg_needed = 0;
+}
 
 $full_season_safety_target = 46;
 $full_season_points_to_safety = max(0, $full_season_safety_target - $team['points']);
@@ -75,13 +91,36 @@ if ($games_remaining > 0) {
     $guaranteed_season_ppg_needed = 0;
 }
 
-
 $mathematical_season_safety_target = 57;
 $mathematical_season_points_to_safety = max(0, $mathematical_season_safety_target - $team['points']);
 if ($games_remaining > 0) {
     $mathematical_season_ppg_needed = round($mathematical_season_points_to_safety / $games_remaining, 2);
 } else {
     $mathematical_season_ppg_needed = 0;
+}
+
+$top_half_season_safety_target = 60;
+$top_half_season_points_to_safety = max(0, $top_half_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $top_half_season_ppg_needed = round($top_half_season_points_to_safety / $games_remaining, 2);
+} else {
+    $top_half_season_ppg_needed = 0;
+}
+
+$european_season_safety_target = 70;
+$european_season_points_to_safety = max(0, $european_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $european_season_ppg_needed = round($european_season_points_to_safety / $games_remaining, 2);
+} else {
+    $european_season_ppg_needed = 0;
+}
+
+$title_season_safety_target = 90;
+$title_season_points_to_safety = max(0, $title_season_safety_target - $team['points']);
+if ($games_remaining > 0) {
+    $title_season_ppg_needed = round($title_season_points_to_safety / $games_remaining, 2);
+} else {
+    $title_season_ppg_needed = 0;
 }
 
 // Calculate 75% rule metrics
@@ -170,17 +209,17 @@ if ($team['points'] >= 57) {
 }
 
 $bottom_six = array_values(array_filter($standings, function ($teamRow) {
-    return (int) $teamRow['position'] >= 15;
+    return (int) $teamRow['position'] >= 19;
 }));
 
-$twentysecond = null;
+$relegation_team = null;
 foreach ($standings as $teamRow) {
     if ((int) $teamRow['position'] === 22) {
-        $twentysecond = $teamRow;
+        $relegation_team = $teamRow;
         break;
     }
 }
-$gap_to_22nd = (int) $team['points'] - (int) ($twentysecond['points'] ?? 0);
+$gap_to_relegation = (int) $team['points'] - (int) ($relegation_team['points'] ?? 0);
 
 // Survival status
 if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
@@ -208,7 +247,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 <div class="panel" style="border: 3px solid <?= $teamSecondary ?>; background: linear-gradient(135deg, <?= $teamPrimary ?> 0%, #2e3136 100%);">
     <div style="text-align: center;">
         <h1 style="color: #FFFFFF; font-size: 48px; margin: 0; text-shadow: 2px 2px 8px rgba(0,0,0,0.8);">
-            <img src="<?= htmlspecialchars($team['team_crest']) ?>" style="height: 48px; vertical-align: middle;"> <?= htmlspecialchars($teamName) ?>
+             <img src="<?= htmlspecialchars($team['team_crest']) ?>" style="height: 48px; vertical-align: middle;"> <?= htmlspecialchars($teamName) ?>
         </h1>
         <h2 style="color: <?= $teamTextColor ?>; font-size: 32px; margin: 10px 0; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);">
             Survival Tracker
@@ -234,7 +273,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             </span>
         </div>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'team-tracker'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'national-league', $currentSubTab ?? 'team-tracker'); ?>
     </div>
 </div>
 
@@ -276,7 +315,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             <div style="font-size: 32px; font-weight: bold; color: #43b581; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">46</div>
         </div>
     </div>
-    
+
     <!-- Progress bar showing season progress -->
     <div style="background: #40444b; border-radius: 8px; height: 30px; position: relative; overflow: hidden; border: 2px solid #5865F2;">
         <?php $season_progress = ($games_played / 46) * 100; ?>
@@ -289,7 +328,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         <?php endif; ?>
     </div>
     <p style="color: #FFFFFF; font-size: 13px; margin-top: 10px; text-align: center; font-weight: bold;">
-        <?php echo $is_first_half ? "First half of season" : "Second half of season"; ?> • 
+        <?php echo $is_first_half ? "First half of season" : "Second half of season"; ?> •
         <?php echo round($season_progress, 1); ?>% complete
     </p>
 </div>
@@ -303,8 +342,8 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             #<?php echo $team['position']; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
-            <?php echo abs($gap_to_22nd); ?> points
-            <?php echo $gap_to_22nd >= 0 ? 'above' : 'below'; ?> relegation zone
+            <?php echo abs($gap_to_relegation); ?> points
+            <?php echo $gap_to_relegation >= 0 ? 'above' : 'below'; ?> relegation zone
         </p>
     </div>
 
@@ -315,7 +354,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             <?php echo $team['points']; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
-            From <?php echo $games_played; ?> games (<?php echo number_format($current_ppg, 2); ?> PPG)
+            PPG needed: <?php echo $ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
         </p>
     </div>
 
@@ -332,47 +371,129 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         </p>
     </div>
 
+    <!-- Points to Halfway Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #5865F2;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Halfway Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #5865F2; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $half_way_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $half_way_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $half_way_ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
+        </p>
+    </div>
+
+    <!-- Points to Halfway Safety Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #43b581;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Halfway Safety Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $half_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $half_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $half_season_ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
+        </p>
+    </div>
+
     <!-- Points to Full Season Target-->
     <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
-        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Season Target</h3>
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Points to Season Safety Target</h3>
         <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $full_season_points_to_safety; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $full_season_safety_target; ?> points
         </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $full_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
     </div>
 
     <!-- Extented Season Target -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
-        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Extended Season Target</h3>
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Extended Season Safety Target</h3>
         <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $extended_season_points_to_safety; ?>
         </div>
             <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $extended_season_safety_target; ?> points
         </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $extended_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
     </div>
 
     <!-- Guaranteed Season Target -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
-        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Guaranteed Season Target</h3>
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Guaranteed Season Safety Target</h3>
         <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $guaranteed_season_points_to_safety; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $guaranteed_season_safety_target; ?> points
         </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $guaranteed_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
     </div>
 
     <!-- Mathematical Season Target -->
     <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
-        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Mathematical Season Target</h3>
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Mathematical Season Safety Target</h3>
         <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
             <?php echo $mathematical_season_points_to_safety; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             Target: <?php echo $mathematical_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $mathematical_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
+    </div>
+
+    <!-- Top Half Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Top Half Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $top_half_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $top_half_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $top_half_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
+    </div>
+
+    <!-- Play-off Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Play-off Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $european_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $european_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $european_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+        </p>
+    </div>
+
+    <!-- Promotion Target -->
+    <div class="panel" style="background: #40444b; border-left: 4px solid #faa61a;">
+        <h3 style="color: <?= $teamTextColor ?>; font-size: 16px; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">Automatic Promotion Target</h3>
+        <div style="font-size: 64px; font-weight: bold; color: #faa61a; text-align: center; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
+            <?php echo $title_season_points_to_safety; ?>
+        </div>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            Target: <?php echo $title_season_safety_target; ?> points
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed: <?php echo $title_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
         </p>
     </div>
 
@@ -408,6 +529,15 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
             PPG needed for Mathematical Season: <?php echo $mathematical_season_ppg_needed; ?>
         </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Top Half: <?php echo $top_half_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Play-offs: <?php echo $european_season_ppg_needed; ?>
+        </p>
+        <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
+            PPG needed for Promotion: <?php echo $title_season_ppg_needed; ?>
+        </p>
     </div>
 </div>
 
@@ -415,13 +545,13 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 <div class="panel">
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Halfway Point Progress (20-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        The <strong style="color: <?= $teamTextColor ?>;">75% Rule</strong>: Teams with 15+ points (75% of 20) at halfway have an 85-90% survival rate
+        The <strong style="color: <?= $teamTextColor ?>;">75% Rule</strong>: Teams with 15+ points (75% of 23) at halfway have an 85-90% survival rate
     </p>
-    
-    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #5865F2;">
-        <?php 
+
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php
         $progress_bar_pct = min(100, $halfway_progress_pct);
-        
+
         // Color based on 75% rule
         if ($progress_bar_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
@@ -433,9 +563,9 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
         }
         ?>
-        
+
         <div style="background: <?php echo $bar_color; ?>; width: <?php echo $progress_bar_pct; ?>%; height: 100%; transition: width 0.5s ease;"></div>
-        
+
         <!-- 75% marker line -->
         <div style="position: absolute; left: 75%; top: 0; bottom: 0; width: 3px; background: white; opacity: 0.9; box-shadow: 0 0 10px rgba(255,255,255,0.8);"></div>
         <div style="position: absolute; left: 75%; top: -32px; font-size: 13px; color: white; font-weight: bold; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid white;">
@@ -453,10 +583,10 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             <?php echo $team['points']; ?> / 23 points (<?php echo round($halfway_progress_pct); ?>%)
         </div>
     </div>
-    
+
     <div style="margin-top: 15px; text-align: center;">
         <span style="background: <?php echo $halfway_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php 
+            <?php
             if ($halfway_progress_pct >= 100) {
                 echo "🏆 100% Target Hit! Exceptional!";
             } elseif ($halfway_progress_pct >= 75) {
@@ -469,7 +599,59 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     </div>
 </div>
 
-<!-- 46 pts progress bars -->
+<!-- 37 pts progress bars -->
+<div class="panel">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Halfway Safety Progress (37-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Target: 37 points for half season safety (historically 90%+ survival rate)
+    </p>
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php
+        $half_season_progress_pct = ($team['points'] / 37) * 100;
+
+        // Color based on proximity to 37 points
+        if ($half_season_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($half_season_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($half_season_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $half_season_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 37-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Halfway Safety (37 pts)
+        </div>
+
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $team['points']; ?> / 37 points (<?php echo round($half_season_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php
+            if ($half_season_progress_pct >= 100) {
+                echo "🏆 Half Season Target Hit! Exceptional!";
+            } elseif ($half_season_progress_pct >= 50) {
+                echo "⚠️ Need " . (37 - $team['points']) . " more to hit safety";
+            } else {
+                echo "⚠️ Need " . (37 - $team['points']) . " more to hit safety";
+            }
+            ?>
+        </span>
+    </div>
+
+
+</div>
+
+<!-- 38 pts progress bars -->
 <div class="panel">
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Full Season Safety Progress (46-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
@@ -478,8 +660,8 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
         <?php
         $full_season_progress_pct = ($team['points'] / 46) * 100;
-        
-        // Color based on proximity to 38 points
+
+        // Color based on proximity to 46 points
         if ($full_season_progress_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
         } elseif ($full_season_progress_pct >= 75) {
@@ -490,15 +672,15 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
         }
         ?>
-        
+
         <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $full_season_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
-        
-        <!-- 38-point marker line -->
+
+        <!-- 46-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
             ▼ Full Safety (46 pts)
         </div>
-        
+
         <!-- Current progress text -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
             <?php echo $team['points']; ?> / 46 points (<?php echo round($full_season_progress_pct); ?>%)
@@ -506,30 +688,30 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     </div>
     <div style="margin-top: 15px; text-align: center;">
         <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php 
+            <?php
             if ($full_season_progress_pct >= 100) {
                 echo "🏆 Full Season Target Hit! Exceptional!";
             } elseif ($full_season_progress_pct >= 50) {
-                echo "⚠️ Need " . (46 - $team["points"]) . " more to hit safety";
+                echo "⚠️ Need " . (46 - $team['points']) . " more to hit safety";
             } else {
-                echo "⚠️ Need " . (46 - $team["points"]) . " more to hit safety";
+                echo "⚠️ Need " . (46 - $team['points']) . " more to hit safety";
             }
             ?>
         </span>
     </div>
-</div>    
+</div>
 
-<!-- 40 pt Progress Bar -->
+<!-- 51 pt Progress Bar -->
 <div class="panel">
-    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Extended Safety Target Progress (50-Point Target)</h2>
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Extended Safety Target Progress (51-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        Extended target: 50 points for extra safety margin (historically 98%+ survival rate)
+        Extended target: 51 points for extra safety margin (historically 98%+ survival rate)
     </p>
     <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
-        <?php 
-        $extended_target_progress_pct = ($team["points"] / 50) * 100;  
+        <?php
+        $extended_target_progress_pct = ($team['points'] / 51) * 100;
 
-        // Color based on proximity to 40 points
+        // Color based on proximity to 51 points
         if ($extended_target_progress_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
         } elseif ($extended_target_progress_pct >= 75) {
@@ -542,43 +724,43 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ?>
         <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $extended_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
 
-        <!-- 40-point marker line -->
+        <!-- 51-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
-            ▼ Extended Safety (50 pts)
-        </div>  
+            ▼ Extended Safety (51 pts)
+        </div>
 
         <!-- Current progress text -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
-            <?php echo $team['points']; ?> / 50 points (<?php echo round($extended_target_progress_pct); ?>%)
+            <?php echo $team['points']; ?> / 51 points (<?php echo round($extended_target_progress_pct); ?>%)
         </div>
     </div>
     <div style="margin-top: 15px; text-align: center;">
         <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php 
+            <?php
             if ($extended_target_progress_pct >= 100) {
                 echo "🏆 Extended Target Hit! Exceptional!";
             } elseif ($extended_target_progress_pct >= 50) {
-                echo "⚠️ Need " . (50 - $team["points"]) . " more to hit extended target";
+                echo "⚠️ Need " . (51 - $team['points']) . " more to hit extended target";
             } else {
-                echo "⚠️ Need " . (50 - $team["points"]) . " more to hit extended target";
+                echo "⚠️ Need " . (51 - $team['points']) . " more to hit extended target";
             }
             ?>
         </span>
     </div>
 </div>
 
-<!-- 42 pt Progress Bar -->
+<!-- 54 pt Progress Bar -->
 <div class="panel">
-    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Guaranteed Safety Target Progress (52-Point Target)</h2>
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Guaranteed Safety Target Progress (54-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        Guaranteed target: 52 points for guaranteed safety margin (historically 99%+ survival rate)
+        Guaranteed target: 54 points for guaranteed safety margin (historically 99%+ survival rate)
     </p>
     <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
-        <?php 
-        $guaranteed_target_progress_pct = ($team["points"] / 52) * 100;
+        <?php
+        $guaranteed_target_progress_pct = ($team['points'] / 54) * 100;
 
-        // Color based on proximity to 42 points
+        // Color based on proximity to 54 points
         if ($guaranteed_target_progress_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
         } elseif ($guaranteed_target_progress_pct >= 75) {
@@ -591,42 +773,42 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ?>
         <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $guaranteed_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
 
-        <!-- 42-point marker line -->
+        <!-- 54-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
-            ▼ Guaranteed Safety (52 pts)
+            ▼ Guaranteed Safety (54 pts)
         </div>
         <!-- Current progress text -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
-            <?php echo $team['points']; ?> / 52 points (<?php echo round($guaranteed_target_progress_pct); ?>%)
+            <?php echo $team['points']; ?> / 54 points (<?php echo round($guaranteed_target_progress_pct); ?>%)
         </div>
     </div>
     <div style="margin-top: 15px; text-align: center;">
         <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php 
+            <?php
             if ($guaranteed_target_progress_pct >= 100) {
-                echo "🏆 Ultimate Target Hit! Exceptional!";
+                echo "🏆 Guaranteed Target Hit! Exceptional!";
             } elseif ($guaranteed_target_progress_pct >= 50) {
-                echo "⚠️ Need " . (52 - $team["points"]) . " more to hit ultimate target";
-            }  else {
-                echo "⚠️ Need " . (52 - $team["points"]) . " more to hit ultimate target";
+                echo "⚠️ Need " . (54 - $team['points']) . " more to hit guaranteed target";
+            } else {
+                echo "⚠️ Need " . (54 - $team['points']) . " more to hit guaranteed target";
             }
             ?>
         </span>
     </div>
 </div>
 
-<!-- 45 pt Progress Bar -->
+<!-- 57 pt Progress Bar -->
 <div class="panel">
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Mathematical Safety Target Progress (57-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
         Mathematical target: 57 points for Mathematical safety margin (historically 100% survival rate)
     </p>
-    <div style="background: #40444b; border-radius: 6px; overflow: hidden; position: relative; height: 50px;">
-        <?php 
-        $mathematical_target_progress_pct = ($team["points"] / 57) * 100;
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php
+        $mathematical_target_progress_pct = ($team['points'] / 57) * 100;
 
-        // Color based on proximity to 45 points
+        // Color based on proximity to 57 points
         if ($mathematical_target_progress_pct >= 100) {
             $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
         } elseif ($mathematical_target_progress_pct >= 75) {
@@ -639,7 +821,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ?>
         <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $mathematical_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
 
-        <!-- 45-point marker line -->
+        <!-- 57-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
             ▼ Mathematical Safety (57 pts)
@@ -651,38 +833,183 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     </div>
     <div style="margin-top: 15px; text-align: center;">
         <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            <?php 
+            <?php
             if ($mathematical_target_progress_pct >= 100) {
-                echo "🏆 Ultimate Target Hit! Exceptional!";
+                echo "🏆 Mathmatical Safety Target Hit! Exceptional!";
             } elseif ($mathematical_target_progress_pct >= 50) {
-                echo "⚠️ Need " . (57 - $team["points"]) . " more to hit mathematical target"; 
+                echo "⚠️ Need " . (57 - $team['points']) . " more to hit mathematical target";
             } else {
-                echo "⚠️ Need " . (57 - $team["points"]) . " more to hit mathematical target";
+                echo "⚠️ Need " . (57 - $team['points']) . " more to hit mathematical target";
             }
             ?>
         </span>
     </div>
 </div>
 
+<!-- 60 pt Progress Bar -->
+<div class="panel">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Top Half Target Progress (60-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Top Half target: 60 points for Top Half
+    </p>
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php
+        $top_half_target_progress_pct = ($team['points'] / 60) * 100;
+
+        // Color based on proximity to 57 points
+        if ($top_half_target_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($top_half_target_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($top_half_target_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $top_half_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 60-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Top Half (60 pts)
+        </div>
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $team['points']; ?> / 60 points (<?php echo round($top_half_target_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php
+            if ($top_half_target_progress_pct >= 100) {
+                echo "🏆 Top Half Target Hit! Exceptional!";
+            } elseif ($top_half_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (60 - $team['points']) . " more to hit top half target";
+            } else {
+                echo "⚠️ Need " . (60 - $team['points']) . " more to hit top half target";
+            }
+            ?>
+        </span>
+    </div>
+</div>
+
+<!-- 70 pt Progress Bar -->
+<div class="panel">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Play-off Target Progress (70-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        PLAY-OFF target: 70 points for the play-offs
+    </p>
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php
+        $european_target_progress_pct = ($team['points'] / 70) * 100;
+
+        // Color based on proximity to 57 points
+        if ($european_target_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($european_target_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($european_target_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $european_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 70-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Play-offs (70 pts)
+        </div>
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $team['points']; ?> / 70 points (<?php echo round($european_target_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php
+            if ($european_target_progress_pct >= 100) {
+                echo "🏆 Play-off Target Hit! Exceptional!";
+            } elseif ($european_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (70 - $team['points']) . " more to hit play-off target";
+            } else {
+                echo "⚠️ Need " . (70 - $team['points']) . " more to hit play-off target";
+            }
+            ?>
+        </span>
+    </div>
+</div>
+
+<!-- 90 pt Progress Bar -->
+<div class="panel">
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Promotion Target Progress (90-Point Target)</h2>
+    <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
+        Promotion target: 90 points for automatic promotion
+    </p>
+    <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
+        <?php
+        $title_target_progress_pct = ($team['points'] / 90) * 100;
+
+        // Color based on proximity to 57 points
+        if ($title_target_progress_pct >= 100) {
+            $bar_color = "linear-gradient(90deg, #43b581, #57f287)";
+        } elseif ($title_target_progress_pct >= 75) {
+            $bar_color = "linear-gradient(90deg, #43b581, #5865F2)";
+        } elseif ($title_target_progress_pct >= 50) {
+            $bar_color = "linear-gradient(90deg, #faa61a, #fee75c)";
+        } else {
+            $bar_color = "linear-gradient(90deg, #f04747, #ff6b6b)";
+        }
+        ?>
+        <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $title_target_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
+
+        <!-- 90-point marker line -->
+        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
+        <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
+            ▼ Promotion (90 pts)
+        </div>
+        <!-- Current progress text -->
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
+            <?php echo $team['points']; ?> / 90 points (<?php echo round($title_target_progress_pct); ?>%)
+        </div>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="background: <?php echo $status_color; ?>; padding: 10px 20px; border-radius: 6px; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <?php
+            if ($title_target_progress_pct >= 100) {
+                echo "🏆 Promotion Target Hit! Exceptional!";
+            } elseif ($title_target_progress_pct >= 50) {
+                echo "⚠️ Need " . (90 - $team['points']) . " more to hit promotion target";
+            } else {
+                echo "⚠️ Need " . (90 - $team['points']) . " more to hit promotion target";
+            }
+            ?>
+        </span>
+    </div>
+</div>
+
+
 <?php if ($is_first_half && $games_to_halfway > 0): ?>
 <!-- Scenarios to Halfway (Next Games) -->
 <div class="panel">
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 Scenarios for Next <?php echo $games_to_halfway; ?> Games (To Halfway)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        Current: <?php echo $team['points']; ?> points | Target at game 23: 23 points (100%) or 17 points (75%)
+        Current: <?php echo $team['points']; ?> points | Target at game 23: 20 points (100%) or 15 points (75%)
     </p>
     <table>
         <tr>
             <th>Next <?php echo $games_to_halfway; ?> Games</th>
             <th>Points Gained</th>
             <th>Total at Game 23</th>
-            <th>% of 20-pt Target</th>
+            <th>% of 23-pt Target</th>
             <th>Status</th>
         </tr>
         <?php
         // Generate scenarios based on games remaining
         $scenarios = [];
-        
+
         if ($games_to_halfway >= 4) {
             $scenarios = [
                 ['label' => '4 wins', 'points' => 12],
@@ -710,7 +1037,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
                 ['label' => '1 win, 1 draw, 1 loss', 'points' => 4],
                 ['label' => '3 draws', 'points' => 3],
                 ['label' => '1 win, 2 losses', 'points' => 3],
-                ['label' => '2 draws, 1 loss', 'points' => 2],  
+                ['label' => '2 draws, 1 loss', 'points' => 2],
                 ['label' => '1 draw, 2 losses', 'points' => 1],
                 ['label' => '3 losses', 'points' => 0],
             ];
@@ -730,11 +1057,11 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
                 ['label' => '1 loss', 'points' => 0],
             ];
         }
-        
+
         foreach ($scenarios as $scenario):
             $scenario_total = $team['points'] + $scenario['points'];
             $scenario_pct = ($scenario_total / 23) * 100;
-            
+
             if ($scenario_pct >= 100) {
                 $row_color = "rgba(67, 181, 129, 0.3)";
                 $status = "✅ TARGET HIT!";
@@ -766,7 +1093,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         </tr>
         <?php endforeach; ?>
     </table>
-    
+
     <?php if ($halfway_progress_pct >= 100): ?>
     <p style="color: #43b581; font-weight: bold; text-align: center; margin-top: 15px; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
         💪 Even 0 points from next <?php echo $games_to_halfway; ?> = still at 100% target!
@@ -793,20 +1120,20 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
                 <div style="font-size: 48px; color: <?= $teamTextColor ?>;">→</div>
                 <div style="flex: 1; min-width: 150px;">
                     <h3 style="color: #FFFFFF; font-size: 14px; margin: 0; font-weight: bold;">Projected Final Points</h3>
-                    <div style="font-size: 36px; font-weight: bold; color: <?php echo $projected_points >= 38 ? '#43b581' : '#f04747'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                    <div style="font-size: 36px; font-weight: bold; color: <?php echo $projected_points >= 46 ? '#43b581' : '#f04747'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
                         <?php echo $projected_points; ?>
                     </div>
                 </div>
             </div>
             <p style="color: #FFFFFF; font-size: 13px; margin-top: 15px; text-align: center; font-weight: bold;">
-                <?php 
-                if ($projected_points >= 38) {
+                <?php
+                if ($projected_points >= 46) {
                     echo "✅ On pace for survival! Keep this form!";
                 } else {
                     // Check if the season is already over to avoid dividing by zero
                     if ($games_remaining > 0) {
-                        $ppg_improvement = round((38 - $projected_points) / $games_remaining, 2);
-                        echo "⚠️ Need to improve PPG by " . $ppg_improvement . " to reach 38 points";
+                        $ppg_improvement = round((46 - $projected_points) / $games_remaining, 2);
+                        echo "⚠️ Need to improve PPG by " . $ppg_improvement . " to reach 46 points";
                     } else {
                         echo "🏁 Season over. Final standings are locked in.";
                     }
@@ -814,7 +1141,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
                 ?>
             </p>
         </div>
-        
+
         <?php if ($is_first_half && $games_to_halfway > 0): ?>
         <div style="background: #40444b; padding: 15px; border-radius: 8px; margin-top: 15px; border: 2px solid #43b581;">
             <h3 style="color: <?= $teamTextColor ?>; font-size: 14px; margin: 0 0 10px 0; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">Projected at Halfway</h3>
@@ -986,7 +1313,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ?>
         <div style="margin-top: 15px;">
             <?php foreach ($three_game_scenarios as $scenario): ?>
-                <?php 
+                <?php
                 $scenario_points = $team['points'] + ($scenario['wins'] * 3) + $scenario['draws'] * 1;
                 $scenario_gap = $scenario_points - $safety_target;
                 ?>
@@ -1020,7 +1347,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     ?>
     <div style="margin-top: 15px;">
         <?php foreach ($two_game_scenarios as $scenario): ?>
-            <?php 
+            <?php
             $scenario_points = $team['points'] + ($scenario['wins'] * 3) + $scenario['draws'] * 1;
             $scenario_gap = $scenario_points - $safety_target;
             ?>
@@ -1047,11 +1374,11 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             ['result' => 'win', 'points' => 3, 'label' => 'Win'],
             ['result' => 'draw', 'points' => 1, 'label' => 'Draw'],
             ['result' => 'loss', 'points' => 0, 'label' => 'Loss']
-        ];  
+        ];
     ?>
     <div style="margin-top: 15px;">
         <?php foreach ($next_game_scenarios as $scenario): ?>
-            <?php 
+            <?php
             $scenario_points = $team['points'] + $scenario['points'];
             $scenario_gap = $scenario_points - $safety_target;
             ?>
@@ -1074,16 +1401,16 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
     <?php
     $season_scenarios = [
-        ['ppg' => 0.9, 'label' => '0.9 PPG (41 pts)'],
-        ['ppg' => 0.8, 'label' => '0.8 PPG (37 pts)'],
-        ['ppg' => 0.7, 'label' => '0.7 PPG (32 pts)'],
-        ['ppg' => 0.6, 'label' => '0.6 PPG (28 pts)'],
-        ['ppg' => 0.5, 'label' => '0.5 PPG (23 pts)'],
-        ['ppg' => 0.4, 'label' => '0.4 PPG (18 pts)'],
-        ['ppg' => 0.3, 'label' => '0.3 PPG (14 pts)'],
-        ['ppg' => 0.2, 'label' => '0.2 PPG (9 pts)'],
-        ['ppg' => 0.1, 'label' => '0.1 PPG (5 pts)'],
-        ['ppg' => 0.0, 'label' => '0.0 PPG (0 pts)']
+        ['ppg' => 0.9, 'label' => '0.9 PPG (39 pts)'],
+        ['ppg' => 0.8, 'label' => '0.8 PPG (36 pts)'],
+        ['ppg' => 0.7, 'label' => '0.7 PPG (33 pts)'],
+        ['ppg' => 0.6, 'label' => '0.6 PPG (37 pts)'],
+        ['ppg' => 0.5, 'label' => '0.5 PPG (27 pts)'],
+        ['ppg' => 0.4, 'label' => '0.4 PPG (24 pts)'],
+        ['ppg' => 0.3, 'label' => '0.3 PPG (21 pts)'],
+        ['ppg' => 0.2, 'label' => '0.2 PPG (18 pts)'],
+        ['ppg' => 0.1, 'label' => '0.1 PPG (15 pts)'],
+        ['ppg' => 0.0, 'label' => '0.0 PPG (12 pts)']
     ];
     ?>
     <div style="margin-top: 15px;">
@@ -1116,16 +1443,16 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
     <?php
     $season_scenarios = [
-        ['ppg' => 2.0, 'label' => '2.0 PPG (92 pts)'],
-        ['ppg' => 1.9, 'label' => '1.9 PPG (87 pts)'],
-        ['ppg' => 1.8, 'label' => '1.8 PPG (83 pts)'],
-        ['ppg' => 1.7, 'label' => '1.7 PPG (78 pts)'],
-        ['ppg' => 1.6, 'label' => '1.6 PPG (74 pts)'],
-        ['ppg' => 1.5, 'label' => '1.5 PPG (69 pts)'],
-        ['ppg' => 1.4, 'label' => '1.4 PPG (64 pts)'],
-        ['ppg' => 1.3, 'label' => '1.3 PPG (60 pts)'],
-        ['ppg' => 1.2, 'label' => '1.2 PPG (55 pts)'],
-        ['ppg' => 1.1, 'label' => '1.1 PPG (51 pts)'],
+        ['ppg' => 2.0, 'label' => '2.0 PPG (90 pts)'],
+        ['ppg' => 1.9, 'label' => '1.9 PPG (66 pts)'],
+        ['ppg' => 1.8, 'label' => '1.8 PPG (63 pts)'],
+        ['ppg' => 1.7, 'label' => '1.7 PPG (90 pts)'],
+        ['ppg' => 1.6, 'label' => '1.6 PPG (56 pts)'],
+        ['ppg' => 1.5, 'label' => '1.5 PPG (57 pts)'],
+        ['ppg' => 1.4, 'label' => '1.4 PPG (53 pts)'],
+        ['ppg' => 1.3, 'label' => '1.3 PPG (49 pts)'],
+        ['ppg' => 1.2, 'label' => '1.2 PPG (48 pts)'],
+        ['ppg' => 1.1, 'label' => '1.1 PPG (44 pts)'],
         ['ppg' => 1.0, 'label' => '1.0 PPG (46 pts)'],
     ];
     ?>
@@ -1159,17 +1486,17 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 What If Scenarios (Full Season Projection)</h2>
     <?php
     $season_scenarios = [
-        ['ppg' => 3.0, 'label' => '3.0 PPG (138 pts)'],
-        ['ppg' => 2.9, 'label' => '2.9 PPG (133 pts)'],
-        ['ppg' => 2.8, 'label' => '2.8 PPG (129 pts)'],
-        ['ppg' => 2.7, 'label' => '2.7 PPG (124 pts)'],
-        ['ppg' => 2.6, 'label' => '2.6 PPG (120 pts)'],
-        ['ppg' => 2.5, 'label' => '2.5 PPG (115 pts)'],
-        ['ppg' => 2.4, 'label' => '2.4 PPG (110 pts)'],
-        ['ppg' => 2.3, 'label' => '2.3 PPG (106 pts)'],
-        ['ppg' => 2.2, 'label' => '2.2 PPG (101 pts)'],
-        ['ppg' => 2.1, 'label' => '2.1 PPG (97 pts)'],
-        ['ppg' => 2.0, 'label' => '2.0 PPG (92 pts)']
+        ['ppg' => 3.0, 'label' => '3.0 PPG (78 pts)'],
+        ['ppg' => 2.9, 'label' => '2.9 PPG (75 pts)'],
+        ['ppg' => 2.8, 'label' => '2.8 PPG (72 pts)'],
+        ['ppg' => 2.7, 'label' => '2.7 PPG (68 pts)'],
+        ['ppg' => 2.6, 'label' => '2.6 PPG (64 pts)'],
+        ['ppg' => 2.5, 'label' => '2.5 PPG (90 pts)'],
+        ['ppg' => 2.4, 'label' => '2.4 PPG (66 pts)'],
+        ['ppg' => 2.3, 'label' => '2.3 PPG (62 pts)'],
+        ['ppg' => 2.2, 'label' => '2.2 PPG (90 pts)'],
+        ['ppg' => 2.1, 'label' => '2.1 PPG (56 pts)'],
+        ['ppg' => 2.0, 'label' => '2.0 PPG (58 pts)']
     ];
     ?>
     <div style="margin-top: 15px;">
@@ -1269,7 +1596,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         $is_selected = ($teamRow['team_name'] === $teamName);
         $gap = (int)$teamRow['points'] - (int)$team['points'];
         $team_ppg = $teamRow['played'] > 0 ? $teamRow['points'] / $teamRow['played'] : 0;
-        $team_projection = round($team_ppg * 38, 1);
+        $team_projection = round($team_ppg * 46, 1);
         ?>
         <tr style="<?php echo $is_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $teamRow['position']; ?></strong></td>
@@ -1285,7 +1612,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             <td style="color: <?php echo $gap > 0 ? '#f04747' : ($gap < 0 ? '#43b581' : '#FFFFFF'); ?>; font-weight: bold;">
                 <?php echo $gap > 0 ? '+' : ''; echo $gap; ?>
             </td>
-            <td style="color: <?php echo $team_projection >= 38 ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
+            <td style="color: <?php echo $team_projection >= 46 ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
                 <?php echo $team_projection; ?> pts
             </td>
         </tr>
@@ -1330,7 +1657,6 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Goal Difference</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
                 <?php echo number_format($games_played > 0 ? $team['gd'] / $games_played : 0, 2); ?> per game
-            </p>
         </div>
     </div>
 
@@ -1344,7 +1670,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             </div>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-                <?php echo $team['won'] + $team['drawn'] ?> undefeated<br>
+                <?php echo $team['won'] + $team['drawn'] ?> undefeated games<br>
             </p>
             <p style="color: #FFFFFF; font-size: 14px; font-weight: bold;">Record This Season</p>
             <p style="color: #43b581; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
@@ -1361,8 +1687,8 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 <div class="panel" style="background: #2e3136; border-left: 4px solid #5865F2;">
     <h3 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📚 The 75% Rule for Survival</h3>
     <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">
-        <strong style="color: <?= $teamTextColor ?>;">Historical Analysis:</strong> Teams with <strong style="color: #43b581;">15+ points at halfway</strong> 
-        (75% of 20-point target) have an <strong style="color: #43b581;">85-90% survival rate</strong>.
+        <strong style="color: <?= $teamTextColor ?>;">Historical Analysis:</strong> Teams with <strong style="color: #43b581;">17+ points at halfway</strong>
+        (75% of 23-point target) have an <strong style="color: #43b581;">85-90% survival rate</strong>.
     </p>
     <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">
         <?= htmlspecialchars($teamName) ?> currently at <strong style="color: <?= $teamTextColor ?>;"><?php echo $team['points']; ?> points</strong>
@@ -1371,7 +1697,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
     </p>
     <?php if ($halfway_progress_pct >= 100): ?>
         <p style="color: #43b581; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            🏆 EXCEPTIONAL! Already hit the 20-point target!
+            🏆 EXCEPTIONAL! Already hit the 23-point target!
         </p>
     <?php elseif ($halfway_progress_pct >= 90): ?>
         <p style="color: #43b581; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
@@ -1387,11 +1713,11 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         </p>
     <?php elseif ($halfway_progress_pct >= 50): ?>
         <p style="color: #faa61a; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            ⚠️ Need to hit 75% by game 19 - improvement required!
+            ⚠️ Need to hit 75% by game 23 - improvement required!
         </p>
     <?php else: ?>
         <p style="color: #f04747; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            🚨 Critical! Major improvement needed to reach 15-point halfway target!
+            🚨 Critical! Major improvement needed to reach 17-point halfway target!
         </p>
     <?php endif; ?>
 </div>
@@ -1399,13 +1725,13 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
 <!-- Motivational Message -->
 <div class="panel" style="background: linear-gradient(135deg, <?= $teamPrimary ?>, <?= $teamSecondary ?>); text-align: center; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);">
     <h2 style="color: white; font-size: 32px; margin: 0; text-shadow: 2px 2px 6px rgba(0,0,0,0.5);">
-        <?php 
+        <?php
         $tn = strtoupper(htmlspecialchars($teamName));
         if ($halfway_progress_pct >= 100) {
             echo "🏆 EXCEPTIONAL FORM! KEEP IT UP $tn!";
         } elseif ($halfway_progress_pct >= 75 && $is_first_half) {
             echo "💪 OUTSTANDING POSITION! KEEP GOING $tn!";
-        } elseif ($team['position'] >= 22) {
+        } elseif ($team['position'] >= 18) {
             echo "🚨 IN THE FIGHT! KEEP PUSHING $tn!";
         } elseif ($points_to_safety <= 5) {
             echo "💪 ALMOST THERE! PUSH ON $tn!";
@@ -1415,7 +1741,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         ?>
     </h2>
     <p style="color: white; font-size: 18px; margin-top: 15px; text-shadow: 1px 1px 4px rgba(0,0,0,0.5); font-weight: bold;">
-        <?php 
+        <?php
         if ($is_first_half) {
             if ($games_to_halfway > 0) {
                 echo $games_to_halfway . " games to halfway. ";
