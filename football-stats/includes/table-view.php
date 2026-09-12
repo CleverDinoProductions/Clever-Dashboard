@@ -567,7 +567,6 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         // (rather than assuming snapshots exist for every matchweek).
         $tableView['position_movements'] = [];
         $tableView['movement_comparison_matchweek'] = null;
-        $tableView['movement_comparison_label'] = null;
         if ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view'])) {
             $activeMatchweek = (int)($tableView['active_matchweek'] ?? 0);
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
@@ -621,6 +620,74 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             }
             $tableView['movement_comparison_label'] = 'after this match';
         }
+            }
+        }
+        elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
+            $activeDate = (string)($tableView['active_date'] ?? '');
+            $seasonLabel = (string)($tableView['active_season_label'] ?? '');
+
+            $previousDateStmt = $db->prepare(
+                'SELECT MAX(snapshot_date) FROM league_table_snapshots_by_date '
+                . 'WHERE competition_code = ? AND season_label = ? AND snapshot_date < ?'
+            );
+            echo $previousDateStmt->queryString;
+            $previousDateStmt->execute([$competitionCode, $seasonLabel, $activeDate]);
+            $previousDate = $previousDateStmt->fetchColumn();
+
+            if ($previousDate !== false && $previousDate !== null) {
+                $previousPositionsStmt = $db->prepare(
+                    'SELECT team_name, position FROM league_table_snapshots_by_date '
+                    . 'WHERE competition_code = ? AND season_label = ? AND snapshot_date = ?'
+                );
+                $previousPositionsStmt->execute([$competitionCode, $seasonLabel, $previousDate]);
+                $previousPositions = [];
+                foreach ($previousPositionsStmt->fetchAll(PDO::FETCH_ASSOC) as $previousTeam) {
+                    $previousPositions[$previousTeam['team_name']] = (int)$previousTeam['position'];
+                }
+
+                foreach ($tableView['standings'] as $team) {
+                    if (isset($previousPositions[$team['team_name']])) {
+                        // Positive means the team climbed (for example 5th to 3rd).
+                        $tableView['position_movements'][$team['team_name']] =
+                            $previousPositions[$team['team_name']] - (int)$team['position'];
+                    }
+                }
+                $tableView['movement_comparison_matchweek'] = $previousDate;
+            }
+        }
+        elseif ($calcMode === 'by_match' && !empty($tableView['is_snapshot_view'])) {
+            $activeMatch = (int)($tableView['active_match'] ?? 0);
+            $seasonLabel = (string)($tableView['active_season_label'] ?? '');
+
+            $previousMatchStmt = $db->prepare(
+                'SELECT MAX(match_id) FROM league_table_snapshots_by_match '
+                . 'WHERE competition_code = ? AND season_label = ? AND match_id < ?'
+            );
+            $previousMatchStmt->execute([$competitionCode, $seasonLabel, $activeMatch]);
+            $previousMatch = $previousMatchStmt->fetchColumn();
+
+            if ($previousMatch !== false && $previousMatch !== null) {
+                $previousPositionsStmt = $db->prepare(
+                    'SELECT team_name, position FROM matches '
+                    . 'WHERE competition_code = ? AND season_label = ? AND match_id = ?'
+                );
+                $previousPositionsStmt->execute([$competitionCode, $seasonLabel, $previousMatch]);
+                $previousPositions = [];
+                foreach ($previousPositionsStmt->fetchAll(PDO::FETCH_ASSOC) as $previousTeam) {
+                    $previousPositions[$previousTeam['team_name']] = (int)$previousTeam['position'];
+                }
+
+                foreach ($tableView['standings'] as $team) {
+                    if (isset($previousPositions[$team['team_name']])) {
+                        // Positive means the team climbed (for example 5th to 3rd).
+                        $tableView['position_movements'][$team['team_name']] =
+                            $previousPositions[$team['team_name']] - (int)$team['position'];
+                    }
+                }
+                $tableView['movement_comparison_matchweek'] = $previousMatch;
+            }
+        }
+        
         return $tableView;
     }
 }
@@ -649,6 +716,23 @@ if (!function_exists('football_stats_render_position_movement')) {
               title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
               aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= $wentUp ? '&#9650;' : '&#9660;' ?><span class="position-movement-count"><?= $places ?></span></span>
         <?php
+        if ($tableView['calc_mode'] === 'by_date') {
+            $wentup = $movement > 0;
+            $places = abs($movement);
+            $previousDate = (string)$tableView['movement_comparison_matchweek'];
+            $label = sprintf(
+                '%s %d %s since %s',
+                $wentup ? 'Up' : 'Down',
+                $places,
+                $places === 1 ? 'place' : 'places',
+                $previousDate
+            );
+            ?>
+            <span class="position-movement <?= $wentup ? 'position-movement-up' : 'position-movement-down' ?>"
+                  title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
+                  aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= $wentup ? '&#9650;' : '&#9660;' ?><span class="position-movement-count"><?= $places ?></span></span>
+            <?php
+        }
     }
 }
 
