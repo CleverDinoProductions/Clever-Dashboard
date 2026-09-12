@@ -1,5 +1,34 @@
 <?php
 
+if (!function_exists('football_stats_format_kickoff')) {
+    /**
+     * Format TheSportsDB's UTC strTimestamp, falling back to the date supplied by
+     * older records that pre-date kickoff-time storage.
+     */
+    function football_stats_format_kickoff(?string $timestamp, ?string $date): string
+    {
+        $timestamp = trim((string)$timestamp);
+
+        if ($timestamp !== '') {
+            try {
+                return (new DateTimeImmutable($timestamp))
+                    ->setTimezone(new DateTimeZone('UTC'))
+                    ->format('D j M Y, H:i') . ' UTC';
+            } catch (Exception $exception) {
+                // Fall through to the reliable date-only value.
+            }
+        }
+
+        $date = trim((string)$date);
+        if ($date === '') {
+            return 'TBC';
+        }
+
+        $parsedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        return $parsedDate ? $parsedDate->format('D j M Y') . ', time TBC' : $date;
+    }
+}
+
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
@@ -322,20 +351,23 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
 
         $standings = [];
         if ($targetMatch) {
+            $targetKickoff = !empty($targetMatch['match_timestamp'])
+                ? $targetMatch['match_timestamp']
+                : $targetMatch['match_date'];
             $mQuery = 'SELECT * FROM matches 
                        WHERE competition_code = ? AND season_label = ? 
                          AND home_goals IS NOT NULL AND away_goals IS NOT NULL
                          AND (
-                           (match_date < ?) OR 
-                           (match_date = ? AND id <= ?)
+                           (COALESCE(NULLIF(match_timestamp, ""), match_date) < ?) OR
+                           (COALESCE(NULLIF(match_timestamp, ""), match_date) = ? AND id <= ?)
                          )
-                       ORDER BY match_date ASC, id ASC';
+                       ORDER BY COALESCE(NULLIF(match_timestamp, ""), match_date) ASC, id ASC';
             $mMatchesStmt = $db->prepare($mQuery);
             $mMatchesStmt->execute([
                 $competitionCode,
                 $requestedSeasonLabel,
-                $targetMatch['match_date'],
-                $targetMatch['match_date'],
+                $targetKickoff,
+                $targetKickoff,
                 $targetMatch['id']
             ]);
 
@@ -448,20 +480,23 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
 
         $standings = [];
         if ($targetMatch) {
+            $targetKickoff = !empty($targetMatch['match_timestamp'])
+                ? $targetMatch['match_timestamp']
+                : $targetMatch['match_date'];
             $mQuery = 'SELECT * FROM matches 
                        WHERE competition_code = ? AND season_label = ? 
                          AND home_goals IS NOT NULL AND away_goals IS NOT NULL
                          AND (
-                           (match_date < ?) OR 
-                           (match_date = ? AND id < ?)
+                           (COALESCE(NULLIF(match_timestamp, ""), match_date) < ?) OR
+                           (COALESCE(NULLIF(match_timestamp, ""), match_date) = ? AND id < ?)
                          )
-                       ORDER BY match_date ASC, id ASC';
+                       ORDER BY COALESCE(NULLIF(match_timestamp, ""), match_date) ASC, id ASC';
             $mMatchesStmt = $db->prepare($mQuery);
             $mMatchesStmt->execute([
                 $competitionCode,
                 $requestedSeasonLabel,
-                $targetMatch['match_date'],
-                $targetMatch['match_date'],
+                $targetKickoff,
+                $targetKickoff,
                 $targetMatch['id']
             ]);
 
@@ -919,7 +954,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 $availableMatchweeks = array_map('intval', $mwStmt->fetchAll(PDO::FETCH_COLUMN));
             }
 
-            $mQuery = 'SELECT id, matchweek, match_date, home_team, away_team, home_goals, away_goals FROM matches WHERE competition_code = ? AND season_label = ?';
+            $mQuery = 'SELECT id, matchweek, match_date, match_timestamp, home_team, away_team, home_goals, away_goals FROM matches WHERE competition_code = ? AND season_label = ?';
             $params = [$competitionCode, $activeSeason];
 
             if ($matchFilterMode === 'matchweek' && $selectedMatchweek !== null) {
@@ -930,7 +965,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 $params[] = $selectedDate;
             }
 
-            $mQuery .= ' ORDER BY match_date ASC, matchweek ASC, id ASC';
+            $mQuery .= ' ORDER BY COALESCE(NULLIF(match_timestamp, ""), match_date) ASC, id ASC';
             $mStmt = $GLOBALS['db']->prepare($mQuery);
             $mStmt->execute($params);
             $availableMatches = $mStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -951,9 +986,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         foreach ($availableMatches as $match) {
             $score = ($match['home_goals'] !== null && $match['away_goals'] !== null)
                 ? " {$match['home_goals']}-{$match['away_goals']} " : ' vs ';
+            $kickoff = football_stats_format_kickoff($match['match_timestamp'] ?? null, $match['match_date'] ?? null);
             $matchSliderItems[] = [
                 'value' => (int)$match['id'],
-                'label' => "MW{$match['matchweek']}: {$match['home_team']}{$score}{$match['away_team']}",
+                'label' => "MW{$match['matchweek']} [$kickoff]: {$match['home_team']}{$score}{$match['away_team']}",
                 'url' => football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => (int)$match['id']]),
             ];
         }
@@ -998,13 +1034,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <?php if ($calcMode === 'by_match' && !empty($tableView['target_match'])): ?>
                     <?php $tm = $tableView['target_match']; ?>
                     <span style="color:#00ff88; font-weight:bold;">
-                        After: <?php echo htmlspecialchars("{$tm['home_team']} {$tm['home_goals']}-{$tm['away_goals']} {$tm['away_team']}"); ?> (<?php echo htmlspecialchars($tm['match_date']); ?>)
+                        After: <?php echo htmlspecialchars("{$tm['home_team']} {$tm['home_goals']}-{$tm['away_goals']} {$tm['away_team']}"); ?> (<?php echo htmlspecialchars(football_stats_format_kickoff($tm['match_timestamp'] ?? null, $tm['match_date'] ?? null)); ?>)
                     </span>
                 <?php endif; ?>
                 <?php if ($calcMode === 'by_match_before' && !empty($tableView['target_match'])): ?>
                     <?php $tm = $tableView['target_match']; ?>
                     <span style="color:#00ff88; font-weight:bold;">
-                        Before: <?php echo htmlspecialchars("{$tm['home_team']} {$tm['home_goals']}-{$tm['away_goals']} {$tm['away_team']}"); ?> (<?php echo htmlspecialchars($tm['match_date']); ?>)
+                        Before: <?php echo htmlspecialchars("{$tm['home_team']} {$tm['home_goals']}-{$tm['away_goals']} {$tm['away_team']}"); ?> (<?php echo htmlspecialchars(football_stats_format_kickoff($tm['match_timestamp'] ?? null, $tm['match_date'] ?? null)); ?>)
                     </span>
                 <?php endif; ?>
             </div>
@@ -1095,7 +1131,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             <?php foreach ($availableMatches as $m):
                                 $mId = (int)$m['id'];
                                 $score = ($m['home_goals'] !== null && $m['away_goals'] !== null) ? " ({$m['home_goals']}-{$m['away_goals']})" : ' (vs)';
-                                $label = "MW{$m['matchweek']} [{$m['match_date']}]: {$m['home_team']}{$score}{$m['away_team']}";
+                                $kickoff = football_stats_format_kickoff($m['match_timestamp'] ?? null, $m['match_date'] ?? null);
+                                $label = "MW{$m['matchweek']} [$kickoff]: {$m['home_team']}{$score}{$m['away_team']}";
                             ?>
                                 <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => $mId])); ?>" <?php echo ($selectedMatchId === $mId) ? 'selected="selected"' : ''; ?>>
                                     <?php echo htmlspecialchars($label); ?>
@@ -1158,7 +1195,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             <?php foreach ($availableMatches as $m):
                                 $mId = (int)$m['id'];
                                 $score = ($m['home_goals'] !== null && $m['away_goals'] !== null) ? " ({$m['home_goals']}-{$m['away_goals']})" : ' (vs)';
-                                $label = "MW{$m['matchweek']} [{$m['match_date']}]: {$m['home_team']}{$score}{$m['away_team']}";
+                                $kickoff = football_stats_format_kickoff($m['match_timestamp'] ?? null, $m['match_date'] ?? null);
+                                $label = "MW{$m['matchweek']} [$kickoff]: {$m['home_team']}{$score}{$m['away_team']}";
                             ?>
                                 <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => $mId])); ?>" <?php echo ($selectedMatchId === $mId) ? 'selected="selected"' : ''; ?>>
                                     <?php echo htmlspecialchars($label); ?>

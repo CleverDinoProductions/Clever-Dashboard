@@ -29,25 +29,24 @@ $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 $selected_mw = isset($_GET['matchweek']) && $_GET['matchweek'] !== '' ? (int)$_GET['matchweek'] : '';
 
 if ($selected_mw !== '') {
-    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY match_date, id");
+    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
     $stmt->execute(['L2', $selectedSeason, $selected_mw]);
 } else {
-    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY matchweek, match_date, id");
+    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
     $stmt->execute(['L2', $selectedSeason]);
 }
 $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$first_date = !empty($matches) ? $matches[0]['match_date'] : '';
 $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
 ?>
 <div class="panel">
-    <h2>League Two <?= htmlspecialchars($seasonDisplay) ?> – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?><?php if ($first_date): ?> <span style="font-size:14px; color:#00ff88;">(<?= htmlspecialchars($first_date) ?>)</span><?php endif; ?></h2>
+    <h2>League Two <?= htmlspecialchars($seasonDisplay) ?> – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?></h2>
     <?php football_stats_render_matches_controls($availableSeasons, $matchweeks, $selectedSeason, $selected_mw, $currentMainTab, $currentLeague, $currentSubTab); ?>
     <table class="matches-table" style="width:100%; font-size:13px;">
         <thead>
             <tr style="background:#222; color:#00ff88;">
                 <th>Matchweek</th>
-                <th>Date</th>
+                <th>Kickoff</th>
                 <th>Home</th>
                 <th>Score</th>
                 <th>Away</th>
@@ -58,7 +57,7 @@ $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
         <?php foreach ($matches as $m): ?>
             <tr>
                 <td><?= htmlspecialchars($m['matchweek']) ?></td>
-                <td><?= htmlspecialchars($m['match_date']) ?></td>
+                <td><time<?= !empty($m['match_timestamp']) ? ' datetime="' . htmlspecialchars($m['match_timestamp'], ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars(football_stats_format_kickoff($m['match_timestamp'] ?? null, $m['match_date'] ?? null), ENT_QUOTES, 'UTF-8') ?></time></td>
                 <td><?= htmlspecialchars($m['home_team']) ?></td>
                 <td style="text-align:center; font-weight:bold;">
                     <?= is_numeric($m['home_goals']) && is_numeric($m['away_goals']) ? $m['home_goals'] . ' - ' . $m['away_goals'] : '-' ?>
