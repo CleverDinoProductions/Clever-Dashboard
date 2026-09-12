@@ -561,7 +561,72 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         }
 
         $tableView['calc_mode'] = $calcMode;
+
+        // A matchweek snapshot is most useful when it also explains how the
+        // table changed. Compare it with the closest earlier archived week
+        // (rather than assuming snapshots exist for every matchweek).
+        $tableView['position_movements'] = [];
+        $tableView['movement_comparison_matchweek'] = null;
+        if ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view'])) {
+            $activeMatchweek = (int)($tableView['active_matchweek'] ?? 0);
+            $seasonLabel = (string)($tableView['active_season_label'] ?? '');
+
+            $previousWeekStmt = $db->prepare(
+                'SELECT MAX(matchweek) FROM league_table_snapshots '
+                . 'WHERE competition_code = ? AND season_label = ? AND matchweek < ?'
+            );
+            $previousWeekStmt->execute([$competitionCode, $seasonLabel, $activeMatchweek]);
+            $previousMatchweek = $previousWeekStmt->fetchColumn();
+
+            if ($previousMatchweek !== false && $previousMatchweek !== null) {
+                $previousPositionsStmt = $db->prepare(
+                    'SELECT team_name, position FROM league_table_snapshots '
+                    . 'WHERE competition_code = ? AND season_label = ? AND matchweek = ?'
+                );
+                $previousPositionsStmt->execute([$competitionCode, $seasonLabel, (int)$previousMatchweek]);
+                $previousPositions = [];
+                foreach ($previousPositionsStmt->fetchAll(PDO::FETCH_ASSOC) as $previousTeam) {
+                    $previousPositions[$previousTeam['team_name']] = (int)$previousTeam['position'];
+                }
+
+                foreach ($tableView['standings'] as $team) {
+                    if (isset($previousPositions[$team['team_name']])) {
+                        // Positive means the team climbed (for example 5th to 3rd).
+                        $tableView['position_movements'][$team['team_name']] =
+                            $previousPositions[$team['team_name']] - (int)$team['position'];
+                    }
+                }
+                $tableView['movement_comparison_matchweek'] = (int)$previousMatchweek;
+            }
+        }
         return $tableView;
+    }
+}
+
+/** Render a snapshot's movement since the closest preceding archived matchweek. */
+if (!function_exists('football_stats_render_position_movement')) {
+    function football_stats_render_position_movement(array $tableView, $teamName)
+    {
+        $movement = (int)($tableView['position_movements'][$teamName] ?? 0);
+        if ($movement === 0) {
+            return;
+        }
+
+        $wentUp = $movement > 0;
+        $places = abs($movement);
+        $previousMatchweek = (int)$tableView['movement_comparison_matchweek'];
+        $label = sprintf(
+            '%s %d %s since matchweek %d',
+            $wentUp ? 'Up' : 'Down',
+            $places,
+            $places === 1 ? 'place' : 'places',
+            $previousMatchweek
+        );
+        ?>
+        <span class="position-movement <?= $wentUp ? 'position-movement-up' : 'position-movement-down' ?>"
+              title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
+              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= $wentUp ? '&#9650;' : '&#9660;' ?><span class="position-movement-count"><?= $places ?></span></span>
+        <?php
     }
 }
 
