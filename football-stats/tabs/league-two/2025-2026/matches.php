@@ -32,7 +32,7 @@ if ($selected_mw !== '') {
     $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
     $stmt->execute(['L2', $selectedSeason, $selected_mw]);
 } else {
-    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
+    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY matchweek, COALESCE(NULLIF(match_timestamp, ''), match_date), id");
     $stmt->execute(['L2', $selectedSeason]);
 }
 $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
