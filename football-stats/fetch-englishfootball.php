@@ -28,7 +28,7 @@ $tables = [
     "league_table_L1" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_L2" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
     "league_table_NL" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
-    "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, home_pens INTEGER, away_pens INTEGER, status TEXT, source TEXT",
+    "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, match_timestamp TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, home_pens INTEGER, away_pens INTEGER, status TEXT, source TEXT",
     "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
     "league_table_snapshots_by_date" => "competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT, PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
@@ -40,7 +40,7 @@ foreach ($tables as $name => $schema) {
 
 // Migrate existing tables
 $migrate = [
-    'matches'                         => ['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT', 'competition_name TEXT'],
+    'matches'                         => ['home_pens INTEGER', 'away_pens INTEGER', 'status TEXT', 'competition_name TEXT', 'match_timestamp TEXT'],
     'league_table_snapshots'          => ['competition_name TEXT'],
     'league_table_snapshots_by_date'  => ['competition_name TEXT'],
 ];
@@ -178,7 +178,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
         $db->exec("DELETE FROM matches WHERE competition_code = '$code' AND season_label = '$season'");
         $db->exec("DELETE FROM league_table_snapshots WHERE competition_code = '$code' AND season_label = '$season'");
 
-        $m_ins = $db->prepare("INSERT INTO matches (competition_code, competition_name, season_label, matchweek, match_date, home_team, away_team, home_goals, away_goals, status, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $m_ins = $db->prepare("INSERT INTO matches (competition_code, competition_name, season_label, matchweek, match_date, match_timestamp, home_team, away_team, home_goals, away_goals, status, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         $mw_buckets = []; $running_stats = [];
 
@@ -228,11 +228,13 @@ function sync_league($db, $BASE_URL, $code, $id) {
                 $matchStatus = 'scheduled';
             }
 
+            $kickoffTimestamp = !empty($e['strTimestamp']) ? $e['strTimestamp'] : null;
             $m_ins->bindValue(1, $code); $m_ins->bindValue(2, $comp_name); $m_ins->bindValue(3, $season); $m_ins->bindValue(4, $mw);
-            $m_ins->bindValue(5, $e['dateEvent']); $m_ins->bindValue(6, $e['strHomeTeam']);
-            $m_ins->bindValue(7, $e['strAwayTeam']); $m_ins->bindValue(8, $hg);
-            $m_ins->bindValue(9, $ag); $m_ins->bindValue(10, $matchStatus);
-            $m_ins->bindValue(11, 'tsdb_v2_optimized');
+            $m_ins->bindValue(5, $e['dateEvent']);
+            $m_ins->bindValue(6, $kickoffTimestamp, $kickoffTimestamp === null ? SQLITE3_NULL : SQLITE3_TEXT);
+            $m_ins->bindValue(7, $e['strHomeTeam']); $m_ins->bindValue(8, $e['strAwayTeam']);
+            $m_ins->bindValue(9, $hg); $m_ins->bindValue(10, $ag);
+            $m_ins->bindValue(11, $matchStatus); $m_ins->bindValue(12, 'tsdb_v2_optimized');
             $m_ins->execute();
 
             if ($hg !== null && $ag !== null) {
