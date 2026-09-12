@@ -1068,6 +1068,33 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 </div>
                 <?php football_stats_render_navigation_slider($dateSliderItems, $tableView['active_date'] ?? $selectedDate, 'Browse dates', $controlId . '|date', 'Move through available snapshot dates, then release to view the standings.'); ?>
                 <?php else: ?>
+                <!-- Dropdown 2 (By Matchweek): Matchweek Selection -->
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-mw">Select Matchweek</label>
+                    <select id="<?php echo $controlId; ?>-mw" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live', 'matchweek' => null])); ?>" <?php echo !$isSnapshot ? 'selected="selected"' : ''; ?>>
+                            Latest Live Table
+                        </option>
+                        <?php
+                        $activeMW = (int)($tableView['active_matchweek'] ?? 0);
+                        foreach ($tableView['available_matchweeks'] as $mw):
+                            $mwUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
+                                'table_view' => 'snapshot',
+                                'matchweek' => $mw,
+                                'snapshot_season' => $activeSeason,
+                            ]);
+
+                            $mwDate = '';
+                            if (isset($GLOBALS['db']) && function_exists('football_stats_get_first_date_for_matchweek')) {
+                                $mwDate = football_stats_get_first_date_for_matchweek($GLOBALS['db'], $competitionCode, $activeSeason, $mw);
+                            }
+                        ?>
+                            <option value="<?php echo htmlspecialchars($mwUrl); ?>" <?php echo ($isSnapshot && $activeMW === (int)$mw) ? 'selected="selected"' : ''; ?>>
+                                <?php if ((int)$mw === 0): ?>Pre-season<?php else: ?>Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' [' . htmlspecialchars($mwDate) . ']'; ?><?php endif; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <?php football_stats_render_historic_league_table_slider($tableView, $tab, $league, $subtab); ?>
                 <?php endif; ?>
             </div>
