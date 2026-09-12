@@ -122,7 +122,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             $show_common = ($team['team_name'] !== $info['common_name']);
         ?>
         <tr style="<?= $row_style ?>">
-            <td><strong><?= $team['position'] ?></strong></td>
+            <td><strong><?= $team['position'] ?></strong><?php if ($table_filter === 'all') football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
             <td>
                 <div class="team-cell">
                     <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
