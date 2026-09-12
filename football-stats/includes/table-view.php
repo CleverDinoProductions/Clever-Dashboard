@@ -662,6 +662,88 @@ if (!function_exists('football_stats_render_historic_league_table_slider')) {
 }
 
 /**
+ * Render a matchweek slider for the snapshots available in one season.
+ *
+ * The slider uses indexes rather than matchweek numbers so it also works when
+ * the archive has gaps (for example, weeks 0, 1, 3 and 4). Moving the control
+ * updates its label immediately; releasing it loads the selected snapshot.
+ */
+if (!function_exists('football_stats_render_historic_league_table_slider')) {
+    function football_stats_render_historic_league_table_slider(array $tableView, $tab = null, $league = null, $subtab = null)
+    {
+        $matchweeks = array_values(array_unique(array_map('intval', $tableView['available_matchweeks'] ?? [])));
+        sort($matchweeks, SORT_NUMERIC);
+
+        if (empty($matchweeks)) {
+            echo '<p class="historic-slider-empty">No historic matchweek snapshots are available for this season.</p>';
+            return;
+        }
+
+        $season = (string)($tableView['active_season_label'] ?? $tableView['requested_season_label'] ?? '');
+        $activeMatchweek = (int)($tableView['active_matchweek'] ?? end($matchweeks));
+        $activeIndex = array_search($activeMatchweek, $matchweeks, true);
+        if ($activeIndex === false) {
+            $activeIndex = count($matchweeks) - 1;
+        }
+
+        $urls = [];
+        foreach ($matchweeks as $matchweek) {
+            $urls[] = football_stats_build_table_view_url($tab, $league, $subtab, [
+                'calc_mode' => 'by_matchweek',
+                'table_view' => 'snapshot',
+                'snapshot_season' => $season,
+                'matchweek' => $matchweek,
+            ]);
+        }
+
+        $controlId = 'historic-league-slider-' . substr(hash('sha256', implode('|', [$tab, $league, $subtab, $season])), 0, 10);
+        $previousIndex = max(0, $activeIndex - 1);
+        $nextIndex = min(count($matchweeks) - 1, $activeIndex + 1);
+        ?>
+        <div class="historic-league-slider" data-historic-slider>
+            <div class="historic-slider-heading">
+                <label for="<?php echo $controlId; ?>">
+                    Historic league table
+                    <strong data-historic-label><?php echo $activeMatchweek === 0 ? 'Pre-season' : 'Matchweek ' . $activeMatchweek; ?></strong>
+                </label>
+                <a class="historic-slider-live" href="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live', 'matchweek' => null]), ENT_QUOTES, 'UTF-8'); ?>">Latest table</a>
+            </div>
+            <div class="historic-slider-controls">
+                <a class="historic-slider-step<?php echo $activeIndex === 0 ? ' is-disabled' : ''; ?>"
+                   href="<?php echo htmlspecialchars($urls[$previousIndex], ENT_QUOTES, 'UTF-8'); ?>"
+                   aria-label="Previous available matchweek"<?php echo $activeIndex === 0 ? ' aria-disabled="true" tabindex="-1"' : ''; ?>>&#8249;</a>
+                <input id="<?php echo $controlId; ?>" type="range" min="0" max="<?php echo count($matchweeks) - 1; ?>"
+                       step="1" value="<?php echo $activeIndex; ?>" aria-describedby="<?php echo $controlId; ?>-help">
+                <a class="historic-slider-step<?php echo $activeIndex === count($matchweeks) - 1 ? ' is-disabled' : ''; ?>"
+                   href="<?php echo htmlspecialchars($urls[$nextIndex], ENT_QUOTES, 'UTF-8'); ?>"
+                   aria-label="Next available matchweek"<?php echo $activeIndex === count($matchweeks) - 1 ? ' aria-disabled="true" tabindex="-1"' : ''; ?>>&#8250;</a>
+            </div>
+            <small id="<?php echo $controlId; ?>-help">Drag or use the arrow keys, then release to view that week's standings.</small>
+        </div>
+        <script>
+        (function () {
+            var root = document.getElementById(<?php echo json_encode($controlId); ?>).closest('[data-historic-slider]');
+            var slider = root.querySelector('input[type="range"]');
+            var label = root.querySelector('[data-historic-label]');
+            var weeks = <?php echo json_encode($matchweeks); ?>;
+            var urls = <?php echo json_encode($urls, JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG); ?>;
+            var describe = function () {
+                var week = weeks[Number(slider.value)];
+                label.textContent = week === 0 ? 'Pre-season' : 'Matchweek ' + week;
+                slider.setAttribute('aria-valuetext', label.textContent);
+            };
+            slider.addEventListener('input', describe);
+            slider.addEventListener('change', function () {
+                window.location.assign(urls[Number(slider.value)]);
+            });
+            describe();
+        }());
+        </script>
+        <?php
+    }
+}
+
+/**
  * Main Table Controls including Matchweek, Date, and Specific Match Selection
  */
 if (!function_exists('football_stats_render_table_view_controls')) {
@@ -771,8 +853,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .historic-slider-heading strong { margin-left: 6px; color: #c7d2fe; }
             .historic-slider-live { color: #c7d2fe; text-transform: none; white-space: nowrap; }
             .historic-slider-controls input { width: 100%; accent-color: #5865f2; cursor: pointer; }
-            .historic-slider-step { display: grid; flex: 0 0 28px; height: 28px; padding: 0; place-items: center; border: 0; border-radius: 6px; background: rgba(88, 101, 242, 0.2); color: #fff; font-size: 22px; text-decoration: none; cursor: pointer; }
-            .historic-slider-step:disabled { opacity: 0.3; cursor: default; }
+            .historic-slider-step { display: grid; flex: 0 0 28px; height: 28px; place-items: center; border-radius: 6px; background: rgba(88, 101, 242, 0.2); color: #fff; font-size: 22px; text-decoration: none; }
+            .historic-slider-step.is-disabled { opacity: 0.3; pointer-events: none; }
             .historic-league-slider small, .historic-slider-empty { color: #8e9297; font-size: 11px; }
         </style>
 
@@ -986,17 +1068,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 </div>
                 <?php football_stats_render_navigation_slider($dateSliderItems, $tableView['active_date'] ?? $selectedDate, 'Browse dates', $controlId . '|date', 'Move through available snapshot dates, then release to view the standings.'); ?>
                 <?php else: ?>
-                <div class="table-view-group">
-                    <label class="table-view-label" for="<?php echo $controlId; ?>-mw">Select Matchweek</label>
-                    <select id="<?php echo $controlId; ?>-mw" class="table-view-select" onchange="window.location.href=this.value;">
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live', 'matchweek' => null])); ?>" <?php echo !$isSnapshot ? 'selected="selected"' : ''; ?>>Latest Live Table</option>
-                        <?php foreach ($tableView['available_matchweeks'] as $mw): ?>
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'snapshot', 'matchweek' => $mw, 'snapshot_season' => $activeSeason])); ?>" <?php echo ($isSnapshot && (int)($tableView['active_matchweek'] ?? 0) === (int)$mw) ? 'selected="selected"' : ''; ?>>
-                                <?php echo (int)$mw === 0 ? 'Pre-season' : 'Matchweek ' . (int)$mw; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
                 <?php football_stats_render_historic_league_table_slider($tableView, $tab, $league, $subtab); ?>
                 <?php endif; ?>
             </div>

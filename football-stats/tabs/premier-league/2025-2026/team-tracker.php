@@ -479,7 +479,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             Target: <?php echo $european_season_safety_target; ?> points
         </p>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
-            PPG needed: <?php echo $europe_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
+            PPG needed: <?php echo $european_season_ppg_needed; ?> points from <?php echo $games_remaining; ?> games
         </p>
     </div>  
 

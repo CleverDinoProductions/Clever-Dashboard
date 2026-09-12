@@ -12,6 +12,7 @@
 
 require_once __DIR__ . '/simulation-engine.php';
 require_once __DIR__ . '/table-view.php';
+require_once __DIR__ . '/match-projection-widget.php';
 
 $comp_code     = $league_config['comp_code'];
 $season_label  = $league_config['season_label'];
@@ -434,6 +435,8 @@ details .sim-table th { position:static; z-index:auto; }
             <span style="color:#faa61a;">⚠️ No completed matches – using neutral team strengths</span>
         <?php endif; ?>
     </div>
+
+    <?php match_projection_render($sim, $zones); ?>
 
     <!-- Results table -->
     <div class="table-container">
