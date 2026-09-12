@@ -620,8 +620,6 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             }
             $tableView['movement_comparison_label'] = 'after this match';
         }
-            }
-        }
         elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
             $activeDate = (string)($tableView['active_date'] ?? '');
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
@@ -670,7 +668,7 @@ if (!function_exists('football_stats_render_position_movement')) {
 
         $wentUp = $movement > 0;
         $places = abs($movement);
-        $comparisonLabel = (string)($tableView['movement_comparison_label'] ?? 'since the previous snapshot');
+        $comparisonLabel = (string)($tableView['movement_comparison_label'] ?? 'since the previous match');
         $label = sprintf(
             '%s %d %s %s',
             $wentUp ? 'Up' : 'Down',
@@ -683,23 +681,7 @@ if (!function_exists('football_stats_render_position_movement')) {
               title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
               aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= $wentUp ? '&#9650;' : '&#9660;' ?><span class="position-movement-count"><?= $places ?></span></span>
         <?php
-        if ($tableView['calc_mode'] === 'by_date') {
-            $wentup = $movement > 0;
-            $places = abs($movement);
-            $previousDate = (string)$tableView['movement_comparison_matchweek'];
-            $label = sprintf(
-                '%s %d %s since %s',
-                $wentup ? 'Up' : 'Down',
-                $places,
-                $places === 1 ? 'place' : 'places',
-                $previousDate
-            );
-            ?>
-            <span class="position-movement <?= $wentup ? 'position-movement-up' : 'position-movement-down' ?>"
-                  title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
-                  aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= $wentup ? '&#9650;' : '&#9660;' ?><span class="position-movement-count"><?= $places ?></span></span>
-            <?php
-        }
+        return;
     }
 }
 
