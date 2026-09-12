@@ -93,6 +93,63 @@ if (!function_exists('football_stats_build_table_view_url')) {
 }
 
 /**
+ * Render the season and matchweek selectors used by league match lists.
+ */
+if (!function_exists('football_stats_render_matches_controls')) {
+    function football_stats_render_matches_controls(array $availableSeasons, array $availableMatchweeks, $selectedSeason, $selectedMatchweek, $tab, $league, $subtab)
+    {
+        $controlId = 'matches-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
+        ?>
+        <div class="table-view-switcher">
+            <div class="table-view-summary">
+                <span class="table-view-pill">Matches</span>
+                <span>Season <?php echo htmlspecialchars((string)$selectedSeason, ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php if ($selectedMatchweek !== ''): ?>
+                    <span>Matchweek <?php echo (int)$selectedMatchweek; ?></span>
+                <?php else: ?>
+                    <span>All Matchweeks</span>
+                <?php endif; ?>
+            </div>
+
+            <div class="table-view-actions">
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
+                    <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
+                        <?php foreach ($availableSeasons as $season):
+                            $seasonUrl = football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season]);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($seasonUrl, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($selectedSeason === (string)$season) ? 'selected' : ''; ?>>
+                                Season <?php echo htmlspecialchars((string)$season, ENT_QUOTES, 'UTF-8'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="table-view-group">
+                    <label class="table-view-label" for="<?php echo $controlId; ?>-mw">Select Matchweek</label>
+                    <select id="<?php echo $controlId; ?>-mw" class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $selectedSeason, 'matchweek' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($selectedMatchweek === '') ? 'selected' : ''; ?>>
+                            All Matchweeks
+                        </option>
+                        <?php foreach ($availableMatchweeks as $matchweek):
+                            $matchweekUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
+                                'snapshot_season' => $selectedSeason,
+                                'matchweek' => $matchweek,
+                            ]);
+                        ?>
+                            <option value="<?php echo htmlspecialchars($matchweekUrl, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($selectedMatchweek !== '' && (int)$selectedMatchweek === (int)$matchweek) ? 'selected' : ''; ?>>
+                                Matchweek <?php echo (int)$matchweek; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+}
+
+/**
  * Check if a subtab supports historical snapshots
  */
 if (!function_exists('football_stats_tab_supports_table_view')) {
