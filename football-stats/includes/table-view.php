@@ -567,6 +567,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         // (rather than assuming snapshots exist for every matchweek).
         $tableView['position_movements'] = [];
         $tableView['movement_comparison_matchweek'] = null;
+        $tableView['movement_comparison_season_label'] = null;
         if ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view'])) {
             $activeMatchweek = (int)($tableView['active_matchweek'] ?? 0);
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
@@ -619,8 +620,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 }
             }
             $tableView['movement_comparison_label'] = 'after this match';
-        }
-        elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
+        } elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
             $activeDate = (string)($tableView['active_date'] ?? '');
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
 
