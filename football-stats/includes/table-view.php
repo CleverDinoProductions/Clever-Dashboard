@@ -597,6 +597,29 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                     }
                 }
                 $tableView['movement_comparison_matchweek'] = (int)$previousMatchweek;
+                $tableView['movement_comparison_label'] = 'since matchweek ' . (int)$previousMatchweek;
+            }
+        } elseif ($calcMode === 'by_match' && !empty($tableView['target_match'])) {
+            // For a specific-match snapshot, compare the table immediately
+            // after that result with the table immediately before it.
+            $beforeMatchView = football_stats_get_table_view_by_match_before(
+                $db,
+                $competitionCode,
+                $liveTableName,
+                $fallbackSeasonLabel
+            );
+            $beforePositions = [];
+            foreach ($beforeMatchView['standings'] as $beforeTeam) {
+                $beforePositions[$beforeTeam['team_name']] = (int)$beforeTeam['position'];
+            }
+            foreach ($tableView['standings'] as $team) {
+                if (isset($beforePositions[$team['team_name']])) {
+                    $tableView['position_movements'][$team['team_name']] =
+                        $beforePositions[$team['team_name']] - (int)$team['position'];
+                }
+            }
+            $tableView['movement_comparison_label'] = 'after this match';
+        }
             }
         }
         elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
@@ -645,6 +668,21 @@ if (!function_exists('football_stats_render_position_movement')) {
             return;
         }
 
+        $wentUp = $movement > 0;
+        $places = abs($movement);
+        $comparisonLabel = (string)($tableView['movement_comparison_label'] ?? 'since the previous snapshot');
+        $label = sprintf(
+            '%s %d %s %s',
+            $wentUp ? 'Up' : 'Down',
+            $places,
+            $places === 1 ? 'place' : 'places',
+            $comparisonLabel
+        );
+        ?>
+        <span class="position-movement <?= $wentUp ? 'position-movement-up' : 'position-movement-down' ?>"
+              title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
+              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><?= $wentUp ? '&#9650;' : '&#9660;' ?><span class="position-movement-count"><?= $places ?></span></span>
+        <?php
         if ($tableView['calc_mode'] === 'by_date') {
             $wentup = $movement > 0;
             $places = abs($movement);
