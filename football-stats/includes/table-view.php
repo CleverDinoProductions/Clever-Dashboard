@@ -632,39 +632,6 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $tableView['movement_comparison_matchweek'] = $previousDate;
             }
         }
-        elseif ($calcMode === 'by_match' && !empty($tableView['is_snapshot_view'])) {
-            $activeMatch = (int)($tableView['active_match'] ?? 0);
-            $seasonLabel = (string)($tableView['active_season_label'] ?? '');
-
-            $previousMatchStmt = $db->prepare(
-                'SELECT MAX(match_id) FROM league_table_snapshots_by_match '
-                . 'WHERE competition_code = ? AND season_label = ? AND match_id < ?'
-            );
-            $previousMatchStmt->execute([$competitionCode, $seasonLabel, $activeMatch]);
-            $previousMatch = $previousMatchStmt->fetchColumn();
-
-            if ($previousMatch !== false && $previousMatch !== null) {
-                $previousPositionsStmt = $db->prepare(
-                    'SELECT team_name, position FROM matches '
-                    . 'WHERE competition_code = ? AND season_label = ? AND match_id = ?'
-                );
-                $previousPositionsStmt->execute([$competitionCode, $seasonLabel, $previousMatch]);
-                $previousPositions = [];
-                foreach ($previousPositionsStmt->fetchAll(PDO::FETCH_ASSOC) as $previousTeam) {
-                    $previousPositions[$previousTeam['team_name']] = (int)$previousTeam['position'];
-                }
-
-                foreach ($tableView['standings'] as $team) {
-                    if (isset($previousPositions[$team['team_name']])) {
-                        // Positive means the team climbed (for example 5th to 3rd).
-                        $tableView['position_movements'][$team['team_name']] =
-                            $previousPositions[$team['team_name']] - (int)$team['position'];
-                    }
-                }
-                $tableView['movement_comparison_matchweek'] = $previousMatch;
-            }
-        }
-        
         return $tableView;
     }
 }
