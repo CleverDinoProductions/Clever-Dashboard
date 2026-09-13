@@ -76,6 +76,10 @@ if (!function_exists('football_stats_get_points_deductions')) {
                 'ELC|2025-2026' => [
                     ['team_name' => 'Sheffield Wednesday', 'points' => 18, 'reason' => 'Administration and EFL financial-rule breaches'],
                 ],
+                // Southamton Cheated and received deductions totalling 4 points.
+                'ELC|2026-2027' => [
+                    ['team_name' => 'Southampton', 'points' => 4, 'reason' => 'Cheated'],
+                ]
             ];
             $deductions = $bundled[$competitionCode . '|' . $seasonLabel] ?? [];
         }
