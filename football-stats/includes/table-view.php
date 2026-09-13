@@ -71,12 +71,15 @@ if (!function_exists('football_stats_get_points_deductions')) {
 
         if (empty($deductions)) {
             $bundled = [
-                // Sheffield Wednesday entered administration during 2025-26
-                // and received deductions totalling 18 points.
+                'ELC|2025-2026' => [
+                    ['team_name' => 'Leicester City', 'points' => 6, 'reason' => 'Administration and EFL financial-rule breaches'],
+                ],
+                'ELC|2025-2026' => [
+                    ['team_name' => 'West Bromwich Albion', 'points' => 2, 'reason' => 'Administration and EFL financial-rule breaches'],
+                ],
                 'ELC|2025-2026' => [
                     ['team_name' => 'Sheffield Wednesday', 'points' => 18, 'reason' => 'Administration and EFL financial-rule breaches'],
                 ],
-                // Southamton Cheated and received deductions totalling 4 points.
                 'ELC|2026-2027' => [
                     ['team_name' => 'Southampton', 'points' => 4, 'reason' => 'EFL rules breach (SpyGate)'],
                 ]

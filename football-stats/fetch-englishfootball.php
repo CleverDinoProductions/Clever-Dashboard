@@ -39,6 +39,10 @@ foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
 }
 $db->exec("INSERT OR IGNORE INTO points_deductions (competition_code, season_label, team_name, points, reason) VALUES ('ELC', '2025-2026', 'Sheffield Wednesday', 18, 'Administration and EFL financial-rule breaches')");
+$db->exec("INSERT OR IGNORE INTO points_deductions (competition_code, season_label, team_name, points, reason) VALUES ('ELC', '2025-2026', 'Leicester City', 6, 'Administration and EFL financial-rule breaches')");
+$db->exec("INSERT OR IGNORE INTO points_deductions (competition_code, season_label, team_name, points, reason) VALUES ('ELC', '2025-2026', 'West Bromwich Albion', 2, 'Administration and EFL financial-rule breaches')");
+$db->exec("INSERT OR IGNORE INTO points_deductions (competition_code, season_label, team_name, points, reason) VALUES ('ELC', '2026-2027', 'Southampton', 4, 'EFL rules breach (SpyGate)')");
+
 
 // Migrate existing tables
 $migrate = [
