@@ -26,6 +26,9 @@ if ($table_filter !== 'all') {
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'home', $halfway_games, 'league_table_L1', $max_regular_mw);
 $awayStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'away', $halfway_games, 'league_table_L1', $max_regular_mw);
+if (!empty($tableView['points_deductions'])) {
+    $standings = football_stats_apply_points_deductions($standings, $tableView['points_deductions']);
+}
 $safety_target_magic = 40; 
 $safety_target_average = 36; 
 $safety_target_low = 34; 
@@ -155,6 +158,7 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
             <?php endforeach; ?>
         </tbody>
     </table>
+    <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
     
     <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
         <div style="background: #1a1c1e; padding: 15px; border-radius: 8px; font-size: 12px;">

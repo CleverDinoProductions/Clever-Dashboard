@@ -43,6 +43,121 @@ if (!function_exists('football_stats_format_kickoff')) {
 require_once __DIR__ . '/table-view-date-helper.php';
 
 /**
+ * Return the points deductions which apply to a competition season.
+ *
+ * Deployments may maintain a `points_deductions` table with the columns
+ * competition_code, season_label, team_name, points and reason. The small
+ * built-in list keeps the currently relevant deduction working on older
+ * databases which have not added that table yet.
+ */
+if (!function_exists('football_stats_get_points_deductions')) {
+    function football_stats_get_points_deductions(PDO $db, $competitionCode, $seasonLabel)
+    {
+        $deductions = [];
+
+        try {
+            $tableExists = $db->query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'points_deductions'")->fetchColumn();
+            if ($tableExists) {
+                $stmt = $db->prepare(
+                    'SELECT team_name, points, reason FROM points_deductions '
+                    . 'WHERE competition_code = ? AND season_label = ? ORDER BY team_name, rowid'
+                );
+                $stmt->execute([$competitionCode, $seasonLabel]);
+                $deductions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        } catch (Exception $exception) {
+            // A read-only or older database can still use the bundled entries.
+        }
+
+        if (empty($deductions)) {
+            $bundled = [
+                // Sheffield Wednesday entered administration during 2025-26
+                // and received deductions totalling 18 points.
+                'ELC|2025-2026' => [
+                    ['team_name' => 'Sheffield Wednesday', 'points' => 18, 'reason' => 'Administration and EFL financial-rule breaches'],
+                ],
+            ];
+            $deductions = $bundled[$competitionCode . '|' . $seasonLabel] ?? [];
+        }
+
+        $normalised = [];
+        foreach ($deductions as $deduction) {
+            $points = abs((int)($deduction['points'] ?? 0));
+            $teamName = trim((string)($deduction['team_name'] ?? ''));
+            if ($points === 0 || $teamName === '') {
+                continue;
+            }
+            $normalised[] = [
+                'team_name' => $teamName,
+                'points' => $points,
+                'reason' => trim((string)($deduction['reason'] ?? '')),
+            ];
+        }
+
+        return $normalised;
+    }
+}
+
+/** Apply season deductions, then recalculate positions for a computed table. */
+if (!function_exists('football_stats_apply_points_deductions')) {
+    function football_stats_apply_points_deductions(array $standings, array $deductions)
+    {
+        $pointsByTeam = [];
+        foreach ($deductions as $deduction) {
+            $pointsByTeam[$deduction['team_name']] = ($pointsByTeam[$deduction['team_name']] ?? 0) + (int)$deduction['points'];
+        }
+
+        foreach ($standings as &$team) {
+            $deducted = $pointsByTeam[$team['team_name']] ?? 0;
+            if ($deducted > 0) {
+                $team['points'] = (int)$team['points'] - $deducted;
+                $team['points_deducted'] = $deducted;
+            }
+        }
+        unset($team);
+
+        usort($standings, static function ($a, $b) {
+            return ((int)$b['points'] <=> (int)$a['points'])
+                ?: ((int)$b['gd'] <=> (int)$a['gd'])
+                ?: ((int)$b['gf'] <=> (int)$a['gf'])
+                ?: strcasecmp((string)$a['team_name'], (string)$b['team_name']);
+        });
+        foreach ($standings as $index => &$team) {
+            $team['position'] = $index + 1;
+        }
+        unset($team);
+
+        return $standings;
+    }
+}
+
+/** Render the explanation directly below a deduction-adjusted league table. */
+if (!function_exists('football_stats_render_points_deductions')) {
+    function football_stats_render_points_deductions(array $deductions)
+    {
+        if (empty($deductions)) {
+            return;
+        }
+        ?>
+        <aside class="points-deductions" style="margin-top:12px;padding:12px 15px;background:rgba(240,71,71,.1);border-left:4px solid #f04747;border-radius:6px;color:#dcddde;" aria-label="Points deductions">
+            <strong style="color:#f04747;">Points deductions applied</strong>
+            <ul style="margin:7px 0 0;padding-left:20px;">
+                <?php foreach ($deductions as $deduction): ?>
+                    <li>
+                        <?= htmlspecialchars($deduction['team_name'], ENT_QUOTES, 'UTF-8') ?>:
+                        &minus;<?= (int)$deduction['points'] ?> point<?= (int)$deduction['points'] === 1 ? '' : 's' ?>
+                        <?php if ($deduction['reason'] !== ''): ?>
+                            &mdash; <?= htmlspecialchars($deduction['reason'], ENT_QUOTES, 'UTF-8') ?>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </aside>
+        <?php
+    }
+}
+
+/**
  * Universal URL builder that strictly preserves active route state across toggles
  */
 if (!function_exists('football_stats_build_table_view_url')) {
@@ -660,6 +775,13 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         }
 
         $tableView['calc_mode'] = $calcMode;
+        $seasonLabel = (string)($tableView['active_season_label'] ?? $tableView['requested_season_label'] ?? '');
+        $isHistoricTable = ($calcMode === 'by_date')
+            || (in_array($calcMode, ['by_match', 'by_match_before'], true) && !empty($tableView['target_match']))
+            || ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view']));
+        $tableView['points_deductions'] = $isHistoricTable
+            ? football_stats_get_points_deductions($db, $competitionCode, $seasonLabel)
+            : [];
 
         // A matchweek snapshot is most useful when it also explains how the
         // table changed. Compare it with the closest earlier archived week

@@ -27,6 +27,9 @@ if ($table_filter !== 'all') {
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL', $max_regular_mw);
 $awayStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'away', $halfway_games, 'league_table_PL', $max_regular_mw);
+if (!empty($tableView['points_deductions'])) {
+    $standings = football_stats_apply_points_deductions($standings, $tableView['points_deductions']);
+}
 $safety_target_magic = 40; // Magic number for safety
 $safety_target_average = 36; // Average Points needed by end of season to stay safe
 $safety_target_low = 34; // Low safety target
@@ -381,6 +384,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         </tr>
         <?php endforeach; ?>
     </table>
+    <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
     
     <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap;">
         <div><span style="color: #43b581;">■</span> Champions League (1st-4th)</div>

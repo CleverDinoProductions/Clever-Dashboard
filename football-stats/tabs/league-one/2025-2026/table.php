@@ -26,6 +26,9 @@ if ($table_filter !== 'all') {
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'home', $halfway_games, 'league_table_L1', $max_regular_mw);
 $awayStandings = football_stats_compute_filtered_standings($db, 'L1', $_split_season, 'away', $halfway_games, 'league_table_L1', $max_regular_mw);
+if (!empty($tableView['points_deductions'])) {
+    $standings = football_stats_apply_points_deductions($standings, $tableView['points_deductions']);
+}
 
 // Team metadata
 require_once dirname(__DIR__, 3) . '/includes/team-info.php';
@@ -142,6 +145,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             <?php endforeach; ?>
         </tbody>
     </table>
+    <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
     
     <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; background: #1a1c1e; padding: 15px; border-radius: 8px;">
         <div><span style="color: #43b581;">■</span> Automatic Promotion (1st-2nd)</div>
