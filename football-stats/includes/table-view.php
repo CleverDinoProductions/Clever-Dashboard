@@ -478,8 +478,22 @@ if (!function_exists('football_stats_get_table_view_by_date')) {
                 : ($availableSeasons[0] ?? $liveSeasonLabel);
         }
 
-        $availableDatesStmt = $db->prepare('SELECT DISTINCT snapshot_date FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? ORDER BY snapshot_date DESC');
-        $availableDatesStmt->execute([$competitionCode, $requestedSeasonLabel]);
+        $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
+        $availableDatesStmt = $db->prepare(
+            'SELECT DISTINCT snapshot_date FROM league_table_snapshots_by_date '
+            . 'WHERE competition_code = ? AND season_label = ? '
+            . 'AND snapshot_date <= ('
+            . 'SELECT MAX(match_date) FROM matches WHERE competition_code = ? AND season_label = ? '
+            . 'AND matchweek >= 1 AND matchweek <= ?'
+            . ') ORDER BY snapshot_date DESC'
+        );
+        $availableDatesStmt->execute([
+            $competitionCode,
+            $requestedSeasonLabel,
+            $competitionCode,
+            $requestedSeasonLabel,
+            $finalMatchweek,
+        ]);
         $availableDates = $availableDatesStmt->fetchAll(PDO::FETCH_COLUMN);
 
         $requestedDate = isset($_GET['snapshot_date'])
@@ -554,8 +568,9 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
 
         $targetMatch = null;
         if ($selectedMatchId) {
-            $mStmt = $db->prepare('SELECT * FROM matches WHERE id = ? AND competition_code = ?');
-            $mStmt->execute([$selectedMatchId, $competitionCode]);
+            $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
+            $mStmt = $db->prepare('SELECT * FROM matches WHERE id = ? AND competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ?');
+            $mStmt->execute([$selectedMatchId, $competitionCode, $requestedSeasonLabel, $finalMatchweek]);
             $targetMatch = $mStmt->fetch(PDO::FETCH_ASSOC) ?: null;
         }
 
@@ -566,6 +581,7 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
                 : $targetMatch['match_date'];
             $mQuery = 'SELECT * FROM matches 
                        WHERE competition_code = ? AND season_label = ? 
+                         AND matchweek >= 1 AND matchweek <= ?
                          AND home_goals IS NOT NULL AND away_goals IS NOT NULL
                          AND (
                            (COALESCE(NULLIF(match_timestamp, ""), match_date) < ?) OR
@@ -576,6 +592,7 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
             $mMatchesStmt->execute([
                 $competitionCode,
                 $requestedSeasonLabel,
+                football_stats_get_final_matchweek($competitionCode),
                 $targetKickoff,
                 $targetKickoff,
                 $targetMatch['id']
@@ -683,8 +700,9 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
 
         $targetMatch = null;
         if ($selectedMatchId) {
-            $mStmt = $db->prepare('SELECT * FROM matches WHERE id = ? AND competition_code = ?');
-            $mStmt->execute([$selectedMatchId, $competitionCode]);
+            $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
+            $mStmt = $db->prepare('SELECT * FROM matches WHERE id = ? AND competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ?');
+            $mStmt->execute([$selectedMatchId, $competitionCode, $requestedSeasonLabel, $finalMatchweek]);
             $targetMatch = $mStmt->fetch(PDO::FETCH_ASSOC) ?: null;
         }
 
@@ -695,6 +713,7 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
                 : $targetMatch['match_date'];
             $mQuery = 'SELECT * FROM matches 
                        WHERE competition_code = ? AND season_label = ? 
+                         AND matchweek >= 1 AND matchweek <= ?
                          AND home_goals IS NOT NULL AND away_goals IS NOT NULL
                          AND (
                            (COALESCE(NULLIF(match_timestamp, ""), match_date) < ?) OR
@@ -705,6 +724,7 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
             $mMatchesStmt->execute([
                 $competitionCode,
                 $requestedSeasonLabel,
+                football_stats_get_final_matchweek($competitionCode),
                 $targetKickoff,
                 $targetKickoff,
                 $targetMatch['id']
