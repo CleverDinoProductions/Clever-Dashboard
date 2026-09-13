@@ -7,25 +7,36 @@ if (!function_exists('football_stats_format_kickoff')) {
      */
     function football_stats_format_kickoff(?string $timestamp, ?string $date): string
     {
-        $timestamp = trim((string)$timestamp);
+        $timestamp = trim((string) $timestamp);
 
         if ($timestamp !== '') {
             try {
-                return (new DateTimeImmutable($timestamp))
+                return (new DateTimeImmutable(
+                    $timestamp,
+                    new DateTimeZone('UTC')
+                ))
                     ->setTimezone(new DateTimeZone('Europe/London'))
-                    ->format('D j M Y, H:i') . ' UTC';
+                    ->format('D j M Y, H:i T');
             } catch (Exception $exception) {
                 // Fall through to the reliable date-only value.
             }
         }
 
-        $date = trim((string)$date);
+        $date = trim((string) $date);
+
         if ($date === '') {
             return 'TBC';
         }
 
-        $parsedDate = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
-        return $parsedDate ? $parsedDate->format('D j M Y') . ', time TBC' : $date;
+        $parsedDate = DateTimeImmutable::createFromFormat(
+            '!Y-m-d',
+            $date,
+            new DateTimeZone('Europe/London')
+        );
+
+        return $parsedDate
+            ? $parsedDate->format('D j M Y') . ', time TBC'
+            : $date;
     }
 }
 
