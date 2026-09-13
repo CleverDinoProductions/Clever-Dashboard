@@ -31,12 +31,14 @@ $tables = [
     "matches" => "id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, season_label TEXT, matchweek INTEGER, match_date TEXT, match_timestamp TEXT, home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER, home_pens INTEGER, away_pens INTEGER, status TEXT, source TEXT",
     "league_table_snapshots" => "competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT, PRIMARY KEY (competition_code, season_label, matchweek, team_name)",
     "league_table_snapshots_by_date" => "competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT, PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)",
+    "points_deductions" => "competition_code TEXT NOT NULL, season_label TEXT NOT NULL, team_name TEXT NOT NULL, points INTEGER NOT NULL CHECK (points > 0), reason TEXT NOT NULL DEFAULT '', PRIMARY KEY (competition_code, season_label, team_name, reason)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
 ];
 
 foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
 }
+$db->exec("INSERT OR IGNORE INTO points_deductions (competition_code, season_label, team_name, points, reason) VALUES ('ELC', '2025-2026', 'Sheffield Wednesday', 18, 'Administration and EFL financial-rule breaches')");
 
 // Migrate existing tables
 $migrate = [

@@ -56,8 +56,22 @@ CREATE TABLE IF NOT EXISTS live_table_metadata (
     updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS points_deductions (
+    competition_code TEXT NOT NULL,
+    season_label TEXT NOT NULL,
+    team_name TEXT NOT NULL,
+    points INTEGER NOT NULL CHECK (points > 0),
+    reason TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (competition_code, season_label, team_name, reason)
+);
+
 CREATE INDEX IF NOT EXISTS idx_league_table_snapshots_lookup
 ON league_table_snapshots (competition_code, season_label, matchweek, position);
+
+INSERT OR IGNORE INTO points_deductions
+    (competition_code, season_label, team_name, points, reason)
+VALUES
+    ('ELC', '2025-2026', 'Sheffield Wednesday', 18, 'Administration and EFL financial-rule breaches');
 ");
 
 echo "Database created!\n";
