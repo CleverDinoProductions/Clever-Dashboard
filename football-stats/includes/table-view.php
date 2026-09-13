@@ -12,7 +12,7 @@ if (!function_exists('football_stats_format_kickoff')) {
         if ($timestamp !== '') {
             try {
                 return (new DateTimeImmutable($timestamp))
-                    ->setTimezone(new DateTimeZone('UTC'))
+                    ->setTimezone(new DateTimeZone('Europe/London'))
                     ->format('D j M Y, H:i') . ' UTC';
             } catch (Exception $exception) {
                 // Fall through to the reliable date-only value.
@@ -716,7 +716,6 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 'SELECT MAX(snapshot_date) FROM league_table_snapshots_by_date '
                 . 'WHERE competition_code = ? AND season_label = ? AND snapshot_date < ?'
             );
-            echo $previousDateStmt->queryString;
             $previousDateStmt->execute([$competitionCode, $seasonLabel, $activeDate]);
             $previousDate = $previousDateStmt->fetchColumn();
 
