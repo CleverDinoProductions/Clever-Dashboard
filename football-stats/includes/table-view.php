@@ -42,36 +42,6 @@ if (!function_exists('football_stats_format_kickoff')) {
 
 require_once __DIR__ . '/table-view-date-helper.php';
 
-/** Return the latest matchweek which has at least one recorded result. */
-if (!function_exists('football_stats_get_last_played_matchweek')) {
-    function football_stats_get_last_played_matchweek(PDO $db, $competitionCode, $seasonLabel)
-    {
-        $stmt = $db->prepare(
-            'SELECT MAX(matchweek) FROM matches '
-            . 'WHERE competition_code = ? AND season_label = ? '
-            . 'AND home_goals IS NOT NULL AND away_goals IS NOT NULL'
-        );
-        $stmt->execute([$competitionCode, $seasonLabel]);
-        $matchweek = $stmt->fetchColumn();
-
-        return $matchweek === false || $matchweek === null ? null : (int)$matchweek;
-    }
-}
-
-/** Remove future matchweeks from values displayed by selector controls. */
-if (!function_exists('football_stats_limit_matchweeks_to_last_played')) {
-    function football_stats_limit_matchweeks_to_last_played(array $matchweeks, $lastPlayedMatchweek)
-    {
-        if ($lastPlayedMatchweek === null) {
-            return $matchweeks;
-        }
-
-        return array_values(array_filter($matchweeks, static function ($matchweek) use ($lastPlayedMatchweek) {
-            return (int)$matchweek <= (int)$lastPlayedMatchweek;
-        }));
-    }
-}
-
 /**
  * Return the points deductions which apply to a competition season.
  *
@@ -257,16 +227,6 @@ if (!function_exists('football_stats_build_table_view_url')) {
 if (!function_exists('football_stats_render_matches_controls')) {
     function football_stats_render_matches_controls(array $availableSeasons, array $availableMatchweeks, $selectedSeason, $selectedMatchweek, $tab, $league, $subtab)
     {
-        $leagueMap = [
-            'premier-league' => 'PL', 'championship' => 'ELC',
-            'league-one' => 'L1', 'league-two' => 'L2', 'national-league' => 'NL',
-        ];
-        if (isset($GLOBALS['db']) && $GLOBALS['db'] instanceof PDO) {
-            $competitionCode = $leagueMap[$league] ?? strtoupper((string)$league);
-            $lastPlayedMatchweek = football_stats_get_last_played_matchweek($GLOBALS['db'], $competitionCode, $selectedSeason);
-            $availableMatchweeks = football_stats_limit_matchweeks_to_last_played($availableMatchweeks, $lastPlayedMatchweek);
-        }
-
         $controlId = 'matches-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
         ?>
         <div class="table-view-switcher">
@@ -1174,8 +1134,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         $availableMatches = [];
 
         if (isset($GLOBALS['db']) && $GLOBALS['db'] instanceof PDO) {
-            $lastPlayedMatchweek = football_stats_get_last_played_matchweek($GLOBALS['db'], $competitionCode, $activeSeason);
-
             if (empty($availableDates)) {
                 $dStmt = $GLOBALS['db']->prepare('SELECT DISTINCT match_date FROM matches WHERE competition_code = ? AND season_label = ? AND match_date IS NOT NULL AND match_date != "" ORDER BY match_date DESC');
                 $dStmt->execute([$competitionCode, $activeSeason]);
@@ -1187,15 +1145,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 $mwStmt->execute([$competitionCode, $activeSeason]);
                 $availableMatchweeks = array_map('intval', $mwStmt->fetchAll(PDO::FETCH_COLUMN));
             }
-            $availableMatchweeks = football_stats_limit_matchweeks_to_last_played($availableMatchweeks, $lastPlayedMatchweek);
 
             $mQuery = 'SELECT id, matchweek, match_date, match_timestamp, home_team, away_team, home_goals, away_goals FROM matches WHERE competition_code = ? AND season_label = ?';
             $params = [$competitionCode, $activeSeason];
-
-            if ($lastPlayedMatchweek !== null) {
-                $mQuery .= ' AND matchweek <= ?';
-                $params[] = $lastPlayedMatchweek;
-            }
 
             if ($matchFilterMode === 'matchweek' && $selectedMatchweek !== null) {
                 $mQuery .= ' AND matchweek = ?';
@@ -1475,7 +1427,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         </option>
                         <?php
                         $activeMW = (int)($tableView['active_matchweek'] ?? 0);
-                        foreach ($availableMatchweeks as $mw):
+                        foreach ($tableView['available_matchweeks'] as $mw):
                             $mwUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
                                 'table_view' => 'snapshot',
                                 'matchweek' => $mw,
