@@ -29,10 +29,6 @@ if (!function_exists('football_stats_format_kickoff')) {
     }
 }
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-date_default_timezone_set('UTC');
-
 require_once __DIR__ . '/table-view-date-helper.php';
 
 /**
