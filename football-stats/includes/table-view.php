@@ -546,6 +546,36 @@ if (!function_exists('football_stats_get_table_view_by_date')) {
 /**
  * Fetch standings calculated precisely after a specific match ID
  */
+if (!function_exists('football_stats_get_match_roster')) {
+    /**
+     * Return every team participating in a competition season.
+     *
+     * Match-level tables must include clubs that have not played yet at the
+     * selected point in time. Otherwise an early fixture can produce a table
+     * containing only the clubs that happened to play first.
+     */
+    function football_stats_get_match_roster(PDO $db, $competitionCode, $seasonLabel)
+    {
+        $rosterStmt = $db->prepare(
+            'SELECT team_name FROM ('
+            . 'SELECT home_team AS team_name FROM matches WHERE competition_code = ? AND season_label = ? '
+            . 'UNION '
+            . 'SELECT away_team AS team_name FROM matches WHERE competition_code = ? AND season_label = ?'
+            . ') ORDER BY team_name ASC'
+        );
+        $rosterStmt->execute([$competitionCode, $seasonLabel, $competitionCode, $seasonLabel]);
+
+        return $rosterStmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+}
+
+if (!function_exists('football_stats_empty_team_stats')) {
+    function football_stats_empty_team_stats()
+    {
+        return ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
+    }
+}
+
 if (!function_exists('football_stats_get_table_view_by_match')) {
     function football_stats_get_table_view_by_match(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
     {
@@ -609,14 +639,17 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
             } catch (Exception $e) {}
 
             $stats = [];
+            foreach (football_stats_get_match_roster($db, $competitionCode, $requestedSeasonLabel) as $teamName) {
+                $stats[$teamName] = football_stats_empty_team_stats();
+            }
             foreach ($playedMatches as $m) {
                 $hg = (int)$m['home_goals'];
                 $ag = (int)$m['away_goals'];
                 $home = $m['home_team'];
                 $away = $m['away_team'];
 
-                if (!isset($stats[$home])) $stats[$home] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
-                if (!isset($stats[$away])) $stats[$away] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
+                if (!isset($stats[$home])) $stats[$home] = football_stats_empty_team_stats();
+                if (!isset($stats[$away])) $stats[$away] = football_stats_empty_team_stats();
 
                 $stats[$home]['p']++; $stats[$away]['p']++;
                 $stats[$home]['gf'] += $hg; $stats[$home]['ga'] += $ag;
@@ -746,14 +779,17 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
             } catch (Exception $e) {}
 
             $stats = [];
+            foreach (football_stats_get_match_roster($db, $competitionCode, $requestedSeasonLabel) as $teamName) {
+                $stats[$teamName] = football_stats_empty_team_stats();
+            }
             foreach ($playedMatches as $m) {
                 $hg = (int)$m['home_goals'];
                 $ag = (int)$m['away_goals'];
                 $home = $m['home_team'];
                 $away = $m['away_team'];
 
-                if (!isset($stats[$home])) $stats[$home] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
-                if (!isset($stats[$away])) $stats[$away] = ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
+                if (!isset($stats[$home])) $stats[$home] = football_stats_empty_team_stats();
+                if (!isset($stats[$away])) $stats[$away] = football_stats_empty_team_stats();
 
                 $stats[$home]['p']++; $stats[$away]['p']++;
                 $stats[$home]['gf'] += $hg; $stats[$home]['ga'] += $ag;
