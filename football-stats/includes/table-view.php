@@ -675,11 +675,14 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
     }
 }
 
-/** 
- * Fetch standings calculated precisely before a specific match ID 
+/**
+ * Fetch standings calculated precisely before a specific match ID.
+ *
+ * The optional override supports internal comparisons without changing the
+ * match selected in the request.
  */
 if (!function_exists('football_stats_get_table_view_by_match_before')) {
-    function football_stats_get_table_view_by_match_before(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
+    function football_stats_get_table_view_by_match_before(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel, $selectedMatchIdOverride = null)
     {
         $metadataStmt = $db->prepare('SELECT season_label FROM live_table_metadata WHERE competition_code = ?');
         $metadataStmt->execute([$competitionCode]);
@@ -696,7 +699,9 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
         $seasonsStmt->execute([$competitionCode]);
         $availableSeasons = $seasonsStmt->fetchAll(PDO::FETCH_COLUMN);
 
-        $selectedMatchId = isset($_GET['match_id']) ? (int)$_GET['match_id'] : null;
+        $selectedMatchId = $selectedMatchIdOverride !== null
+            ? (int)$selectedMatchIdOverride
+            : (isset($_GET['match_id']) ? (int)$_GET['match_id'] : null);
 
         $targetMatch = null;
         if ($selectedMatchId) {
@@ -892,6 +897,53 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 }
             }
             $tableView['movement_comparison_label'] = 'after this match';
+        } elseif ($calcMode === 'by_match_before' && !empty($tableView['target_match'])) {
+            // The table before this fixture includes the result of the fixture
+            // immediately preceding it. Compare both pre-match states so the
+            // arrows show the movement caused by that preceding result.
+            $targetMatch = $tableView['target_match'];
+            $targetKickoff = !empty($targetMatch['match_timestamp'])
+                ? $targetMatch['match_timestamp']
+                : $targetMatch['match_date'];
+            $previousMatchStmt = $db->prepare(
+                'SELECT id FROM matches '
+                . 'WHERE competition_code = ? AND season_label = ? '
+                . 'AND matchweek >= 1 AND matchweek <= ? '
+                . 'AND home_goals IS NOT NULL AND away_goals IS NOT NULL '
+                . 'AND ((COALESCE(NULLIF(match_timestamp, ""), match_date) < ?) '
+                . 'OR (COALESCE(NULLIF(match_timestamp, ""), match_date) = ? AND id < ?)) '
+                . 'ORDER BY COALESCE(NULLIF(match_timestamp, ""), match_date) DESC, id DESC LIMIT 1'
+            );
+            $previousMatchStmt->execute([
+                $competitionCode,
+                $seasonLabel,
+                football_stats_get_final_matchweek($competitionCode),
+                $targetKickoff,
+                $targetKickoff,
+                $targetMatch['id'],
+            ]);
+            $previousMatch = $previousMatchStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+            if ($previousMatch) {
+                $previousBeforeView = football_stats_get_table_view_by_match_before(
+                    $db,
+                    $competitionCode,
+                    $liveTableName,
+                    $fallbackSeasonLabel,
+                    (int)$previousMatch['id']
+                );
+                $previousPositions = [];
+                foreach ($previousBeforeView['standings'] as $previousTeam) {
+                    $previousPositions[$previousTeam['team_name']] = (int)$previousTeam['position'];
+                }
+                foreach ($tableView['standings'] as $team) {
+                    if (isset($previousPositions[$team['team_name']])) {
+                        $tableView['position_movements'][$team['team_name']] =
+                            $previousPositions[$team['team_name']] - (int)$team['position'];
+                    }
+                }
+                $tableView['movement_comparison_label'] = 'after the previous match';
+            }
         } elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
             $activeDate = (string)($tableView['active_date'] ?? '');
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
