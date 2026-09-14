@@ -192,7 +192,21 @@ if (!function_exists('football_stats_get_tracker_team')) {
 if (!function_exists('football_stats_render_team_selector')) {
     function football_stats_render_team_selector($standings, $selectedTeamName) {
         $baseParams = [];
-        foreach (['tab', 'league', 'subtab', 'table_view', 'snapshot_season', 'snapshot_date', 'matchweek', 'calc_mode'] as $key) {
+        // Keep the table snapshot intact when changing teams. In particular,
+        // match-level standings are empty without their selected match_id.
+        foreach ([
+            'tab',
+            'league',
+            'subtab',
+            'table_view',
+            'snapshot_season',
+            'snapshot_date',
+            'matchweek',
+            'calc_mode',
+            'match_filter_mode',
+            'match_id',
+            'table_filter',
+        ] as $key) {
             if (isset($_GET[$key]) && $_GET[$key] !== '') {
                 $baseParams[$key] = $_GET[$key];
             }
