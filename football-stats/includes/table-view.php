@@ -1606,7 +1606,11 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             var matchweek = this.value;
                             if (!matchweek) return;
                             boxes.forEach(function (box) {
+<<<<<<< HEAD
                                 if (box.dataset.matchweek === matchweek) box.checked = true;
+=======
+                                box.checked = box.dataset.matchweek === matchweek;
+>>>>>>> 759335181f32527acf1eb637de8f58716a6c148e
                             });
                             this.value = '';
                         });
