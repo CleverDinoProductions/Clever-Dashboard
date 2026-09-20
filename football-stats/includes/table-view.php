@@ -1580,6 +1580,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <label for="<?php echo $controlId; ?>-custom-matchweek-remove">Remove Matchweek</label>
+                            <select id="<?php echo $controlId; ?>-custom-matchweek-remove" data-matchweek-remove>
+                                <option value="">Choose a matchweek&hellip;</option>
+                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
+                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
+                                <?php endforeach; ?>
+                            </select>
                             <label for="<?php echo $controlId; ?>-custom-matchweek-only">Only Matchweek</label>
                             <select id="<?php echo $controlId; ?>-custom-matchweek-only" data-matchweek-only>
                                 <option value="">Choose a matchweek&hellip;</option>
@@ -1614,6 +1621,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             if (!matchweek) return;
                             boxes.forEach(function (box) {
                                 if (box.dataset.matchweek === matchweek) box.checked = true;
+                            });
+                            this.value = '';
+                        });
+                        panel.querySelector('[data-matchweek-remove]').addEventListener('change', function () {
+                            var matchweek = this.value;
+                            if (!matchweek) return;
+                            boxes.forEach(function (box) {
+                                if (box.dataset.matchweek === matchweek) box.checked = false;
                             });
                             this.value = '';
                         });
