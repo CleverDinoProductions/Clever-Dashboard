@@ -1573,8 +1573,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             <span>Tick matches to include in the calculation.</span>
                             <button type="button" data-match-select-all>Select all</button>
                             <button type="button" data-match-clear-all>Clear all</button>
-                            <label for="<?php echo $controlId; ?>-custom-matchweek">Select Matchweek</label>
-                            <select id="<?php echo $controlId; ?>-custom-matchweek" data-matchweek-select>
+                            <label for="<?php echo $controlId; ?>-custom-matchweek">Add Matchweek</label>
+                            <select id="<?php echo $controlId; ?>-custom-matchweek" data-matchweek-add>
+                                <option value="">Choose a matchweek&hellip;</option>
+                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
+                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <label for="<?php echo $controlId; ?>-custom-matchweek-only">Only Matchweek</label>
+                            <select id="<?php echo $controlId; ?>-custom-matchweek-only" data-matchweek-only>
                                 <option value="">Choose a matchweek&hellip;</option>
                                 <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
                                     <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
@@ -1602,15 +1609,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
                         panel.querySelector('[data-match-select-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = true; }); });
                         panel.querySelector('[data-match-clear-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = false; }); });
-                        panel.querySelector('[data-matchweek-select]').addEventListener('change', function () {
+                        panel.querySelector('[data-matchweek-add]').addEventListener('change', function () {
                             var matchweek = this.value;
                             if (!matchweek) return;
                             boxes.forEach(function (box) {
-<<<<<<< HEAD
                                 if (box.dataset.matchweek === matchweek) box.checked = true;
-=======
+                            });
+                            this.value = '';
+                        });
+                        panel.querySelector('[data-matchweek-only]').addEventListener('change', function () {
+                            var matchweek = this.value;
+                            if (!matchweek) return;
+                            boxes.forEach(function (box) {
                                 box.checked = box.dataset.matchweek === matchweek;
->>>>>>> 759335181f32527acf1eb637de8f58716a6c148e
                             });
                             this.value = '';
                         });
