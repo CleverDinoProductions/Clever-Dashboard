@@ -1007,6 +1007,35 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $tableView['movement_comparison_matchweek'] = (int)$previousMatchweek;
                 $tableView['movement_comparison_label'] = 'since matchweek ' . (int)$previousMatchweek;
             }
+        } elseif ($calcMode === 'custom_matches') {
+            // Show how each team's position changes when the unchecked matches
+            // are removed, using the complete played-match table as the baseline.
+            $completeStandings = football_stats_compute_custom_match_standings(
+                $db,
+                $competitionCode,
+                $seasonLabel,
+                $liveTableName,
+                []
+            );
+            $completeStandings = football_stats_apply_points_deductions(
+                $completeStandings,
+                $tableView['points_deductions']
+            );
+            $selectedStandings = football_stats_apply_points_deductions(
+                $tableView['standings'],
+                $tableView['points_deductions']
+            );
+            $completePositions = [];
+            foreach ($completeStandings as $completeTeam) {
+                $completePositions[$completeTeam['team_name']] = (int)$completeTeam['position'];
+            }
+            foreach ($selectedStandings as $team) {
+                if (isset($completePositions[$team['team_name']])) {
+                    $tableView['position_movements'][$team['team_name']] =
+                        $completePositions[$team['team_name']] - (int)$team['position'];
+                }
+            }
+            $tableView['movement_comparison_label'] = 'compared with all completed matches';
         } elseif ($calcMode === 'by_match' && !empty($tableView['target_match'])) {
             // For a specific-match snapshot, compare the table immediately
             // after that result with the table immediately before it.
