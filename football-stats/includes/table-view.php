@@ -1471,8 +1471,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-panel summary { padding: 12px 14px; color: #c7d2fe; font-weight: 700; cursor: pointer; }
             .custom-match-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 14px 12px; color: #b9bbbe; font-size: 12px; }
             .custom-match-toolbar button { padding: 7px 10px; border: 0; border-radius: 6px; background: #4f545c; color: #fff; cursor: pointer; }
-            .custom-match-toolbar select { padding: 7px 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; background: #2f3136; color: #fff; cursor: pointer; }
-            .custom-match-toolbar .custom-match-reset { background: #3ba55d; }
             .custom-match-toolbar .custom-match-apply { margin-left: auto; background: #5865f2; font-weight: 700; }
             .custom-match-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; max-height: 420px; overflow: auto; padding: 0 14px 14px; }
             .custom-match-option { display: flex; gap: 9px; align-items: flex-start; padding: 8px; border-radius: 6px; background: rgba(255,255,255,.035); color: #dcddde; font-size: 12px; cursor: pointer; }
@@ -1555,24 +1553,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 </div>
 
                 <?php if ($calcMode === 'custom_matches'): ?>
-                    <?php
-                    $excludedLookup = array_fill_keys(football_stats_get_excluded_match_ids(), true);
-                    $customMatchweeks = array_values(array_unique(array_map('intval', array_column($availableMatches, 'matchweek'))));
-                    sort($customMatchweeks, SORT_NUMERIC);
-                    ?>
+                    <?php $excludedLookup = array_fill_keys(football_stats_get_excluded_match_ids(), true); ?>
                     <details class="custom-match-panel" data-custom-match-panel>
                         <summary>Show / hide match selection</summary>
                         <div class="custom-match-toolbar">
                             <span>Tick matches to include in the calculation.</span>
                             <button type="button" data-match-select-all>Select all</button>
                             <button type="button" data-match-clear-all>Clear all</button>
-                            <select data-matchweek-select aria-label="Select matchweek">
-                                <option value="">Select Matchweek</option>
-                                <?php foreach ($customMatchweeks as $matchweek): ?>
-                                    <option value="<?php echo $matchweek; ?>">Matchweek <?php echo $matchweek; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
                             <button type="button" class="custom-match-apply" data-match-apply>Recalculate table</button>
                         </div>
                         <div class="custom-match-list">
@@ -1581,7 +1568,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 $matchId = (int)$match['id'];
                             ?>
                                 <label class="custom-match-option">
-                                    <input type="checkbox" value="<?php echo $matchId; ?>" data-matchweek="<?php echo (int)$match['matchweek']; ?>" <?php echo isset($excludedLookup[$matchId]) ? '' : 'checked'; ?>>
+                                    <input type="checkbox" value="<?php echo $matchId; ?>" <?php echo isset($excludedLookup[$matchId]) ? '' : 'checked'; ?>>
                                     <span><strong>MW<?php echo (int)$match['matchweek']; ?></strong> &middot; <?php echo htmlspecialchars("{$match['home_team']} {$match['home_goals']}-{$match['away_goals']} {$match['away_team']}", ENT_QUOTES, 'UTF-8'); ?></span>
                                 </label>
                             <?php endforeach; ?>
@@ -1592,27 +1579,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var panel = document.querySelector('[data-custom-match-panel]');
                         if (!panel) return;
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
-                        var navigateWithSelection = function () {
+                        panel.querySelector('[data-match-select-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = true; }); });
+                        panel.querySelector('[data-match-clear-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = false; }); });
+                        panel.querySelector('[data-match-apply]').addEventListener('click', function () {
                             var excluded = boxes.filter(function (box) { return !box.checked; }).map(function (box) { return box.value; });
                             var url = new URL(window.location.href);
                             if (excluded.length) url.searchParams.set('excluded_matches', excluded.join(','));
                             else url.searchParams.delete('excluded_matches');
                             window.location.assign(url.toString());
-                        };
-                        panel.querySelector('[data-match-select-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = true; }); });
-                        panel.querySelector('[data-match-clear-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = false; }); });
-                        panel.querySelector('[data-matchweek-select]').addEventListener('change', function () {
-                            var matchweek = this.value;
-                            if (!matchweek) return;
-                            boxes.forEach(function (box) { box.checked = box.dataset.matchweek === matchweek; });
                         });
-                        panel.querySelector('[data-match-reset]').addEventListener('click', function () {
-                            boxes.forEach(function (box) { box.checked = true; });
-                            var url = new URL(window.location.href);
-                            url.searchParams.delete('excluded_matches');
-                            window.location.assign(url.toString());
-                        });
-                        panel.querySelector('[data-match-apply]').addEventListener('click', navigateWithSelection);
                     }());
                     </script>
                 <?php elseif ($calcMode === 'by_match'): ?>
