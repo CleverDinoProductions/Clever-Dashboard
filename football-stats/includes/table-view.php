@@ -1537,9 +1537,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             By Specific Match (After)
                         </option>
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'excluded_matches' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
-                            Choose Matches
+                            By Custom Rules
                         </option>
-                        
                     </select>
                 </div>
 
