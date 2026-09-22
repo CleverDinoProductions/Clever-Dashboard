@@ -1678,6 +1678,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                             </select>
                                             <button type="button" data-matchweek-range-action="add">Add range</button>
                                             <button type="button" data-matchweek-range-action="remove">Remove range</button>
+                                            <button type="button" data-matchweek-range-action="only">Only range</button>
                                         </span>
                                     </div>
                                 </details>
@@ -1727,6 +1728,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             </div>
                             <div class="custom-match-toolbar-actions" style="margin-top:10px; margin-bottom:0;">
                                 <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
+                                <span data-match-selection-status aria-live="polite"></span>
                                 <button type="button" class="custom-match-apply" data-match-apply>Recalculate table</button>
                             </div>
                         </div>
@@ -1767,8 +1769,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var panel = document.querySelector('[data-custom-match-panel]');
                         if (!panel) return;
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
-                        panel.querySelector('[data-match-select-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = true; }); });
-                        panel.querySelector('[data-match-clear-all]').addEventListener('click', function () { boxes.forEach(function (box) { box.checked = false; }); });
+                        var selectionStatus = panel.querySelector('[data-match-selection-status]');
+                        function updateSelectionStatus() {
+                            var selected = boxes.filter(function (box) { return box.checked; }).length;
+                            selectionStatus.textContent = selected + ' of ' + boxes.length + ' team results selected';
+                        }
+                        panel.querySelector('[data-match-select-all]').addEventListener('click', function () {
+                            boxes.forEach(function (box) { box.checked = true; });
+                            updateSelectionStatus();
+                        });
+                        panel.querySelector('[data-match-clear-all]').addEventListener('click', function () {
+                            boxes.forEach(function (box) { box.checked = false; });
+                            updateSelectionStatus();
+                        });
                         panel.querySelector('[data-matchweek-add]').addEventListener('change', function () {
                             var matchweek = this.value;
                             if (!matchweek) return;
@@ -1776,6 +1789,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 if (box.dataset.matchweek === matchweek) box.checked = true;
                             });
                             this.value = '';
+                            updateSelectionStatus();
                         });
                         panel.querySelector('[data-matchweek-remove]').addEventListener('change', function () {
                             var matchweek = this.value;
@@ -1784,25 +1798,35 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 if (box.dataset.matchweek === matchweek) box.checked = false;
                             });
                             this.value = '';
+                            updateSelectionStatus();
                         });
                         panel.querySelector('[data-matchweek-only]').addEventListener('change', function () {
                             var matchweek = this.value;
                             if (!matchweek) return;
                             boxes.forEach(function (box) {
-                                box.checked = box.dataset.matchweek === matchweek;
+                                // Narrow the existing selection rather than replacing it. This
+                                // lets a matchweek constraint be stacked on team/result filters.
+                                if (box.dataset.matchweek !== matchweek) box.checked = false;
                             });
                             this.value = '';
+                            updateSelectionStatus();
                         });
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-matchweek-range-action]'), function (button) {
                             button.addEventListener('click', function () {
                                 var start = Number(panel.querySelector('[data-matchweek-range-start]').value);
                                 var end = Number(panel.querySelector('[data-matchweek-range-end]').value);
                                 if (start > end) { var swap = start; start = end; end = swap; }
-                                var include = this.dataset.matchweekRangeAction === 'add';
+                                var action = this.dataset.matchweekRangeAction;
                                 boxes.forEach(function (box) {
                                     var week = Number(box.dataset.matchweek);
-                                    if (week >= start && week <= end) box.checked = include;
+                                    var inRange = week >= start && week <= end;
+                                    if (action === 'add' && inRange) box.checked = true;
+                                    if (action === 'remove' && inRange) box.checked = false;
+                                    // As with "Only Matchweek", retain exclusions already made
+                                    // inside the range so independently chosen filters compose.
+                                    if (action === 'only' && !inRange) box.checked = false;
                                 });
+                                updateSelectionStatus();
                             });
                         });
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-team-rule]'), function (select) {
@@ -1830,6 +1854,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     if (matchesRule) box.checked = include;
                                 });
                                 this.value = '';
+                                updateSelectionStatus();
                             });
                         });
                         panel.querySelector('[data-match-reset]').addEventListener('click', function () {
@@ -1839,6 +1864,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             url.searchParams.delete('excluded_results');
                             window.location.assign(url.toString());
                         });
+                        boxes.forEach(function (box) {
+                            box.addEventListener('change', updateSelectionStatus);
+                        });
+                        updateSelectionStatus();
                         panel.querySelector('[data-match-apply]').addEventListener('click', function () {
                             var excluded = boxes.filter(function (box) { return !box.checked; }).map(function (box) { return box.value; });
                             var url = new URL(window.location.href);
