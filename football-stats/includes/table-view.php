@@ -1608,6 +1608,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 'draw' => 'Draws',
                                 'loss' => 'Losses',
                                 'team' => 'Team',
+                                'home' => 'Home (Team A)',
+                                'home_win' => 'Home Wins (Team A)',
+                                'home_draw' => 'Home Draws (Team A)',
+                                'home_loss' => 'Home Losses (Team A)',
+                                'away' => 'Away (Team B)',
+                                'away_win' => 'Away Wins (Team B)',
+                                'away_draw' => 'Away Draws (Team B)',
+                                'away_loss' => 'Away Losses (Team B)',
                             ];
                             foreach (['add' => 'Add', 'remove' => 'Remove'] as $ruleAction => $ruleActionLabel):
                                 foreach ($customResultRules as $ruleResult => $ruleResultLabel):
@@ -1689,11 +1697,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     var isAllTeams = team === '__all__';
                                     var isHomeTeam = box.dataset.homeTeam === team;
                                     var isAwayTeam = box.dataset.awayTeam === team;
-                                    var matchesResult = result === 'team'
-                                        || (isHomeTeam && box.dataset.homeResult === result)
-                                        || (isAwayTeam && box.dataset.awayResult === result)
-                                        || (isAllTeams && (box.dataset.homeResult === result || box.dataset.awayResult === result));
-                                    if ((isAllTeams || isHomeTeam || isAwayTeam) && matchesResult) box.checked = include;
+                                    var ruleParts = result.split('_');
+                                    var ruleSide = ruleParts[0];
+                                    var sideResult = ruleParts[1] || '';
+                                    var matchesRule = (result === 'team' && (isAllTeams || isHomeTeam || isAwayTeam))
+                                        || (result === 'home' && (isAllTeams || isHomeTeam))
+                                        || (result === 'away' && (isAllTeams || isAwayTeam))
+                                        || (ruleSide === 'home' && sideResult !== '' && (isAllTeams || isHomeTeam) && box.dataset.homeResult === sideResult)
+                                        || (ruleSide === 'away' && sideResult !== '' && (isAllTeams || isAwayTeam) && box.dataset.awayResult === sideResult)
+                                        || (ruleParts.length === 1 && result !== 'team' && result !== 'home' && result !== 'away'
+                                            && ((isHomeTeam && box.dataset.homeResult === result)
+                                                || (isAwayTeam && box.dataset.awayResult === result)
+                                                || (isAllTeams && (box.dataset.homeResult === result || box.dataset.awayResult === result))));
+                                    if (matchesRule) box.checked = include;
                                 });
                                 this.value = '';
                             });
