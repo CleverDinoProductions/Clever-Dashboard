@@ -509,18 +509,43 @@ tr {
 .panel {
     padding-top: 10px !important;
 }
-/* Position change shown beside rankings while viewing historic table snapshots. */
+/* Responsive position-change column shown while viewing historic table snapshots. */
+.movement-column {
+    box-sizing: border-box;
+    width: clamp(58px, 7vw, 92px);
+    min-width: clamp(58px, 7vw, 92px);
+    padding-inline: clamp(4px, 0.8vw, 10px) !important;
+    text-align: center;
+    font-size: clamp(9px, 0.85vw, 13px);
+}
+
 .position-movement {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
-    margin-left: 5px;
-    font-size: 11px;
+    justify-content: center;
+    gap: clamp(2px, 0.35vw, 5px);
+    font-size: clamp(10px, 0.9vw, 14px);
     font-weight: 700;
     line-height: 1;
-    vertical-align: middle;
+    white-space: nowrap;
 }
 
 .position-movement-up { color: #43b581; }
 .position-movement-down { color: #f04747; }
+.position-movement-arrow { font-size: 0.9em; }
 .position-movement-count { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 600px) {
+    .movement-column {
+        width: 54px;
+        min-width: 54px;
+        padding-inline: 3px !important;
+        font-size: 8px;
+    }
+
+    .position-movement {
+        flex-direction: column;
+        gap: 1px;
+        font-size: 9px;
+    }
+}
