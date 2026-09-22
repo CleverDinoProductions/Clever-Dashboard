@@ -121,6 +121,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
     
     <table>
         <tr>
+            <th class="movement-column" scope="col">Movement</th>
             <th title="Position">Pos</th>
             <th title="Team">Team</th>
             <th title="Played">P</th>
@@ -175,7 +176,8 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             $show_common = ($team['team_name'] !== $info['common_name']);
         ?>
         <tr <?= $row_attribute ?>>
-            <td><strong><?= $team['position'] ?></strong><?php if ($table_filter === 'all') football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
+            <td class="movement-column"><?php if ($table_filter === 'all') football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
+            <td><strong><?= $team['position'] ?></strong></td>
             <td>
                 <div class="team-cell">
                     <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
