@@ -1469,12 +1469,21 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .historic-league-slider small, .historic-slider-empty { color: #8e9297; font-size: 11px; }
             .custom-match-panel { flex: 1 1 100%; border: 1px solid rgba(88, 101, 242, 0.35); border-radius: 8px; background: #25272b; }
             .custom-match-panel summary { padding: 12px 14px; color: #c7d2fe; font-weight: 700; cursor: pointer; }
-            .custom-match-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 14px 12px; color: #b9bbbe; font-size: 12px; }
+            .custom-match-toolbar { padding: 0 14px 12px; color: #b9bbbe; font-size: 12px; }
+            .custom-match-toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
             .custom-match-toolbar button { padding: 7px 10px; border: 0; border-radius: 6px; background: #4f545c; color: #fff; cursor: pointer; }
             .custom-match-toolbar label { font-weight: 700; color: #dcddde; }
             .custom-match-toolbar select { padding: 7px 28px 7px 9px; border: 1px solid #4f545c; border-radius: 6px; background: #1e1f22; color: #fff; cursor: pointer; }
+            .custom-match-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+            .custom-match-section { min-width: 0; border: 1px solid rgba(255,255,255,.09); border-radius: 7px; background: rgba(255,255,255,.025); }
+            .custom-match-section[open] { border-color: rgba(88,101,242,.4); background: rgba(88,101,242,.06); }
+            .custom-match-section summary { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; color: #dcddde; font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; }
+            .custom-match-section summary::after { content: '+'; color: #8e9297; font-size: 17px; line-height: 1; }
+            .custom-match-section[open] summary::after { content: '\2212'; }
+            .custom-match-section-controls { display: flex; flex-direction: column; gap: 7px; padding: 0 9px 9px; }
             .custom-match-rule { display: inline-flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.035); }
-            .custom-match-rule label { white-space: nowrap; }
+            .custom-match-rule label { flex: 1; white-space: nowrap; }
+            .custom-match-rule select { min-width: 0; max-width: 145px; }
             .custom-match-toolbar .custom-match-reset { background: #3a3c41; }
             .custom-match-toolbar .custom-match-apply { margin-left: auto; background: #5865f2; font-weight: 700; }
             .custom-match-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; max-height: 420px; overflow: auto; padding: 0 14px 14px; }
@@ -1578,30 +1587,11 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <details class="custom-match-panel" data-custom-match-panel>
                         <summary>Show / hide match selection</summary>
                         <div class="custom-match-toolbar">
-                            <span>Tick matches to include in the calculation.</span>
-                            <button type="button" data-match-select-all>Select all</button>
-                            <button type="button" data-match-clear-all>Clear all</button>
-                            <label for="<?php echo $controlId; ?>-custom-matchweek">Add Matchweek</label>
-                            <select id="<?php echo $controlId; ?>-custom-matchweek" data-matchweek-add>
-                                <option value="">Choose a matchweek&hellip;</option>
-                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
-                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <label for="<?php echo $controlId; ?>-custom-matchweek-remove">Remove Matchweek</label>
-                            <select id="<?php echo $controlId; ?>-custom-matchweek-remove" data-matchweek-remove>
-                                <option value="">Choose a matchweek&hellip;</option>
-                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
-                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <label for="<?php echo $controlId; ?>-custom-matchweek-only">Only Matchweek</label>
-                            <select id="<?php echo $controlId; ?>-custom-matchweek-only" data-matchweek-only>
-                                <option value="">Choose a matchweek&hellip;</option>
-                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
-                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <div class="custom-match-toolbar-actions">
+                                <span>Tick matches to include in the calculation.</span>
+                                <button type="button" data-match-select-all>Select all</button>
+                                <button type="button" data-match-clear-all>Clear all</button>
+                            </div>
                             <?php
                             $customResultRules = [
                                 'win' => 'Wins',
@@ -1617,14 +1607,61 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 'away_draw' => 'Away Draws (Team B)',
                                 'away_loss' => 'Away Losses (Team B)',
                             ];
-                            foreach (['add' => 'Add', 'remove' => 'Remove'] as $ruleAction => $ruleActionLabel):
-                                foreach ($customResultRules as $ruleResult => $ruleResultLabel):
-                                    $ruleControlId = $controlId . '-custom-' . $ruleAction . '-' . $ruleResult;
+                            $customRuleSections = [
+                                'Team' => ['win', 'draw', 'loss', 'team'],
+                                'Home' => ['home', 'home_win', 'home_draw', 'home_loss'],
+                                'Away' => ['away', 'away_win', 'away_draw', 'away_loss'],
+                            ];
+                            ?>
+                            <div class="custom-match-sections">
+                                <details class="custom-match-section">
+                                    <summary>Matchweek</summary>
+                                    <div class="custom-match-section-controls">
+                                        <?php foreach (['add' => 'Add Matchweek', 'remove' => 'Remove Matchweek', 'only' => 'Only Matchweek'] as $matchweekAction => $matchweekLabel): ?>
+                                            <span class="custom-match-rule">
+                                                <label for="<?php echo $controlId; ?>-custom-matchweek-<?php echo $matchweekAction; ?>"><?php echo $matchweekLabel; ?></label>
+                                                <select id="<?php echo $controlId; ?>-custom-matchweek-<?php echo $matchweekAction; ?>" data-matchweek-<?php echo $matchweekAction; ?>>
+                                                    <option value="">Choose&hellip;</option>
+                                                    <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
+                                                        <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </details>
+                                <?php foreach ($customRuleSections as $sectionLabel => $sectionRules): ?>
+                                <details class="custom-match-section">
+                                    <summary><?php echo $sectionLabel; ?></summary>
+                                    <div class="custom-match-section-controls">
+                                    <?php foreach ($sectionRules as $ruleResult):
+                                        $ruleResultLabel = $customResultRules[$ruleResult];
+                                        $ruleControlId = $controlId . '-custom-add-' . $ruleResult;
+                                    ?>
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $ruleControlId; ?>">Add <?php echo $ruleResultLabel; ?></label>
+                                            <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="add" data-rule-result="<?php echo $ruleResult; ?>">
+                                                <option value="">Choose&hellip;</option>
+                                                <option value="__all__">All teams</option>
+                                                <?php foreach ($customRuleTeams as $customRuleTeam): ?>
+                                                    <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </span>
+                                    <?php endforeach; ?>
+                                    </div>
+                                </details>
+                                <?php endforeach; ?>
+                                <details class="custom-match-section">
+                                    <summary>Remove</summary>
+                                    <div class="custom-match-section-controls">
+                            <?php foreach ($customResultRules as $ruleResult => $ruleResultLabel):
+                                    $ruleControlId = $controlId . '-custom-remove-' . $ruleResult;
                             ?>
                                 <span class="custom-match-rule">
-                                    <label for="<?php echo $ruleControlId; ?>"><?php echo $ruleActionLabel . ' ' . $ruleResultLabel; ?></label>
-                                    <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="<?php echo $ruleAction; ?>" data-rule-result="<?php echo $ruleResult; ?>">
-                                        <option value="">Choose a team&hellip;</option>
+                                    <label for="<?php echo $ruleControlId; ?>">Remove <?php echo $ruleResultLabel; ?></label>
+                                    <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="remove" data-rule-result="<?php echo $ruleResult; ?>">
+                                        <option value="">Choose&hellip;</option>
                                         <option value="__all__">All teams</option>
                                         <?php foreach ($customRuleTeams as $customRuleTeam): ?>
                                             <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
@@ -1632,11 +1669,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     </select>
                                 </span>
                             <?php
-                                endforeach;
                             endforeach;
                             ?>
-                            <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
-                            <button type="button" class="custom-match-apply" data-match-apply>Recalculate table</button>
+                                    </div>
+                                </details>
+                            </div>
+                            <div class="custom-match-toolbar-actions" style="margin-top:10px; margin-bottom:0;">
+                                <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
+                                <button type="button" class="custom-match-apply" data-match-apply>Recalculate table</button>
+                            </div>
                         </div>
                         <div class="custom-match-list">
                             <?php foreach ($availableMatches as $match):
