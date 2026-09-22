@@ -1473,6 +1473,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-toolbar button { padding: 7px 10px; border: 0; border-radius: 6px; background: #4f545c; color: #fff; cursor: pointer; }
             .custom-match-toolbar label { font-weight: 700; color: #dcddde; }
             .custom-match-toolbar select { padding: 7px 28px 7px 9px; border: 1px solid #4f545c; border-radius: 6px; background: #1e1f22; color: #fff; cursor: pointer; }
+            .custom-match-rule { display: inline-flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.035); }
+            .custom-match-rule label { white-space: nowrap; }
             .custom-match-toolbar .custom-match-reset { background: #3a3c41; }
             .custom-match-toolbar .custom-match-apply { margin-left: auto; background: #5865f2; font-weight: 700; }
             .custom-match-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; max-height: 420px; overflow: auto; padding: 0 14px 14px; }
@@ -1565,6 +1567,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     }
                     $completedMatchweeks = array_keys($completedMatchweeks);
                     sort($completedMatchweeks, SORT_NUMERIC);
+                    $customRuleTeams = [];
+                    foreach ($availableMatches as $availableMatch) {
+                        $customRuleTeams[$availableMatch['home_team']] = true;
+                        $customRuleTeams[$availableMatch['away_team']] = true;
+                    }
+                    $customRuleTeams = array_keys($customRuleTeams);
+                    natcasesort($customRuleTeams);
                     ?>
                     <details class="custom-match-panel" data-custom-match-panel>
                         <summary>Show / hide match selection</summary>
@@ -1593,6 +1602,30 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <?php
+                            $customResultRules = [
+                                'win' => 'Wins',
+                                'draw' => 'Draws',
+                                'loss' => 'Losses',
+                                'team' => 'Team',
+                            ];
+                            foreach (['add' => 'Add', 'remove' => 'Remove'] as $ruleAction => $ruleActionLabel):
+                                foreach ($customResultRules as $ruleResult => $ruleResultLabel):
+                                    $ruleControlId = $controlId . '-custom-' . $ruleAction . '-' . $ruleResult;
+                            ?>
+                                <span class="custom-match-rule">
+                                    <label for="<?php echo $ruleControlId; ?>"><?php echo $ruleActionLabel . ' ' . $ruleResultLabel; ?></label>
+                                    <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="<?php echo $ruleAction; ?>" data-rule-result="<?php echo $ruleResult; ?>">
+                                        <option value="">Choose a team&hellip;</option>
+                                        <?php foreach ($customRuleTeams as $customRuleTeam): ?>
+                                            <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </span>
+                            <?php
+                                endforeach;
+                            endforeach;
+                            ?>
                             <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
                             <button type="button" class="custom-match-apply" data-match-apply>Recalculate table</button>
                         </div>
@@ -1602,7 +1635,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 $matchId = (int)$match['id'];
                             ?>
                                 <label class="custom-match-option">
-                                    <input type="checkbox" value="<?php echo $matchId; ?>" data-matchweek="<?php echo (int)$match['matchweek']; ?>" <?php echo isset($excludedLookup[$matchId]) ? '' : 'checked'; ?>>
+                                    <?php
+                                    $homeGoals = (int)$match['home_goals'];
+                                    $awayGoals = (int)$match['away_goals'];
+                                    $homeResult = $homeGoals === $awayGoals ? 'draw' : ($homeGoals > $awayGoals ? 'win' : 'loss');
+                                    $awayResult = $homeGoals === $awayGoals ? 'draw' : ($awayGoals > $homeGoals ? 'win' : 'loss');
+                                    ?>
+                                    <input type="checkbox" value="<?php echo $matchId; ?>" data-matchweek="<?php echo (int)$match['matchweek']; ?>" data-home-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-away-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-home-result="<?php echo $homeResult; ?>" data-away-result="<?php echo $awayResult; ?>" <?php echo isset($excludedLookup[$matchId]) ? '' : 'checked'; ?>>
                                     <span><strong>MW<?php echo (int)$match['matchweek']; ?></strong> &middot; <?php echo htmlspecialchars("{$match['home_team']} {$match['home_goals']}-{$match['away_goals']} {$match['away_team']}", ENT_QUOTES, 'UTF-8'); ?></span>
                                 </label>
                             <?php endforeach; ?>
@@ -1638,6 +1677,23 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 box.checked = box.dataset.matchweek === matchweek;
                             });
                             this.value = '';
+                        });
+                        Array.prototype.forEach.call(panel.querySelectorAll('[data-team-rule]'), function (select) {
+                            select.addEventListener('change', function () {
+                                var team = this.value;
+                                var result = this.dataset.ruleResult;
+                                var include = this.dataset.ruleAction === 'add';
+                                if (!team) return;
+                                boxes.forEach(function (box) {
+                                    var isHomeTeam = box.dataset.homeTeam === team;
+                                    var isAwayTeam = box.dataset.awayTeam === team;
+                                    var matchesResult = result === 'team'
+                                        || (isHomeTeam && box.dataset.homeResult === result)
+                                        || (isAwayTeam && box.dataset.awayResult === result);
+                                    if ((isHomeTeam || isAwayTeam) && matchesResult) box.checked = include;
+                                });
+                                this.value = '';
+                            });
                         });
                         panel.querySelector('[data-match-reset]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
