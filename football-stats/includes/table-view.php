@@ -1617,6 +1617,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     <label for="<?php echo $ruleControlId; ?>"><?php echo $ruleActionLabel . ' ' . $ruleResultLabel; ?></label>
                                     <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="<?php echo $ruleAction; ?>" data-rule-result="<?php echo $ruleResult; ?>">
                                         <option value="">Choose a team&hellip;</option>
+                                        <option value="__all__">All teams</option>
                                         <?php foreach ($customRuleTeams as $customRuleTeam): ?>
                                             <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
                                         <?php endforeach; ?>
@@ -1685,12 +1686,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var include = this.dataset.ruleAction === 'add';
                                 if (!team) return;
                                 boxes.forEach(function (box) {
+                                    var isAllTeams = team === '__all__';
                                     var isHomeTeam = box.dataset.homeTeam === team;
                                     var isAwayTeam = box.dataset.awayTeam === team;
                                     var matchesResult = result === 'team'
                                         || (isHomeTeam && box.dataset.homeResult === result)
-                                        || (isAwayTeam && box.dataset.awayResult === result);
-                                    if ((isHomeTeam || isAwayTeam) && matchesResult) box.checked = include;
+                                        || (isAwayTeam && box.dataset.awayResult === result)
+                                        || (isAllTeams && (box.dataset.homeResult === result || box.dataset.awayResult === result));
+                                    if ((isAllTeams || isHomeTeam || isAwayTeam) && matchesResult) box.checked = include;
                                 });
                                 this.value = '';
                             });
