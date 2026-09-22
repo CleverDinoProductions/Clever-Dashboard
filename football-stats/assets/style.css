@@ -512,11 +512,12 @@ tr {
 /* Responsive position-change column shown while viewing historic table snapshots. */
 .movement-column {
     box-sizing: border-box;
-    width: clamp(58px, 7vw, 92px);
-    min-width: clamp(58px, 7vw, 92px);
+    width: 1%;
+    min-width: 0;
     padding-inline: clamp(4px, 0.8vw, 10px) !important;
     text-align: center;
     font-size: clamp(9px, 0.85vw, 13px);
+    white-space: nowrap;
 }
 
 .position-movement {
