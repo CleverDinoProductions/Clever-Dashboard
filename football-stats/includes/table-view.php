@@ -1191,7 +1191,7 @@ if (!function_exists('football_stats_render_position_movement')) {
         ?>
         <span class="position-movement <?= $wentUp ? 'position-movement-up' : 'position-movement-down' ?>"
               title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
-              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><span class="position-movement-arrow" aria-hidden="true"><?= $wentUp ? '&#9650;' : '&#9660;' ?></span><span class="position-movement-text"><?= $wentUp ? 'Up' : 'Down' ?> <span class="position-movement-count"><?= $places ?></span></span></span>
+              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><span class="position-movement-arrow" aria-hidden="true"><?= $wentUp ? '&#9650;' : '&#9660;' ?></span><span class="position-movement-text"><span class="position-movement-count"><?= $label ?> </span></span></span>
         <?php
         return;
     }
