@@ -222,6 +222,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'table_view',
             'excluded_matches',
             'excluded_results',
+            'outcome_overrides',
         ];
         
         foreach ($persistentKeys as $key) {
@@ -882,9 +883,45 @@ if (!function_exists('football_stats_get_excluded_result_keys')) {
     }
 }
 
+/**
+ * Return valid custom outcome changes as [match id => home|draw|away].
+ *
+ * The compact query-string format is "42-h,57-d,61-a". Invalid and duplicate
+ * entries are ignored (with the last valid value for a match taking priority).
+ */
+if (!function_exists('football_stats_get_outcome_overrides')) {
+    function football_stats_get_outcome_overrides()
+    {
+        $overrides = [];
+        $outcomeMap = ['h' => 'home', 'd' => 'draw', 'a' => 'away'];
+        foreach (explode(',', (string)($_GET['outcome_overrides'] ?? '')) as $entry) {
+            if (!preg_match('/^([1-9][0-9]*)-([hda])$/', $entry, $matches)) continue;
+            $overrides[(int)$matches[1]] = $outcomeMap[$matches[2]];
+        }
+        ksort($overrides, SORT_NUMERIC);
+        return $overrides;
+    }
+}
+
+/** Change a score with the fewest added goals needed to produce an outcome. */
+if (!function_exists('football_stats_apply_outcome_override')) {
+    function football_stats_apply_outcome_override($homeGoals, $awayGoals, $outcome)
+    {
+        $homeGoals = (int)$homeGoals;
+        $awayGoals = (int)$awayGoals;
+        if ($outcome === 'draw') {
+            $levelScore = max($homeGoals, $awayGoals);
+            return [$levelScore, $levelScore];
+        }
+        if ($outcome === 'home' && $homeGoals <= $awayGoals) return [$awayGoals + 1, $awayGoals];
+        if ($outcome === 'away' && $awayGoals <= $homeGoals) return [$homeGoals, $homeGoals + 1];
+        return [$homeGoals, $awayGoals];
+    }
+}
+
 /** Calculate a league table from completed regular-season matches chosen by the user. */
 if (!function_exists('football_stats_compute_custom_match_standings')) {
-    function football_stats_compute_custom_match_standings(PDO $db, $competitionCode, $seasonLabel, $liveTableName, array $excludedResults)
+    function football_stats_compute_custom_match_standings(PDO $db, $competitionCode, $seasonLabel, $liveTableName, array $excludedResults, array $outcomeOverrides = [])
     {
         $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
         $stmt = $db->prepare(
@@ -910,6 +947,13 @@ if (!function_exists('football_stats_compute_custom_match_standings')) {
             $away = $match['away_team'];
             $homeGoals = (int)$match['home_goals'];
             $awayGoals = (int)$match['away_goals'];
+            if (isset($outcomeOverrides[$matchId])) {
+                [$homeGoals, $awayGoals] = football_stats_apply_outcome_override(
+                    $homeGoals,
+                    $awayGoals,
+                    $outcomeOverrides[$matchId]
+                );
+            }
             if (!isset($stats[$home])) $stats[$home] = football_stats_empty_team_stats();
             if (!isset($stats[$away])) $stats[$away] = football_stats_empty_team_stats();
             if ($includeHome) {
@@ -971,15 +1015,18 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $tableView = football_stats_get_table_view($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
             $seasonLabel = (string)($tableView['active_season_label'] ?? $fallbackSeasonLabel);
             $excludedIds = football_stats_get_excluded_result_keys();
+            $outcomeOverrides = football_stats_get_outcome_overrides();
             $tableView['standings'] = football_stats_compute_custom_match_standings(
                 $db,
                 $competitionCode,
                 $seasonLabel,
                 $liveTableName,
-                $excludedIds
+                $excludedIds,
+                $outcomeOverrides
             );
             $tableView['is_snapshot_view'] = true;
             $tableView['excluded_match_ids'] = $excludedIds;
+            $tableView['outcome_overrides'] = $outcomeOverrides;
         } elseif ($calcMode === 'by_match') {
             $tableView = football_stats_get_table_view_by_match($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
         } elseif ($calcMode === 'by_match_before') {
@@ -1523,6 +1570,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-option { display: flex; gap: 9px; align-items: flex-start; padding: 8px; border-radius: 6px; background: rgba(255,255,255,.035); color: #dcddde; font-size: 12px; cursor: pointer; }
             .custom-match-option input { margin-top: 2px; accent-color: #5865f2; }
             .custom-match-result { display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
+            .custom-match-outcome { margin-left: auto; padding: 5px 7px; border: 1px solid #4f545c; border-radius: 6px; background: #1e1f22; color: #fff; }
             .custom-match-range { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         </style>
 
@@ -1547,7 +1595,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     }
                     $excludedCount = count(array_intersect($availableResultKeys, football_stats_get_excluded_result_keys()));
                     ?>
+                    <?php $alteredOutcomeCount = count(football_stats_get_outcome_overrides()); ?>
                     <span><?php echo (count($availableMatches) * 2) - $excludedCount; ?> of <?php echo count($availableMatches) * 2; ?> team results included</span>
+                    <span><?php echo $alteredOutcomeCount; ?> match outcome<?php echo $alteredOutcomeCount === 1 ? '' : 's'; ?> altered</span>
                 <?php endif; ?>
                 <?php if ($calcMode === 'by_matchweek'): ?>
                     <span>Matchweek <?php echo (int)($tableView['active_matchweek'] ?? 0); ?><?php if ($summaryDate): ?> <strong style="color:#00ff88; font-size:12px;">[<?php echo htmlspecialchars($summaryDate); ?>]</strong><?php endif; ?></span>
@@ -1586,7 +1636,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_match'])); ?>" <?php echo ($calcMode === 'by_match') ? 'selected="selected"' : ''; ?>>
                             By Specific Match (After)
                         </option>
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'excluded_matches' => null, 'excluded_results' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
                             By Custom Rules
                         </option>
                     </select>
@@ -1597,7 +1647,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
                     <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
                         <?php foreach ($tableView['available_seasons'] as $season): ?>
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season, 'excluded_matches' => null, 'excluded_results' => null])); ?>" <?php echo ((string)$season === $activeSeason) ? 'selected="selected"' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season, 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null])); ?>" <?php echo ((string)$season === $activeSeason) ? 'selected="selected"' : ''; ?>>
                                 Season <?php echo htmlspecialchars($season); ?>
                             </option>
                         <?php endforeach; ?>
@@ -1607,6 +1657,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <?php if ($calcMode === 'custom_matches'): ?>
                     <?php
                     $excludedLookup = array_fill_keys(football_stats_get_excluded_result_keys(), true);
+                    $outcomeOverrides = football_stats_get_outcome_overrides();
                     $completedMatchweeks = [];
                     foreach ($availableMatches as $availableMatch) {
                         if ($availableMatch['home_goals'] !== null && $availableMatch['away_goals'] !== null) {
@@ -1627,7 +1678,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         <summary>Show / hide match selection</summary>
                         <div class="custom-match-toolbar">
                             <div class="custom-match-toolbar-actions">
-                                <span>Tick matches to include in the calculation.</span>
+                                <span>Choose which team results count, then optionally change a fixture's outcome for a what-if table.</span>
                                 <button type="button" data-match-select-all>Select all</button>
                                 <button type="button" data-match-clear-all>Clear all</button>
                             </div>
@@ -1752,11 +1803,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     $awayGoals = (int)$match['away_goals'];
                                     $homeResult = $homeGoals === $awayGoals ? 'draw' : ($homeGoals > $awayGoals ? 'win' : 'loss');
                                     $awayResult = $homeGoals === $awayGoals ? 'draw' : ($awayGoals > $homeGoals ? 'win' : 'loss');
+                                    $actualOutcome = $homeGoals === $awayGoals ? 'draw' : ($homeGoals > $awayGoals ? 'home' : 'away');
+                                    $selectedOutcome = $outcomeOverrides[$matchId] ?? 'actual';
                                     ?>
                                     <div class="custom-match-option">
                                         <span><?php echo htmlspecialchars("{$match['home_team']} {$match['home_goals']}-{$match['away_goals']} {$match['away_team']}", ENT_QUOTES, 'UTF-8'); ?></span>
                                         <label class="custom-match-result"><input type="checkbox" value="h<?php echo $matchId; ?>" data-result-side="home" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $homeResult; ?>" <?php echo isset($excludedLookup['h' . $matchId]) ? '' : 'checked'; ?>> Team A</label>
                                         <label class="custom-match-result"><input type="checkbox" value="a<?php echo $matchId; ?>" data-result-side="away" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $awayResult; ?>" <?php echo isset($excludedLookup['a' . $matchId]) ? '' : 'checked'; ?>> Team B</label>
+                                        <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" aria-label="What-if outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <option value="actual"<?php echo $selectedOutcome === 'actual' ? ' selected' : ''; ?>>Actual: <?php echo ucfirst($actualOutcome); ?></option>
+                                            <option value="home"<?php echo $selectedOutcome === 'home' ? ' selected' : ''; ?>>Team A wins</option>
+                                            <option value="draw"<?php echo $selectedOutcome === 'draw' ? ' selected' : ''; ?>>Draw</option>
+                                            <option value="away"<?php echo $selectedOutcome === 'away' ? ' selected' : ''; ?>>Team B wins</option>
+                                        </select>
                                     </div>
                                 <?php endforeach; ?>
                                 </div>
@@ -1769,10 +1828,12 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var panel = document.querySelector('[data-custom-match-panel]');
                         if (!panel) return;
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
+                        var outcomeSelects = Array.prototype.slice.call(panel.querySelectorAll('[data-outcome-match]'));
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
                         function updateSelectionStatus() {
                             var selected = boxes.filter(function (box) { return box.checked; }).length;
-                            selectionStatus.textContent = selected + ' of ' + boxes.length + ' team results selected';
+                            var altered = outcomeSelects.filter(function (select) { return select.value !== 'actual'; }).length;
+                            selectionStatus.textContent = selected + ' of ' + boxes.length + ' team results selected; ' + altered + ' outcomes altered';
                         }
                         panel.querySelector('[data-match-select-all]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
@@ -1859,13 +1920,18 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         });
                         panel.querySelector('[data-match-reset]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
+                            outcomeSelects.forEach(function (select) { select.value = 'actual'; });
                             var url = new URL(window.location.href);
                             url.searchParams.delete('excluded_matches');
                             url.searchParams.delete('excluded_results');
+                            url.searchParams.delete('outcome_overrides');
                             window.location.assign(url.toString());
                         });
                         boxes.forEach(function (box) {
                             box.addEventListener('change', updateSelectionStatus);
+                        });
+                        outcomeSelects.forEach(function (select) {
+                            select.addEventListener('change', updateSelectionStatus);
                         });
                         updateSelectionStatus();
                         panel.querySelector('[data-match-apply]').addEventListener('click', function () {
@@ -1874,6 +1940,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             url.searchParams.delete('excluded_matches');
                             if (excluded.length) url.searchParams.set('excluded_results', excluded.join(','));
                             else url.searchParams.delete('excluded_results');
+                            var outcomeCodes = { home: 'h', draw: 'd', away: 'a' };
+                            var overrides = outcomeSelects.filter(function (select) {
+                                return select.value !== 'actual';
+                            }).map(function (select) {
+                                return select.dataset.outcomeMatch + '-' + outcomeCodes[select.value];
+                            });
+                            if (overrides.length) url.searchParams.set('outcome_overrides', overrides.join(','));
+                            else url.searchParams.delete('outcome_overrides');
                             window.location.assign(url.toString());
                         });
                     }());
