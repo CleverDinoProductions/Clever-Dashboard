@@ -1046,13 +1046,13 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             ? football_stats_get_points_deductions($db, $competitionCode, $seasonLabel)
             : [];
 
-        // A matchweek snapshot is most useful when it also explains how the
-        // table changed. Compare it with the closest earlier archived week
-        // (rather than assuming snapshots exist for every matchweek).
+        // A table view is most useful when it also explains how the table
+        // changed. Compare it with the closest earlier archived period
+        // (rather than assuming snapshots exist for every week or date).
         $tableView['position_movements'] = [];
         $tableView['movement_comparison_matchweek'] = null;
         $tableView['movement_comparison_season_label'] = null;
-        if ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view'])) {
+        if ($calcMode === 'by_matchweek' && !empty($tableView['active_matchweek'])) {
             $activeMatchweek = (int)($tableView['active_matchweek'] ?? 0);
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
 
@@ -1180,7 +1180,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 }
                 $tableView['movement_comparison_label'] = 'after the previous match';
             }
-        } elseif ($calcMode === 'by_date' && empty($tableView['is_snapshot_view'])) {
+        } elseif ($calcMode === 'by_date' && !empty($tableView['active_date'])) {
             $activeDate = (string)($tableView['active_date'] ?? '');
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
 
@@ -1210,6 +1210,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                     }
                 }
                 $tableView['movement_comparison_matchweek'] = $previousDate;
+                $tableView['movement_comparison_label'] = 'since ' . $previousDate;
             }
         }
         return $tableView;
