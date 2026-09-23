@@ -579,6 +579,69 @@ if (!function_exists('football_stats_empty_team_stats')) {
     }
 }
 
+if (!function_exists('football_stats_resolve_selected_match')) {
+    /**
+     * Resolve the selected fixture, keeping it inside the active match filter.
+     *
+     * Filter controls intentionally preserve the rest of the table state. When
+     * that includes a match from the old filter, however, the browser displays
+     * the first option in the new list while the table is still calculated for
+     * the stale match ID. Pick the first fixture in the requested matchweek or
+     * date in that case so the selector and calculated table stay in sync.
+     */
+    function football_stats_resolve_selected_match(PDO $db, $competitionCode, $seasonLabel, $selectedMatchId)
+    {
+        $conditions = [
+            'competition_code = ?',
+            'season_label = ?',
+            'matchweek >= 1',
+            'matchweek <= ?',
+        ];
+        $params = [
+            $competitionCode,
+            $seasonLabel,
+            football_stats_get_final_matchweek($competitionCode),
+        ];
+
+        $hasFilter = false;
+        $filterMode = $_GET['match_filter_mode'] ?? 'matchweek';
+        if ($filterMode === 'date' && !empty($_GET['snapshot_date'])) {
+            $conditions[] = 'match_date = ?';
+            $params[] = (string)$_GET['snapshot_date'];
+            $hasFilter = true;
+        } elseif ($filterMode === 'matchweek' && isset($_GET['matchweek']) && $_GET['matchweek'] !== '') {
+            $conditions[] = 'matchweek = ?';
+            $params[] = (int)$_GET['matchweek'];
+            $hasFilter = true;
+        }
+
+        if ($selectedMatchId) {
+            $selectedConditions = $conditions;
+            $selectedConditions[] = 'id = ?';
+            $selectedParams = $params;
+            $selectedParams[] = (int)$selectedMatchId;
+            $stmt = $db->prepare('SELECT * FROM matches WHERE ' . implode(' AND ', $selectedConditions));
+            $stmt->execute($selectedParams);
+            $match = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            if ($match || !$hasFilter) {
+                return $match;
+            }
+        }
+
+        if (!$hasFilter) {
+            return null;
+        }
+
+        $stmt = $db->prepare(
+            'SELECT * FROM matches WHERE ' . implode(' AND ', $conditions)
+            . ' ORDER BY COALESCE(NULLIF(match_timestamp, ""), match_date) ASC, id ASC LIMIT 1'
+        );
+        $stmt->execute($params);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+}
+
 if (!function_exists('football_stats_get_table_view_by_match')) {
     function football_stats_get_table_view_by_match(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
     {
@@ -599,13 +662,13 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
 
         $selectedMatchId = isset($_GET['match_id']) ? (int)$_GET['match_id'] : null;
 
-        $targetMatch = null;
-        if ($selectedMatchId) {
-            $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
-            $mStmt = $db->prepare('SELECT * FROM matches WHERE id = ? AND competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ?');
-            $mStmt->execute([$selectedMatchId, $competitionCode, $requestedSeasonLabel, $finalMatchweek]);
-            $targetMatch = $mStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-        }
+        $targetMatch = football_stats_resolve_selected_match(
+            $db,
+            $competitionCode,
+            $requestedSeasonLabel,
+            $selectedMatchId
+        );
+        $selectedMatchId = $targetMatch ? (int)$targetMatch['id'] : $selectedMatchId;
 
         $standings = [];
         if ($targetMatch) {
@@ -739,13 +802,29 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
             ? (int)$selectedMatchIdOverride
             : (isset($_GET['match_id']) ? (int)$_GET['match_id'] : null);
 
-        $targetMatch = null;
-        if ($selectedMatchId) {
-            $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
-            $mStmt = $db->prepare('SELECT * FROM matches WHERE id = ? AND competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ?');
-            $mStmt->execute([$selectedMatchId, $competitionCode, $requestedSeasonLabel, $finalMatchweek]);
+        if ($selectedMatchIdOverride !== null) {
+            // Internal movement comparisons deliberately step outside the
+            // currently selected matchweek/date filter.
+            $mStmt = $db->prepare(
+                'SELECT * FROM matches WHERE id = ? AND competition_code = ? AND season_label = ? '
+                . 'AND matchweek >= 1 AND matchweek <= ?'
+            );
+            $mStmt->execute([
+                $selectedMatchId,
+                $competitionCode,
+                $requestedSeasonLabel,
+                football_stats_get_final_matchweek($competitionCode),
+            ]);
             $targetMatch = $mStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } else {
+            $targetMatch = football_stats_resolve_selected_match(
+                $db,
+                $competitionCode,
+                $requestedSeasonLabel,
+                $selectedMatchId
+            );
         }
+        $selectedMatchId = $targetMatch ? (int)$targetMatch['id'] : $selectedMatchId;
 
         $standings = [];
         if ($targetMatch) {
@@ -1460,7 +1539,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         $matchFilterMode = $_GET['match_filter_mode'] ?? 'matchweek';
         $selectedMatchweek = isset($_GET['matchweek']) ? (int)$_GET['matchweek'] : null;
         $selectedDate = $_GET['snapshot_date'] ?? '';
-        $selectedMatchId = isset($_GET['match_id']) ? (int)$_GET['match_id'] : null;
+        $selectedMatchId = isset($tableView['selected_match_id'])
+            ? (int)$tableView['selected_match_id']
+            : (isset($_GET['match_id']) ? (int)$_GET['match_id'] : null);
         $isSnapshot = isset($_GET['table_view']) && $_GET['table_view'] === 'snapshot';
 
         $availableMatchweeks = $tableView['available_matchweeks'] ?? [];
