@@ -136,6 +136,47 @@ $filteredOptions = football_stats_get_movement_preference_options('by_matchweek'
 assert_same('Unfiltered calculation (default)', $filteredOptions['relevant']['label'] ?? null, 'Filtered tables should offer their relevant unfiltered baseline.');
 $customOptions = football_stats_get_movement_preference_options('custom_matches');
 assert_same(false, isset($customOptions['completed']), 'Custom rules should not duplicate its completed-matches default.');
+assert_same(
+    ['relevant', 'custom_outcomes', 'custom_selection', 'off'],
+    array_keys($customOptions),
+    'Custom rules should offer comparisons that isolate outcome changes and result selection.'
+);
+
+$_GET = ['movement_compare' => 'custom_outcomes'];
+$customOutcomeMovementView = football_stats_apply_movement_preference(
+    [
+        'custom_selected_original_standings' => [
+            ['team_name' => 'Beta', 'position' => 1],
+            ['team_name' => 'Alpha', 'position' => 2],
+        ],
+    ],
+    [
+        ['team_name' => 'Alpha', 'position' => 1],
+        ['team_name' => 'Beta', 'position' => 2],
+    ],
+    [],
+    false
+);
+assert_same(1, $customOutcomeMovementView['position_movements']['Alpha'] ?? null, 'Custom rules should isolate movement caused by outcome overrides.');
+assert_same('compared with the selected results at their original outcomes', $customOutcomeMovementView['movement_comparison_label'] ?? null, 'Custom outcome movement should describe its baseline.');
+
+$_GET = ['movement_compare' => 'custom_selection'];
+$customSelectionMovementView = football_stats_apply_movement_preference(
+    [
+        'custom_all_overridden_standings' => [
+            ['team_name' => 'Alpha', 'position' => 1],
+            ['team_name' => 'Beta', 'position' => 2],
+        ],
+    ],
+    [
+        ['team_name' => 'Beta', 'position' => 1],
+        ['team_name' => 'Alpha', 'position' => 2],
+    ],
+    [],
+    false
+);
+assert_same(1, $customSelectionMovementView['position_movements']['Beta'] ?? null, 'Custom rules should isolate movement caused by result selection.');
+assert_same('compared with all completed matches using the custom outcomes', $customSelectionMovementView['movement_comparison_label'] ?? null, 'Custom selection movement should describe its baseline.');
 $styleOptions = football_stats_get_movement_style_options();
 assert_same(['compact', 'badge', 'detailed'], array_keys($styleOptions), 'The movement column should offer all supported visual styles.');
 
