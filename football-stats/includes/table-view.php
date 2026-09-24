@@ -1643,6 +1643,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-rule { display: inline-flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.035); }
             .custom-match-rule label { flex: 1; white-space: nowrap; }
             .custom-match-rule select { min-width: 0; max-width: 145px; }
+            .custom-match-outcome-rule { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(110px, 1fr); gap: 6px; }
+            .custom-match-outcome-rule label { grid-column: 1 / -1; }
+            .custom-match-outcome-rule button { grid-column: 1 / -1; }
             .custom-match-toolbar .custom-match-reset { background: #3a3c41; }
             .custom-match-toolbar .custom-match-apply { margin-left: auto; background: #5865f2; font-weight: 700; }
             .custom-match-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; max-height: 420px; overflow: auto; padding: 0 14px 14px; }
@@ -1858,6 +1861,51 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             ?>
                                     </div>
                                 </details>
+                                <details class="custom-match-section">
+                                    <summary>Alter outcomes</summary>
+                                    <div class="custom-match-section-controls">
+                                        <span class="custom-match-rule custom-match-outcome-rule">
+                                            <label for="<?php echo $controlId; ?>-bulk-outcome">All fixtures</label>
+                                            <select id="<?php echo $controlId; ?>-bulk-outcome" data-bulk-outcome>
+                                                <option value="actual">Use actual outcomes</option>
+                                                <option value="home">Team A wins</option>
+                                                <option value="draw">Draws</option>
+                                                <option value="away">Team B wins</option>
+                                            </select>
+                                            <button type="button" data-bulk-outcome-apply="all">Apply to all</button>
+                                        </span>
+                                        <span class="custom-match-rule custom-match-outcome-rule">
+                                            <label for="<?php echo $controlId; ?>-bulk-outcome-matchweek">By matchweek</label>
+                                            <select id="<?php echo $controlId; ?>-bulk-outcome-matchweek" data-bulk-outcome-matchweek>
+                                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
+                                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <select data-bulk-matchweek-outcome aria-label="Outcome for selected matchweek">
+                                                <option value="actual">Use actual outcomes</option>
+                                                <option value="home">Team A wins</option>
+                                                <option value="draw">Draws</option>
+                                                <option value="away">Team B wins</option>
+                                            </select>
+                                            <button type="button" data-bulk-outcome-apply="matchweek">Apply to matchweek</button>
+                                        </span>
+                                        <span class="custom-match-rule custom-match-outcome-rule">
+                                            <label for="<?php echo $controlId; ?>-bulk-outcome-team">By team</label>
+                                            <select id="<?php echo $controlId; ?>-bulk-outcome-team" data-bulk-outcome-team>
+                                                <?php foreach ($customRuleTeams as $customRuleTeam): ?>
+                                                    <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <select data-bulk-team-outcome aria-label="Outcome for selected team">
+                                                <option value="actual">Use actual outcomes</option>
+                                                <option value="win">Team wins</option>
+                                                <option value="draw">Team draws</option>
+                                                <option value="loss">Team loses</option>
+                                            </select>
+                                            <button type="button" data-bulk-outcome-apply="team">Apply to team</button>
+                                        </span>
+                                    </div>
+                                </details>
                             </div>
                             <div class="custom-match-toolbar-actions" style="margin-top:10px; margin-bottom:0;">
                                 <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
@@ -1892,7 +1940,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                         <span><?php echo htmlspecialchars("{$match['home_team']} {$match['home_goals']}-{$match['away_goals']} {$match['away_team']}", ENT_QUOTES, 'UTF-8'); ?></span>
                                         <label class="custom-match-result"><input type="checkbox" value="h<?php echo $matchId; ?>" data-result-side="home" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $homeResult; ?>" <?php echo isset($excludedLookup['h' . $matchId]) ? '' : 'checked'; ?>> Team A</label>
                                         <label class="custom-match-result"><input type="checkbox" value="a<?php echo $matchId; ?>" data-result-side="away" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $awayResult; ?>" <?php echo isset($excludedLookup['a' . $matchId]) ? '' : 'checked'; ?>> Team B</label>
-                                        <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" aria-label="What-if outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" data-matchweek="<?php echo $matchweek; ?>" data-home-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-away-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" aria-label="What-if outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <option value="actual"<?php echo $selectedOutcome === 'actual' ? ' selected' : ''; ?>>Actual: <?php echo ucfirst($actualOutcome); ?></option>
                                             <option value="home"<?php echo $selectedOutcome === 'home' ? ' selected' : ''; ?>>Team A wins</option>
                                             <option value="draw"<?php echo $selectedOutcome === 'draw' ? ' selected' : ''; ?>>Draw</option>
@@ -2014,6 +2062,35 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         });
                         outcomeSelects.forEach(function (select) {
                             select.addEventListener('change', updateSelectionStatus);
+                        });
+                        Array.prototype.forEach.call(panel.querySelectorAll('[data-bulk-outcome-apply]'), function (button) {
+                            button.addEventListener('click', function () {
+                                var scope = this.dataset.bulkOutcomeApply;
+                                var matchweek = panel.querySelector('[data-bulk-outcome-matchweek]').value;
+                                var team = panel.querySelector('[data-bulk-outcome-team]').value;
+                                var outcome = scope === 'all'
+                                    ? panel.querySelector('[data-bulk-outcome]').value
+                                    : panel.querySelector(scope === 'matchweek' ? '[data-bulk-matchweek-outcome]' : '[data-bulk-team-outcome]').value;
+
+                                outcomeSelects.forEach(function (select) {
+                                    if (scope === 'matchweek' && select.dataset.matchweek !== matchweek) return;
+                                    if (scope === 'team') {
+                                        var isHomeTeam = select.dataset.homeTeam === team;
+                                        var isAwayTeam = select.dataset.awayTeam === team;
+                                        if (!isHomeTeam && !isAwayTeam) return;
+                                        if (outcome === 'actual' || outcome === 'draw') {
+                                            select.value = outcome;
+                                        } else if (outcome === 'win') {
+                                            select.value = isHomeTeam ? 'home' : 'away';
+                                        } else {
+                                            select.value = isHomeTeam ? 'away' : 'home';
+                                        }
+                                        return;
+                                    }
+                                    select.value = outcome;
+                                });
+                                updateSelectionStatus();
+                            });
                         });
                         updateSelectionStatus();
                         panel.querySelector('[data-match-apply]').addEventListener('click', function () {
