@@ -1403,6 +1403,62 @@ if (!function_exists('football_stats_apply_movement_preference')) {
     }
 }
 
+/** Describe movement choices in terms of the calculation currently on screen. */
+if (!function_exists('football_stats_get_movement_preference_options')) {
+    function football_stats_get_movement_preference_options($calcMode, $hasActiveFilter = false)
+    {
+        if ($hasActiveFilter) {
+            $defaultLabel = 'Unfiltered calculation (default)';
+            $defaultDescription = 'Compare this filtered table with the same calculation before the table filter is applied.';
+        } else {
+            $modeDefaults = [
+                'by_matchweek' => [
+                    'Previous matchweek (default)',
+                    'Show movement since the closest earlier archived matchweek.',
+                ],
+                'by_date' => [
+                    'Previous date (default)',
+                    'Show movement since the closest earlier date with archived standings.',
+                ],
+                'by_match_before' => [
+                    'Previous match (default)',
+                    'Show the movement caused by the fixture immediately before the selected match.',
+                ],
+                'by_match' => [
+                    'Before selected match (default)',
+                    'Show the movement caused by the selected match.',
+                ],
+                'custom_matches' => [
+                    'All completed matches (default)',
+                    'Compare the custom-rules table with standings from every completed match.',
+                ],
+            ];
+            [$defaultLabel, $defaultDescription] = $modeDefaults[$calcMode] ?? $modeDefaults['by_matchweek'];
+        }
+
+        $options = [
+            'relevant' => ['label' => $defaultLabel, 'description' => $defaultDescription],
+        ];
+        if (!$hasActiveFilter && $calcMode !== 'custom_matches') {
+            $options['completed'] = [
+                'label' => 'All completed matches',
+                'description' => 'Compare this table with the latest standings calculated from all completed fixtures.',
+            ];
+        } elseif ($hasActiveFilter) {
+            $options['completed'] = [
+                'label' => 'All completed matches',
+                'description' => 'Compare the filtered table with standings from all completed fixtures.',
+            ];
+        }
+        $options['off'] = [
+            'label' => 'Hide movement arrows',
+            'description' => 'Do not show position movement for this table.',
+        ];
+
+        return $options;
+    }
+}
+
 /**
  * Render appropriate controls
  */
@@ -2538,13 +2594,23 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
                 </span>
             <?php endif; ?>
         </div>
-        <div class="movement-comparison-toggle" role="group" aria-label="Movement arrow comparison">
-            <span>Movement arrows:</span>
-            <?php foreach ([
-                'relevant' => 'Relevant setting',
-                'completed' => 'Completed matches',
-                'off' => 'Off',
-            ] as $key => $label):
+        <?php
+        $calcMode = $_GET['calc_mode'] ?? 'by_matchweek';
+        $hasActiveFilter = $activeFilter !== 'all' && $activeFilter !== '';
+        $movementOptions = football_stats_get_movement_preference_options($calcMode, $hasActiveFilter);
+        // Custom rules already use completed matches as their default, so an
+        // old explicit value should resolve to that single, meaningful choice.
+        if (!isset($movementOptions[$movementPreference])) {
+            $movementPreference = 'relevant';
+        }
+        ?>
+        <details class="movement-comparison-panel">
+            <summary>
+                <span>Show / hide movement arrow preferences</span>
+                <small><?= htmlspecialchars($movementOptions[$movementPreference]['label'], ENT_QUOTES, 'UTF-8') ?></small>
+            </summary>
+            <div class="movement-comparison-options" role="group" aria-label="Movement arrow comparison">
+            <?php foreach ($movementOptions as $key => $option):
                 $params = $_GET;
                 if ($key === 'relevant') {
                     unset($params['movement_compare']);
@@ -2555,9 +2621,13 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
             ?>
                 <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
                    class="<?= $movementPreference === $key ? 'is-active' : '' ?>"
-                   aria-pressed="<?= $movementPreference === $key ? 'true' : 'false' ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
+                   aria-pressed="<?= $movementPreference === $key ? 'true' : 'false' ?>">
+                    <span><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <small><?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?></small>
+                </a>
             <?php endforeach; ?>
-        </div>
+            </div>
+        </details>
         <?php
     }
 }
