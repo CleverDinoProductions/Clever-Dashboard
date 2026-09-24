@@ -1329,9 +1329,11 @@ if (!function_exists('football_stats_render_position_movement')) {
 
         $wentUp = $movement > 0;
         $places = abs($movement);
-        $style = $tableView['movement_style'] ?? 'compact';
+        // Keep the original, descriptive movement treatment as the default;
+        // the shorter treatments are opt-in display preferences.
+        $style = $tableView['movement_style'] ?? 'detailed';
         if (!in_array($style, ['compact', 'badge', 'detailed'], true)) {
-            $style = 'compact';
+            $style = 'detailed';
         }
         $comparisonLabel = (string)($tableView['movement_comparison_label'] ?? 'since the previous match');
         $label = sprintf(
@@ -1344,7 +1346,7 @@ if (!function_exists('football_stats_render_position_movement')) {
         ?>
         <span class="position-movement position-movement-<?= htmlspecialchars($style, ENT_QUOTES, 'UTF-8') ?> <?= $wentUp ? 'position-movement-up' : 'position-movement-down' ?>"
               title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
-              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><span class="position-movement-arrow" aria-hidden="true"><?= $wentUp ? '&#9650;' : '&#9660;' ?></span><span class="position-movement-text" aria-hidden="true"><span class="position-movement-compact-count"><?= $places ?></span><span class="position-movement-detailed-label"><?= htmlspecialchars($wentUp ? 'Up' : 'Down', ENT_QUOTES, 'UTF-8') ?> <?= $places ?> <?= $places === 1 ? 'place' : 'places' ?></span></span></span>
+              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><span class="position-movement-arrow" aria-hidden="true"><?= $wentUp ? '&#9650;' : '&#9660;' ?></span><span class="position-movement-text" aria-hidden="true"><span class="position-movement-compact-count"><?= $places ?></span><span class="position-movement-detailed-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span></span></span>
         <?php
         return;
     }
@@ -1391,8 +1393,8 @@ if (!function_exists('football_stats_apply_movement_preference')) {
             $preference = 'relevant';
         }
         $tableView['movement_compare'] = $preference;
-        $style = $_GET['movement_style'] ?? 'compact';
-        $tableView['movement_style'] = in_array($style, ['compact', 'badge', 'detailed'], true) ? $style : 'compact';
+        $style = $_GET['movement_style'] ?? 'detailed';
+        $tableView['movement_style'] = in_array($style, ['detailed', 'compact', 'badge'], true) ? $style : 'detailed';
 
         if ($preference === 'off') {
             $tableView['position_movements'] = [];
@@ -1455,6 +1457,10 @@ if (!function_exists('football_stats_get_movement_style_options')) {
     function football_stats_get_movement_style_options()
     {
         return [
+            'detailed' => [
+                'label' => 'Classic',
+                'description' => 'Show the full movement wording and comparison used previously.',
+            ],
             'compact' => [
                 'label' => 'Compact arrows',
                 'description' => 'Show a clean arrow and the number of places moved.',
@@ -1462,10 +1468,6 @@ if (!function_exists('football_stats_get_movement_style_options')) {
             'badge' => [
                 'label' => 'Colour badges',
                 'description' => 'Place each arrow and count inside a coloured pill.',
-            ],
-            'detailed' => [
-                'label' => 'Detailed labels',
-                'description' => 'Spell out “Up” or “Down” and the number of places.',
             ],
         ];
     }
@@ -2647,10 +2649,10 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
         if (!in_array($movementPreference, ['relevant', 'completed', 'custom_outcomes', 'custom_selection', 'off'], true)) {
             $movementPreference = 'relevant';
         }
-        $movementStyle = $_GET['movement_style'] ?? 'compact';
+        $movementStyle = $_GET['movement_style'] ?? 'detailed';
         $movementStyles = football_stats_get_movement_style_options();
         if (!isset($movementStyles[$movementStyle])) {
-            $movementStyle = 'compact';
+            $movementStyle = 'detailed';
         }
 
         $baseParams = $_GET;
@@ -2692,45 +2694,53 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
                 <span>Show / hide movement arrow preferences</span>
                 <small><?= htmlspecialchars($movementOptions[$movementPreference]['label'], ENT_QUOTES, 'UTF-8') ?></small>
             </summary>
-            <form class="movement-preferences-form" method="get">
-            <?php foreach ($_GET as $name => $value):
-                if ($name === 'movement_compare' || $name === 'movement_style' || is_array($value)) {
-                    continue;
-                }
-            ?>
-                <input type="hidden" name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') ?>">
-            <?php endforeach; ?>
-            <input type="hidden" name="movement_compare" value="<?= htmlspecialchars($movementPreference, ENT_QUOTES, 'UTF-8') ?>">
-            <input type="hidden" name="movement_style" value="<?= htmlspecialchars($movementStyle, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="movement-preferences-form">
             <fieldset class="movement-preference-group">
                 <legend>Arrow comparison</legend>
                 <div class="movement-comparison-options" role="group" aria-label="Movement arrow comparison">
             <?php foreach ($movementOptions as $key => $option):
+                $params = $_GET;
+                if ($key === 'relevant') {
+                    unset($params['movement_compare']);
+                } else {
+                    $params['movement_compare'] = $key;
+                }
+                $url = '?' . http_build_query($params);
             ?>
-                <button type="submit" name="movement_compare" value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"
-                        class="movement-preference-button <?= $movementPreference === $key ? 'is-active' : '' ?>"
-                        aria-pressed="<?= $movementPreference === $key ? 'true' : 'false' ?>">
+                <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                   class="movement-preference-button <?= $movementPreference === $key ? 'is-active' : '' ?>"
+                   title="<?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?>"
+                   role="button"
+                   aria-pressed="<?= $movementPreference === $key ? 'true' : 'false' ?>">
                     <span><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                    <small><?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?></small>
-                </button>
+                </a>
             <?php endforeach; ?>
                 </div>
             </fieldset>
             <fieldset class="movement-preference-group">
                 <legend>Column style</legend>
                 <div class="movement-style-options" role="group" aria-label="Movement column style">
-                <?php foreach ($movementStyles as $key => $option): ?>
-                    <button type="submit" name="movement_style" value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>"
-                            class="movement-preference-button movement-style-button <?= $movementStyle === $key ? 'is-active' : '' ?>"
-                            aria-pressed="<?= $movementStyle === $key ? 'true' : 'false' ?>">
-                        <span class="movement-style-preview movement-style-preview-<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true">▲ 2</span>
+                <?php foreach ($movementStyles as $key => $option):
+                    $params = $_GET;
+                    if ($key === 'detailed') {
+                        unset($params['movement_style']);
+                    } else {
+                        $params['movement_style'] = $key;
+                    }
+                    $url = '?' . http_build_query($params);
+                ?>
+                    <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                       class="movement-preference-button movement-style-button <?= $movementStyle === $key ? 'is-active' : '' ?>"
+                       title="<?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?>"
+                       role="button"
+                       aria-pressed="<?= $movementStyle === $key ? 'true' : 'false' ?>">
+                        <span class="movement-style-preview movement-style-preview-<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"><?= $key === 'detailed' ? '▲ Up 2 places' : '▲ 2' ?></span>
                         <span><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                        <small><?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?></small>
-                    </button>
+                    </a>
                 <?php endforeach; ?>
                 </div>
             </fieldset>
-            </form>
+            </div>
         </details>
         <?php
     }

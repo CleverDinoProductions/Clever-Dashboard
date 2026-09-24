@@ -178,6 +178,18 @@ $customSelectionMovementView = football_stats_apply_movement_preference(
 assert_same(1, $customSelectionMovementView['position_movements']['Beta'] ?? null, 'Custom rules should isolate movement caused by result selection.');
 assert_same('compared with all completed matches using the custom outcomes', $customSelectionMovementView['movement_comparison_label'] ?? null, 'Custom selection movement should describe its baseline.');
 $styleOptions = football_stats_get_movement_style_options();
-assert_same(['compact', 'badge', 'detailed'], array_keys($styleOptions), 'The movement column should offer all supported visual styles.');
+assert_same(['detailed', 'compact', 'badge'], array_keys($styleOptions), 'The movement column should offer the classic display first, plus compact visual styles.');
+
+$_GET = [];
+$defaultStyleView = football_stats_apply_movement_preference(['position_movements' => []], [], []);
+assert_same('detailed', $defaultStyleView['movement_style'] ?? null, 'The original detailed movement display should remain the default.');
+
+$_GET = ['calc_mode' => 'by_date', 'movement_style' => 'compact'];
+ob_start();
+football_stats_render_table_filter_buttons('all', '2025-2026', 'premier-league', 'table');
+$preferenceMarkup = ob_get_clean();
+assert_same(true, strpos($preferenceMarkup, '>Classic</span>') !== false, 'The style controls should include the classic movement display.');
+assert_same(true, strpos($preferenceMarkup, 'movement_style=badge') !== false, 'Style links should offer the other compact treatment without losing the page query.');
+assert_same(true, strpos($preferenceMarkup, 'role="button"') !== false, 'Preference links should expose their button behaviour to assistive technology.');
 
 echo "Movement calculations passed.\n";
