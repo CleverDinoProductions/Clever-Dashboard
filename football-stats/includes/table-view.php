@@ -1325,6 +1325,38 @@ if (!function_exists('football_stats_render_position_movement')) {
 }
 
 /**
+ * Add movement data for a filtered table relative to its unfiltered baseline.
+ *
+ * Filtered tables are calculated independently, so their arrows cannot use the
+ * historic movement already attached to the main table view.  Comparing the
+ * two supplied tables keeps the meaning useful: an up arrow shows how much
+ * higher a team ranks under the active filter than it does across all relevant
+ * completed matches.
+ */
+if (!function_exists('football_stats_add_filtered_position_movements')) {
+    function football_stats_add_filtered_position_movements(array $tableView, array $filteredStandings, array $baselineStandings, $comparisonLabel = 'compared with all completed matches')
+    {
+        $baselinePositions = [];
+        foreach ($baselineStandings as $team) {
+            if (isset($team['team_name'], $team['position'])) {
+                $baselinePositions[$team['team_name']] = (int)$team['position'];
+            }
+        }
+
+        $tableView['position_movements'] = [];
+        foreach ($filteredStandings as $team) {
+            if (isset($team['team_name'], $team['position'], $baselinePositions[$team['team_name']])) {
+                $tableView['position_movements'][$team['team_name']] =
+                    $baselinePositions[$team['team_name']] - (int)$team['position'];
+            }
+        }
+        $tableView['movement_comparison_label'] = $comparisonLabel;
+
+        return $tableView;
+    }
+}
+
+/**
  * Render appropriate controls
  */
 if (!function_exists('football_stats_render_combined_table_controls')) {
