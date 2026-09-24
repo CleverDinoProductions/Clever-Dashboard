@@ -1118,6 +1118,17 @@ if (!function_exists('football_stats_get_table_view_combined')) {
 
         $tableView['calc_mode'] = $calcMode;
         $seasonLabel = (string)($tableView['active_season_label'] ?? $tableView['requested_season_label'] ?? '');
+        // Keep one canonical, completed-results table available to every view.
+        // Table filters are applied by the individual league templates, so
+        // movement arrows can use this as an alternative to the contextually
+        // relevant (unfiltered/previous-period) comparison.
+        $tableView['completed_standings'] = football_stats_compute_custom_match_standings(
+            $db,
+            $competitionCode,
+            $seasonLabel,
+            $liveTableName,
+            []
+        );
         $isHistoricTable = in_array($calcMode, ['by_date', 'custom_matches'], true)
             || (in_array($calcMode, ['by_match', 'by_match_before'], true) && !empty($tableView['target_match']))
             || ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view']));
@@ -1166,13 +1177,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         } elseif ($calcMode === 'custom_matches') {
             // Show how each team's position changes when the unchecked matches
             // are removed, using the complete played-match table as the baseline.
-            $completeStandings = football_stats_compute_custom_match_standings(
-                $db,
-                $competitionCode,
-                $seasonLabel,
-                $liveTableName,
-                []
-            );
+            $completeStandings = $tableView['completed_standings'];
             $completeStandings = football_stats_apply_points_deductions(
                 $completeStandings,
                 $tableView['points_deductions']
@@ -1351,6 +1356,48 @@ if (!function_exists('football_stats_add_filtered_position_movements')) {
             }
         }
         $tableView['movement_comparison_label'] = $comparisonLabel;
+
+        return $tableView;
+    }
+}
+
+/** Apply the user's movement-arrow comparison choice to the displayed table. */
+if (!function_exists('football_stats_apply_movement_preference')) {
+    function football_stats_apply_movement_preference(array $tableView, array $displayedStandings, array $relevantBaseline, $hasActiveFilter = false)
+    {
+        $preference = $_GET['movement_compare'] ?? 'relevant';
+        if (!in_array($preference, ['relevant', 'completed', 'off'], true)) {
+            $preference = 'relevant';
+        }
+        $tableView['movement_compare'] = $preference;
+
+        if ($preference === 'off') {
+            $tableView['position_movements'] = [];
+            $tableView['movement_comparison_label'] = '';
+            return $tableView;
+        }
+
+        if ($preference === 'completed') {
+            $baseline = $tableView['completed_standings'] ?? [];
+            if (!empty($tableView['points_deductions'])) {
+                $baseline = football_stats_apply_points_deductions($baseline, $tableView['points_deductions']);
+            }
+            return football_stats_add_filtered_position_movements(
+                $tableView,
+                $displayedStandings,
+                $baseline,
+                'compared with all completed matches'
+            );
+        }
+
+        if ($hasActiveFilter) {
+            return football_stats_add_filtered_position_movements(
+                $tableView,
+                $displayedStandings,
+                $relevantBaseline,
+                'compared with the unfiltered calculation'
+            );
+        }
 
         return $tableView;
     }
@@ -2462,6 +2509,10 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
             'home'        => 'Standings based on home matches only',
             'away'        => 'Standings based on away matches only',
         ];
+        $movementPreference = $_GET['movement_compare'] ?? 'relevant';
+        if (!in_array($movementPreference, ['relevant', 'completed', 'off'], true)) {
+            $movementPreference = 'relevant';
+        }
 
         $baseParams = $_GET;
         unset($baseParams['table_filter']);
@@ -2486,6 +2537,26 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
                     Filtered view &mdash; standings computed from match data
                 </span>
             <?php endif; ?>
+        </div>
+        <div class="movement-comparison-toggle" role="group" aria-label="Movement arrow comparison">
+            <span>Movement arrows:</span>
+            <?php foreach ([
+                'relevant' => 'Relevant setting',
+                'completed' => 'Completed matches',
+                'off' => 'Off',
+            ] as $key => $label):
+                $params = $_GET;
+                if ($key === 'relevant') {
+                    unset($params['movement_compare']);
+                } else {
+                    $params['movement_compare'] = $key;
+                }
+                $url = '?' . http_build_query($params);
+            ?>
+                <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
+                   class="<?= $movementPreference === $key ? 'is-active' : '' ?>"
+                   aria-pressed="<?= $movementPreference === $key ? 'true' : 'false' ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></a>
+            <?php endforeach; ?>
         </div>
         <?php
     }

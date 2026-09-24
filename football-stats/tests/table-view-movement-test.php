@@ -86,4 +86,39 @@ assert_same(1, $filteredView['position_movements']['Alpha'] ?? null, 'A filter s
 assert_same(-1, $filteredView['position_movements']['Beta'] ?? null, 'A filter should show how far a team falls relative to completed matches.');
 assert_same('compared with all completed matches', $filteredView['movement_comparison_label'] ?? null, 'Filtered movement should explain its baseline.');
 
+$_GET = ['movement_compare' => 'off'];
+$hiddenMovementView = football_stats_apply_movement_preference(
+    $filteredView,
+    [['team_name' => 'Alpha', 'position' => 1]],
+    [['team_name' => 'Alpha', 'position' => 2]],
+    true
+);
+assert_same([], $hiddenMovementView['position_movements'], 'The movement toggle should be able to hide arrows.');
+
+$_GET = ['movement_compare' => 'completed'];
+$completedMovementView = football_stats_apply_movement_preference(
+    ['completed_standings' => [
+        ['team_name' => 'Beta', 'position' => 1],
+        ['team_name' => 'Alpha', 'position' => 2],
+    ]],
+    [
+        ['team_name' => 'Alpha', 'position' => 1],
+        ['team_name' => 'Beta', 'position' => 2],
+    ],
+    [],
+    false
+);
+assert_same(1, $completedMovementView['position_movements']['Alpha'] ?? null, 'Completed-match comparison should work in every calculation mode.');
+assert_same('compared with all completed matches', $completedMovementView['movement_comparison_label'] ?? null, 'Completed-match movement should identify its baseline.');
+
+$_GET = [];
+$relevantMovementView = football_stats_apply_movement_preference(
+    [],
+    [['team_name' => 'Alpha', 'position' => 1]],
+    [['team_name' => 'Alpha', 'position' => 2]],
+    true
+);
+assert_same(1, $relevantMovementView['position_movements']['Alpha'] ?? null, 'Filtered relevant movement should compare with the unfiltered calculation.');
+assert_same('compared with the unfiltered calculation', $relevantMovementView['movement_comparison_label'] ?? null, 'Filtered relevant movement should describe its calculation baseline.');
+
 echo "Movement calculations passed.\n";

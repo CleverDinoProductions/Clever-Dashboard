@@ -31,9 +31,12 @@ if (!empty($tableView['points_deductions'])) {
     $standings = football_stats_apply_points_deductions($standings, $tableView['points_deductions']);
     $movementBaselineStandings = football_stats_apply_points_deductions($movementBaselineStandings, $tableView['points_deductions']);
 }
-if ($table_filter !== 'all' && !empty($filteredStandings)) {
-    $tableView = football_stats_add_filtered_position_movements($tableView, $standings, $movementBaselineStandings);
-}
+$tableView = football_stats_apply_movement_preference(
+    $tableView,
+    $standings,
+    $movementBaselineStandings,
+    $table_filter !== 'all' && !empty($filteredStandings)
+);
 
 require_once dirname(__DIR__, 3) . '/includes/team-info.php';
 $team_info = $team_info_L2;
