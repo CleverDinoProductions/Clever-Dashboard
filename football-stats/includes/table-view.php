@@ -1103,6 +1103,23 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $excludedIds,
                 $outcomeOverrides
             );
+            // Keep separate baselines so movement can explain either half of a
+            // custom calculation: changed outcomes or omitted team results.
+            $tableView['custom_selected_original_standings'] = football_stats_compute_custom_match_standings(
+                $db,
+                $competitionCode,
+                $seasonLabel,
+                $liveTableName,
+                $excludedIds
+            );
+            $tableView['custom_all_overridden_standings'] = football_stats_compute_custom_match_standings(
+                $db,
+                $competitionCode,
+                $seasonLabel,
+                $liveTableName,
+                [],
+                $outcomeOverrides
+            );
             $tableView['is_snapshot_view'] = true;
             $tableView['excluded_match_ids'] = $excludedIds;
             $tableView['outcome_overrides'] = $outcomeOverrides;
@@ -1370,7 +1387,7 @@ if (!function_exists('football_stats_apply_movement_preference')) {
     function football_stats_apply_movement_preference(array $tableView, array $displayedStandings, array $relevantBaseline, $hasActiveFilter = false)
     {
         $preference = $_GET['movement_compare'] ?? 'relevant';
-        if (!in_array($preference, ['relevant', 'completed', 'off'], true)) {
+        if (!in_array($preference, ['relevant', 'completed', 'custom_outcomes', 'custom_selection', 'off'], true)) {
             $preference = 'relevant';
         }
         $tableView['movement_compare'] = $preference;
@@ -1393,6 +1410,30 @@ if (!function_exists('football_stats_apply_movement_preference')) {
                 $displayedStandings,
                 $baseline,
                 'compared with all completed matches'
+            );
+        }
+
+        $customBaselines = [
+            'custom_outcomes' => [
+                'key' => 'custom_selected_original_standings',
+                'label' => 'compared with the selected results at their original outcomes',
+            ],
+            'custom_selection' => [
+                'key' => 'custom_all_overridden_standings',
+                'label' => 'compared with all completed matches using the custom outcomes',
+            ],
+        ];
+        if (isset($customBaselines[$preference])) {
+            $customBaseline = $customBaselines[$preference];
+            $baseline = $tableView[$customBaseline['key']] ?? [];
+            if (!empty($tableView['points_deductions'])) {
+                $baseline = football_stats_apply_points_deductions($baseline, $tableView['points_deductions']);
+            }
+            return football_stats_add_filtered_position_movements(
+                $tableView,
+                $displayedStandings,
+                $baseline,
+                $customBaseline['label']
             );
         }
 
@@ -1466,6 +1507,16 @@ if (!function_exists('football_stats_get_movement_preference_options')) {
         $options = [
             'relevant' => ['label' => $defaultLabel, 'description' => $defaultDescription],
         ];
+        if (!$hasActiveFilter && $calcMode === 'custom_matches') {
+            $options['custom_outcomes'] = [
+                'label' => 'Original outcomes for selection',
+                'description' => 'Show movement caused only by changing outcomes, while keeping the same selected team results.',
+            ];
+            $options['custom_selection'] = [
+                'label' => 'All matches with custom outcomes',
+                'description' => 'Show movement caused only by removing team results, while retaining your changed outcomes.',
+            ];
+        }
         if (!$hasActiveFilter && $calcMode !== 'custom_matches') {
             $options['completed'] = [
                 'label' => 'All completed matches',
@@ -2593,7 +2644,7 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
             'away'        => 'Standings based on away matches only',
         ];
         $movementPreference = $_GET['movement_compare'] ?? 'relevant';
-        if (!in_array($movementPreference, ['relevant', 'completed', 'off'], true)) {
+        if (!in_array($movementPreference, ['relevant', 'completed', 'custom_outcomes', 'custom_selection', 'off'], true)) {
             $movementPreference = 'relevant';
         }
         $movementStyle = $_GET['movement_style'] ?? 'compact';
@@ -2630,8 +2681,8 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
         $calcMode = $_GET['calc_mode'] ?? 'by_matchweek';
         $hasActiveFilter = $activeFilter !== 'all' && $activeFilter !== '';
         $movementOptions = football_stats_get_movement_preference_options($calcMode, $hasActiveFilter);
-        // Custom rules already use completed matches as their default, so an
-        // old explicit value should resolve to that single, meaningful choice.
+        // Preferences that do not apply to the current calculation resolve to
+        // its contextually relevant default.
         if (!isset($movementOptions[$movementPreference])) {
             $movementPreference = 'relevant';
         }
