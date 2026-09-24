@@ -95,7 +95,7 @@ $hiddenMovementView = football_stats_apply_movement_preference(
 );
 assert_same([], $hiddenMovementView['position_movements'], 'The movement toggle should be able to hide arrows.');
 
-$_GET = ['movement_compare' => 'completed'];
+$_GET = ['movement_compare' => 'completed', 'movement_style' => 'badge'];
 $completedMovementView = football_stats_apply_movement_preference(
     ['completed_standings' => [
         ['team_name' => 'Beta', 'position' => 1],
@@ -110,6 +110,13 @@ $completedMovementView = football_stats_apply_movement_preference(
 );
 assert_same(1, $completedMovementView['position_movements']['Alpha'] ?? null, 'Completed-match comparison should work in every calculation mode.');
 assert_same('compared with all completed matches', $completedMovementView['movement_comparison_label'] ?? null, 'Completed-match movement should identify its baseline.');
+assert_same('badge', $completedMovementView['movement_style'] ?? null, 'The selected movement column style should be retained.');
+
+ob_start();
+football_stats_render_position_movement($completedMovementView, 'Alpha');
+$badgeMarkup = ob_get_clean();
+assert_same(true, strpos($badgeMarkup, 'position-movement-badge') !== false, 'Movement markup should expose the selected style to CSS.');
+assert_same(true, strpos($badgeMarkup, 'aria-label="Up 1 place compared with all completed matches"') !== false, 'Compact visual styles should retain a detailed accessible label.');
 
 $_GET = [];
 $relevantMovementView = football_stats_apply_movement_preference(
@@ -129,5 +136,7 @@ $filteredOptions = football_stats_get_movement_preference_options('by_matchweek'
 assert_same('Unfiltered calculation (default)', $filteredOptions['relevant']['label'] ?? null, 'Filtered tables should offer their relevant unfiltered baseline.');
 $customOptions = football_stats_get_movement_preference_options('custom_matches');
 assert_same(false, isset($customOptions['completed']), 'Custom rules should not duplicate its completed-matches default.');
+$styleOptions = football_stats_get_movement_style_options();
+assert_same(['compact', 'badge', 'detailed'], array_keys($styleOptions), 'The movement column should offer all supported visual styles.');
 
 echo "Movement calculations passed.\n";
