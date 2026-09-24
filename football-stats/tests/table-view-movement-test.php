@@ -71,4 +71,19 @@ $afterFinalMatch = football_stats_get_table_view_combined($db, 'TEST', 'league_t
 assert_same(2, $afterFinalMatch['selected_match_id'] ?? null, 'By Match (After) should use the fixture shown by the final-matchweek filter.');
 assert_same(1, $afterFinalMatch['position_movements']['Alpha'] ?? null, 'By Match (After) should show movement caused by the final matchweek fixture.');
 
+$filteredView = football_stats_add_filtered_position_movements(
+    ['position_movements' => ['Alpha' => 99], 'movement_comparison_label' => 'old comparison'],
+    [
+        ['team_name' => 'Alpha', 'position' => 1],
+        ['team_name' => 'Beta', 'position' => 2],
+    ],
+    [
+        ['team_name' => 'Beta', 'position' => 1],
+        ['team_name' => 'Alpha', 'position' => 2],
+    ]
+);
+assert_same(1, $filteredView['position_movements']['Alpha'] ?? null, 'A filter should show how far a team rises relative to completed matches.');
+assert_same(-1, $filteredView['position_movements']['Beta'] ?? null, 'A filter should show how far a team falls relative to completed matches.');
+assert_same('compared with all completed matches', $filteredView['movement_comparison_label'] ?? null, 'Filtered movement should explain its baseline.');
+
 echo "Movement calculations passed.\n";

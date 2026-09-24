@@ -4,6 +4,7 @@ require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 $tableView = football_stats_get_table_view_combined($db, 'L2', 'league_table_L2', $currentMainTab ?? '2025-2026');
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
+$movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
 
 // League Two Settings
@@ -28,6 +29,10 @@ $homeStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_se
 $awayStandings = football_stats_compute_filtered_standings($db, 'L2', $_split_season, 'away', $halfway_games, 'league_table_L2', $max_regular_mw);
 if (!empty($tableView['points_deductions'])) {
     $standings = football_stats_apply_points_deductions($standings, $tableView['points_deductions']);
+    $movementBaselineStandings = football_stats_apply_points_deductions($movementBaselineStandings, $tableView['points_deductions']);
+}
+if ($table_filter !== 'all' && !empty($filteredStandings)) {
+    $tableView = football_stats_add_filtered_position_movements($tableView, $standings, $movementBaselineStandings);
 }
 
 require_once dirname(__DIR__, 3) . '/includes/team-info.php';
@@ -105,7 +110,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 $show_common = ($team['team_name'] !== $info['common_name']);
             ?>
             <tr style="<?= $row_style ?>">
-                <td class="movement-column"><?php if ($table_filter === 'all') football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
+                <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
                 <td style="color: <?= $pos_color ?>; font-weight: bold;"><?= $pos ?></td>
                 <td>
                     <div class="team-cell">
