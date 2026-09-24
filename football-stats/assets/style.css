@@ -548,52 +548,60 @@ tr {
 
 .movement-comparison-panel {
     margin: -5px 0 14px;
-    border: 1px solid rgba(88,101,242,.35);
-    border-radius: 8px;
-    background: #25272b;
-    font-size: 12px;
+    border: 1px solid #5865f2;
+    border-radius: 10px;
+    background: #202225;
+    box-shadow: 0 5px 18px rgba(0,0,0,.22);
+    font-size: 13px;
 }
 .movement-comparison-panel > summary {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    padding: 11px 14px;
-    color: #c7d2fe;
-    font-weight: 700;
+    padding: 13px 16px;
+    color: #fff;
+    background: #292b31;
+    border-radius: 9px;
+    font-weight: 800;
     cursor: pointer;
 }
-.movement-comparison-panel > summary small { color: #8e9297; font-weight: 600; text-align: right; }
-.movement-preferences-form { display: grid; gap: 12px; padding: 0 12px 12px; }
+.movement-comparison-panel[open] > summary { border-radius: 9px 9px 0 0; border-bottom: 1px solid #3b3f49; }
+.movement-comparison-panel > summary small { color: #b9c0ff; font-weight: 700; text-align: right; }
+.movement-preferences-form { display: grid; gap: 16px; padding: 16px; }
 .movement-preference-group { min-width: 0; margin: 0; padding: 0; border: 0; }
-.movement-preference-group legend { margin-bottom: 7px; color: #c7d2fe; font-weight: 800; }
+.movement-preference-group legend { margin-bottom: 9px; color: #fff; font-size: 14px; font-weight: 800; }
 .movement-comparison-options,
-.movement-style-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.movement-style-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 9px; }
 .movement-preference-button {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 7px 16px;
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 6px;
+    gap: 10px;
+    padding: 11px 13px;
+    border: 1px solid #4f545c;
+    border-radius: 8px;
     background: #2f3136;
-    color: #b9bbbe;
+    color: #f2f3f5;
     font-size: 13px;
     line-height: 1.4;
-    text-decoration: none;
     cursor: pointer;
 }
-.movement-preference-button:hover { background: #40444b; color: #fff; }
-.movement-preference-button:focus-visible { outline: 2px solid #7983f5; outline-offset: 2px; }
-.movement-preference-button > span:not(.movement-style-preview) { color: #dcddde; font-weight: 700; }
+.movement-preference-button:hover { border-color: #8b94ff; background: #393c43; color: #fff; }
+.movement-preference-button:focus-within { outline: 3px solid #9da4ff; outline-offset: 2px; }
+.movement-preference-button input { width: 17px; height: 17px; margin: 0; accent-color: #5865f2; flex: 0 0 auto; }
+.movement-preference-button > span:not(.movement-style-preview) { display: grid; gap: 2px; color: #fff; }
+.movement-preference-button small { color: #c7c9ce; font-size: 11px; font-weight: 500; }
 .movement-preference-button.is-active {
-    border-color: #5865f2;
-    background: #5865f2;
+    border-color: #7983f5;
+    background: #3d4380;
     color: #fff;
     box-shadow: 0 2px 8px rgba(88,101,242,.3);
 }
-.movement-preference-button.is-active > span:not(.movement-style-preview) { color: #fff; }
+.movement-preference-button.is-active small { color: #e3e5ff; }
 .movement-style-preview { color: #43b581; font-size: 12px; font-weight: 800; }
 .movement-style-preview-badge { padding: 3px 7px; border-radius: 999px; background: rgba(67,181,129,.16); }
+.movement-preferences-submit { justify-self: start; padding: 9px 16px; border: 1px solid #7983f5; border-radius: 7px; background: #5865f2; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.movement-preferences-submit:hover { background: #6875f5; }
+.movement-preferences-submit:focus-visible { outline: 3px solid #9da4ff; outline-offset: 2px; }
 
 @media (max-width: 600px) {
     .movement-column {

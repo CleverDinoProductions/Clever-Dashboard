@@ -1346,7 +1346,7 @@ if (!function_exists('football_stats_render_position_movement')) {
         ?>
         <span class="position-movement position-movement-<?= htmlspecialchars($style, ENT_QUOTES, 'UTF-8') ?> <?= $wentUp ? 'position-movement-up' : 'position-movement-down' ?>"
               title="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"
-              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><span class="position-movement-arrow" aria-hidden="true"><?= $wentUp ? '&#9650;' : '&#9660;' ?></span><span class="position-movement-text" aria-hidden="true"><span class="position-movement-compact-count"><?= $places ?></span><span class="position-movement-detailed-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span></span></span>
+              aria-label="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>"><span class="position-movement-arrow" aria-hidden="true"><?= $wentUp ? '&#9650;' : '&#9660;' ?></span><span class="position-movement-text" aria-hidden="true"><?php if ($style === 'detailed'): ?><span class="position-movement-detailed-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span><?php else: ?><span class="position-movement-compact-count"><?= $places ?></span><?php endif; ?></span></span>
         <?php
         return;
     }
@@ -2689,58 +2689,46 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
             $movementPreference = 'relevant';
         }
         ?>
+        <?php
+        $preferenceParams = $_GET;
+        unset($preferenceParams['movement_compare'], $preferenceParams['movement_style']);
+        ?>
         <details class="movement-comparison-panel">
             <summary>
                 <span>Show / hide movement arrow preferences</span>
                 <small><?= htmlspecialchars($movementOptions[$movementPreference]['label'], ENT_QUOTES, 'UTF-8') ?></small>
             </summary>
-            <div class="movement-preferences-form">
+            <form class="movement-preferences-form" method="get">
+            <?php foreach ($preferenceParams as $key => $value): ?>
+                <?php if (is_scalar($value)): ?>
+                    <input type="hidden" name="<?= htmlspecialchars((string)$key, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') ?>">
+                <?php endif; ?>
+            <?php endforeach; ?>
             <fieldset class="movement-preference-group">
                 <legend>Arrow comparison</legend>
-                <div class="movement-comparison-options" role="group" aria-label="Movement arrow comparison">
-            <?php foreach ($movementOptions as $key => $option):
-                $params = $_GET;
-                if ($key === 'relevant') {
-                    unset($params['movement_compare']);
-                } else {
-                    $params['movement_compare'] = $key;
-                }
-                $url = '?' . http_build_query($params);
-            ?>
-                <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
-                   class="movement-preference-button <?= $movementPreference === $key ? 'is-active' : '' ?>"
-                   title="<?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?>"
-                   role="button"
-                   aria-pressed="<?= $movementPreference === $key ? 'true' : 'false' ?>">
-                    <span><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                </a>
+                <div class="movement-comparison-options">
+            <?php foreach ($movementOptions as $key => $option): ?>
+                <label class="movement-preference-button <?= $movementPreference === $key ? 'is-active' : '' ?>">
+                    <input type="radio" name="movement_compare" value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" <?= $movementPreference === $key ? 'checked' : '' ?>>
+                    <span><strong><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?></small></span>
+                </label>
             <?php endforeach; ?>
                 </div>
             </fieldset>
             <fieldset class="movement-preference-group">
                 <legend>Column style</legend>
-                <div class="movement-style-options" role="group" aria-label="Movement column style">
-                <?php foreach ($movementStyles as $key => $option):
-                    $params = $_GET;
-                    if ($key === 'detailed') {
-                        unset($params['movement_style']);
-                    } else {
-                        $params['movement_style'] = $key;
-                    }
-                    $url = '?' . http_build_query($params);
-                ?>
-                    <a href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8') ?>"
-                       class="movement-preference-button movement-style-button <?= $movementStyle === $key ? 'is-active' : '' ?>"
-                       title="<?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?>"
-                       role="button"
-                       aria-pressed="<?= $movementStyle === $key ? 'true' : 'false' ?>">
+                <div class="movement-style-options">
+                <?php foreach ($movementStyles as $key => $option): ?>
+                    <label class="movement-preference-button movement-style-button <?= $movementStyle === $key ? 'is-active' : '' ?>">
+                        <input type="radio" name="movement_style" value="<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" <?= $movementStyle === $key ? 'checked' : '' ?>>
                         <span class="movement-style-preview movement-style-preview-<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"><?= $key === 'detailed' ? '▲ Up 2 places' : '▲ 2' ?></span>
-                        <span><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                    </a>
+                        <span><strong><?= htmlspecialchars($option['label'], ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars($option['description'], ENT_QUOTES, 'UTF-8') ?></small></span>
+                    </label>
                 <?php endforeach; ?>
                 </div>
             </fieldset>
-            </div>
+            <button class="movement-preferences-submit" type="submit">Apply movement preferences</button>
+            </form>
         </details>
         <?php
     }

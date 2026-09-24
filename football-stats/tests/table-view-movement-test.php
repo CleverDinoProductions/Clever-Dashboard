@@ -117,6 +117,7 @@ football_stats_render_position_movement($completedMovementView, 'Alpha');
 $badgeMarkup = ob_get_clean();
 assert_same(true, strpos($badgeMarkup, 'position-movement-badge') !== false, 'Movement markup should expose the selected style to CSS.');
 assert_same(true, strpos($badgeMarkup, 'aria-label="Up 1 place compared with all completed matches"') !== false, 'Compact visual styles should retain a detailed accessible label.');
+assert_same(1, substr_count($badgeMarkup, '>1<'), 'Compact movement markup should render its movement count once.');
 
 $_GET = [];
 $relevantMovementView = football_stats_apply_movement_preference(
@@ -188,8 +189,20 @@ $_GET = ['calc_mode' => 'by_date', 'movement_style' => 'compact'];
 ob_start();
 football_stats_render_table_filter_buttons('all', '2025-2026', 'premier-league', 'table');
 $preferenceMarkup = ob_get_clean();
-assert_same(true, strpos($preferenceMarkup, '>Classic</span>') !== false, 'The style controls should include the classic movement display.');
-assert_same(true, strpos($preferenceMarkup, 'movement_style=badge') !== false, 'Style links should offer the other compact treatment without losing the page query.');
-assert_same(true, strpos($preferenceMarkup, 'role="button"') !== false, 'Preference links should expose their button behaviour to assistive technology.');
+assert_same(true, strpos($preferenceMarkup, '>Classic</strong>') !== false, 'The style controls should include the classic movement display.');
+assert_same(true, strpos($preferenceMarkup, 'name="movement_style" value="badge"') !== false, 'Style controls should offer the badge treatment.');
+assert_same(true, strpos($preferenceMarkup, 'type="radio" name="movement_compare"') !== false, 'Comparison preferences should use native radio controls.');
+assert_same(true, strpos($preferenceMarkup, 'type="submit"') !== false, 'Movement preferences should provide an explicit apply control.');
+
+$_GET = [];
+ob_start();
+football_stats_render_position_movement([
+    'position_movements' => ['Alpha' => 3],
+    'movement_style' => 'detailed',
+    'movement_comparison_label' => 'since the previous match',
+], 'Alpha');
+$detailedMarkup = ob_get_clean();
+assert_same(true, strpos($detailedMarkup, '<span class="position-movement-detailed-label">Up 3 places since the previous match</span>') !== false, 'Detailed movement should render its full visible label.');
+assert_same(false, strpos($detailedMarkup, 'position-movement-compact-count') !== false, 'Detailed movement should not include the compact count before its label.');
 
 echo "Movement calculations passed.\n";
