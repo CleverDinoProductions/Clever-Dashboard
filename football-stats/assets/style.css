@@ -536,6 +536,30 @@ tr {
 .position-movement-arrow { font-size: 0.9em; }
 .position-movement-count { font-variant-numeric: tabular-nums; }
 
+.movement-comparison-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: -5px 0 14px;
+    color: #8e9297;
+    font-size: 12px;
+}
+.movement-comparison-toggle > span { margin-right: 2px; font-weight: 700; }
+.movement-comparison-toggle a {
+    padding: 5px 9px;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 999px;
+    background: #2f3136;
+    color: #b9bbbe;
+    text-decoration: none;
+}
+.movement-comparison-toggle a.is-active {
+    border-color: #5865f2;
+    background: rgba(88,101,242,.22);
+    color: #fff;
+}
+
 @media (max-width: 600px) {
     .movement-column {
         width: 54px;
