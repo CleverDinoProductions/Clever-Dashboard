@@ -982,6 +982,48 @@ if (!function_exists('football_stats_get_outcome_overrides')) {
     }
 }
 
+/** Build human-readable labels for the filters and outcomes used by custom rules. */
+if (!function_exists('football_stats_describe_custom_rules')) {
+    function football_stats_describe_custom_rules(array $matches, array $excludedResults, array $outcomeOverrides)
+    {
+        $excludedLookup = array_fill_keys($excludedResults, true);
+        $filters = [];
+        $outcomes = [];
+
+        foreach ($matches as $match) {
+            $matchId = (int)($match['id'] ?? 0);
+            if ($matchId < 1) continue;
+
+            $homeKey = 'h' . $matchId;
+            $awayKey = 'a' . $matchId;
+            $homeExcluded = isset($excludedLookup[$homeKey]);
+            $awayExcluded = isset($excludedLookup[$awayKey]);
+            $matchLabel = 'MW' . (int)($match['matchweek'] ?? 0) . ': '
+                . (string)($match['home_team'] ?? '') . ' '
+                . (string)($match['home_goals'] ?? '') . '-' . (string)($match['away_goals'] ?? '') . ' '
+                . (string)($match['away_team'] ?? '');
+
+            if ($homeExcluded && $awayExcluded) {
+                $filters[] = 'Exclude both team results from ' . $matchLabel;
+            } elseif ($homeExcluded) {
+                $filters[] = 'Exclude ' . (string)$match['home_team'] . "'s result from " . $matchLabel;
+            } elseif ($awayExcluded) {
+                $filters[] = 'Exclude ' . (string)$match['away_team'] . "'s result from " . $matchLabel;
+            }
+
+            if (isset($outcomeOverrides[$matchId])) {
+                $outcome = $outcomeOverrides[$matchId];
+                $outcomeLabel = $outcome === 'draw'
+                    ? 'Draw'
+                    : (string)($match[$outcome === 'home' ? 'home_team' : 'away_team'] ?? '') . ' wins';
+                $outcomes[] = $matchLabel . ' → ' . $outcomeLabel;
+            }
+        }
+
+        return ['filters' => $filters, 'outcomes' => $outcomes];
+    }
+}
+
 /** Change a score with the fewest added goals needed to produce an outcome. */
 if (!function_exists('football_stats_apply_outcome_override')) {
     function football_stats_apply_outcome_override($homeGoals, $awayGoals, $outcome)
@@ -1828,6 +1870,12 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .table-view-switcher { margin: 14px 0 16px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.03); }
             .table-view-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; color: #dcddde; font-size: 13px; }
             .table-view-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(88, 101, 242, 0.15); border: 1px solid rgba(88, 101, 242, 0.35); color: #c7d2fe; font-weight: 600; }
+            .custom-rules-applied { flex: 1 1 100%; display: grid; gap: 7px; padding: 10px 12px; border: 1px solid rgba(88,101,242,.28); border-radius: 8px; background: rgba(88,101,242,.07); }
+            .custom-rules-applied-heading { color: #c7d2fe; font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
+            .custom-rules-applied-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+            .custom-rules-applied-label { color: #b9bbbe; font-weight: 700; }
+            .custom-rules-applied-item { padding: 4px 7px; border-radius: 5px; background: rgba(255,255,255,.07); color: #dcddde; font-size: 12px; }
+            .custom-rules-applied-empty { color: #8e9297; font-size: 12px; }
             .table-view-actions { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
             .table-view-group { display: flex; flex-direction: column; gap: 4px; }
             .table-view-select { min-width: 180px; padding: 10px 12px; border-radius: 8px; background: #2f3136; border: 1px solid rgba(255, 255, 255, 0.08); color: #dcddde; font-size: 12px; font-weight: 600; cursor: pointer; }
@@ -1898,6 +1946,24 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <?php $alteredOutcomeCount = count(football_stats_get_outcome_overrides()); ?>
                     <span><?php echo (count($availableMatches) * 2) - $excludedCount; ?> of <?php echo count($availableMatches) * 2; ?> team results included</span>
                     <span><?php echo $alteredOutcomeCount; ?> match outcome<?php echo $alteredOutcomeCount === 1 ? '' : 's'; ?> altered</span>
+                    <?php $appliedCustomRules = football_stats_describe_custom_rules($availableMatches, football_stats_get_excluded_result_keys(), football_stats_get_outcome_overrides()); ?>
+                    <div class="custom-rules-applied" aria-label="Applied custom rules">
+                        <span class="custom-rules-applied-heading">Applied custom rules</span>
+                        <?php if (empty($appliedCustomRules['filters']) && empty($appliedCustomRules['outcomes'])): ?>
+                            <span class="custom-rules-applied-empty">No filters or altered outcomes are applied. All actual team results are included.</span>
+                        <?php else: ?>
+                            <?php if (!empty($appliedCustomRules['filters'])): ?>
+                                <span class="custom-rules-applied-group"><span class="custom-rules-applied-label">Filters:</span>
+                                <?php foreach ($appliedCustomRules['filters'] as $appliedFilter): ?><span class="custom-rules-applied-item"><?php echo htmlspecialchars($appliedFilter, ENT_QUOTES, 'UTF-8'); ?></span><?php endforeach; ?>
+                                </span>
+                            <?php endif; ?>
+                            <?php if (!empty($appliedCustomRules['outcomes'])): ?>
+                                <span class="custom-rules-applied-group"><span class="custom-rules-applied-label">Outcomes:</span>
+                                <?php foreach ($appliedCustomRules['outcomes'] as $appliedOutcome): ?><span class="custom-rules-applied-item"><?php echo htmlspecialchars($appliedOutcome, ENT_QUOTES, 'UTF-8'); ?></span><?php endforeach; ?>
+                                </span>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
                 <?php if ($calcMode === 'by_matchweek'): ?>
                     <span>Matchweek <?php echo (int)($tableView['active_matchweek'] ?? 0); ?><?php if ($summaryDate): ?> <strong style="color:#00ff88; font-size:12px;">[<?php echo htmlspecialchars($summaryDate); ?>]</strong><?php endif; ?></span>

@@ -181,6 +181,19 @@ assert_same('compared with all completed matches using the custom outcomes', $cu
 $styleOptions = football_stats_get_movement_style_options();
 assert_same(['detailed', 'compact', 'badge'], array_keys($styleOptions), 'The movement column should offer the classic display first, plus compact visual styles.');
 
+$customRuleDescriptions = football_stats_describe_custom_rules([
+    ['id' => 1, 'matchweek' => 1, 'home_team' => 'Alpha', 'away_team' => 'Beta', 'home_goals' => 0, 'away_goals' => 1],
+    ['id' => 2, 'matchweek' => 46, 'home_team' => 'Alpha', 'away_team' => 'Beta', 'home_goals' => 3, 'away_goals' => 0],
+], ['h1', 'a2', 'h2'], [1 => 'home', 2 => 'draw']);
+assert_same([
+    "Exclude Alpha's result from MW1: Alpha 0-1 Beta",
+    'Exclude both team results from MW46: Alpha 3-0 Beta',
+], $customRuleDescriptions['filters'], 'Custom rules should describe each applied result filter.');
+assert_same([
+    'MW1: Alpha 0-1 Beta → Alpha wins',
+    'MW46: Alpha 3-0 Beta → Draw',
+], $customRuleDescriptions['outcomes'], 'Custom rules should describe each applied outcome override.');
+
 $_GET = [];
 $defaultStyleView = football_stats_apply_movement_preference(['position_movements' => []], [], []);
 assert_same('detailed', $defaultStyleView['movement_style'] ?? null, 'The original detailed movement display should remain the default.');
