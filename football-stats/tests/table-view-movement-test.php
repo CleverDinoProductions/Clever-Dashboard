@@ -121,4 +121,13 @@ $relevantMovementView = football_stats_apply_movement_preference(
 assert_same(1, $relevantMovementView['position_movements']['Alpha'] ?? null, 'Filtered relevant movement should compare with the unfiltered calculation.');
 assert_same('compared with the unfiltered calculation', $relevantMovementView['movement_comparison_label'] ?? null, 'Filtered relevant movement should describe its calculation baseline.');
 
+$dateOptions = football_stats_get_movement_preference_options('by_date');
+assert_same('Previous date (default)', $dateOptions['relevant']['label'] ?? null, 'By Date should name its original movement comparison.');
+$matchOptions = football_stats_get_movement_preference_options('by_match');
+assert_same('Before selected match (default)', $matchOptions['relevant']['label'] ?? null, 'By Match should name its original movement comparison.');
+$filteredOptions = football_stats_get_movement_preference_options('by_matchweek', true);
+assert_same('Unfiltered calculation (default)', $filteredOptions['relevant']['label'] ?? null, 'Filtered tables should offer their relevant unfiltered baseline.');
+$customOptions = football_stats_get_movement_preference_options('custom_matches');
+assert_same(false, isset($customOptions['completed']), 'Custom rules should not duplicate its completed-matches default.');
+
 echo "Movement calculations passed.\n";
