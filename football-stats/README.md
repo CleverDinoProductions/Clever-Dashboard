@@ -1,50 +1,80 @@
 # Football Stats Dashboard
 
-A PHP and Python-powered dashboard for football statistics, league tables, match results, and advanced analytics for the Premier League, Championship, and World Cup.
+This PHP and SQLite application presents English football and World Cup data through tables, match lists, matchweek comparisons, block analysis, team trackers, what-if tools, and simulations. Python and PHP maintenance scripts fetch or rebuild the underlying data.
 
-## Features
-- Live and historical league tables (snapshots by matchweek)
-- Match results and analytics
-- Comparison tools for any two matchweeks or live vs. snapshot
-- Team-specific breakdowns (e.g., Leeds United)
-- Relegation and block-based analysis
-- World Cup group and knockout stages
+## Supported views
 
-## Directory Structure
-- `fetch-worldfootball.py` — Fetches data from football-data.org API, updates database, recalculates snapshots
-- `football-stats.sqlite3` — SQLite database storing all football data
-- `index.php` — Main entry point and dashboard config
-- `includes/` — Shared PHP includes (table rendering, helpers, etc.)
-- `tabs/` — All dashboard tab views, organized by competition and season
-    - `premier-league/2025-2026/` — Premier League tabs for 2025-2026
-    - `championship/2025-2026/` — Championship tabs for 2025-2026
-    - `world-cup/` — World Cup tabs
-- `assets/` — CSS and static assets
+- 2025/26 Division One, Premier League, Championship, League One, League Two, and National League views
+- Regular and deep-dive tables, matches, snapshot and season comparisons
+- Four-team block analysis and live block movement
+- Team trackers, what-if projections, and season simulations
+- Playoff views for supported lower divisions
+- World Cup groups, knockout bracket, standings, predictions, and simulation
 
-## Data Flow
-1. Python script fetches and processes data from the API
-2. Data is stored in SQLite (matches, league tables, snapshots, etc.)
-3. PHP dashboard reads from SQLite and renders interactive views
+See [`tabs/README.md`](tabs/README.md) for the view layout and [`includes/README.md`](includes/README.md) for shared rendering components.
+
+## Requirements
+
+- PHP 8 with PDO SQLite
+- Python 3
+- SQLite 3
+- `requests` for the Python API clients
 
 ## Setup
-1. Install dependencies: Python 3, PHP, SQLite
-2. Run `python3 fetch-worldfootball.py` to fetch/update data
-3. Serve the project with a PHP server (e.g., `php -S localhost:8000`)
 
-### Filling API gaps
-
-`sync-matches.py` merges fixtures from football-data.org and API-Football instead
-of replacing one provider's rows. Set `FOOTBALL_DATA_TOKEN` and/or
-`API_FOOTBALL_KEY`, then run (for example):
+From the repository root:
 
 ```sh
-python3 sync-matches.py PL 2025-2026
+# Create the core schema when starting with an empty database
+php football-stats/setup-db.php
+
+# Serve the whole repository
+php -S localhost:8000
 ```
 
-Matches are de-duplicated by competition, season, clubs and date. After every
-merge, matchweek 0 and every completed matchweek snapshot are reconstructed from
-the combined results, so historic table views cannot remain stale.
+Then open <http://localhost:8000/football-stats/>. `config.php` expects `football-stats.sqlite3` and `world-cup-stats.sqlite3` in this directory. Database files are runtime data and should not be treated as source.
 
----
+## Updating match data
 
-For details on each tab, see the README in each tab directory.
+The repository contains several provider-specific and historical maintenance tools. Inspect a script before using it: some legacy fetchers contain provider configuration and may target a narrower set of competitions.
+
+For merged English-league fixtures, `sync-matches.py` is the preferred command. It accepts `PL`, `ELC`, `L1`, `L2`, or `NL` plus a season:
+
+```sh
+export FOOTBALL_DATA_TOKEN='...'
+export API_FOOTBALL_KEY='...'
+python3 football-stats/sync-matches.py PL 2025-2026
+```
+
+At least one provider variable is required. Rows are merged by competition, season, clubs, and date rather than replacing the other provider's data. The command then reconstructs matchweek 0 and completed-matchweek snapshots.
+
+Other utilities include `backfill-mw0.php`, `populate-sample-data.php`, `update-el-data.php`, `update-wc-data.php`, and the `fetch-*` scripts. Back up a populated database before running a mutating utility.
+
+## Project structure
+
+```text
+football-stats/
+├── index.php              # Season/competition/tab router
+├── config.php             # SQLite connections
+├── config/                # Competition rules
+├── assets/                # Dashboard styles
+├── includes/              # Shared renderers and simulation helpers
+├── tabs/                  # Competition and World Cup views
+├── tests/                 # Standalone PHP regression tests
+├── setup-db.php           # Core schema setup
+└── sync-matches.py        # Multi-provider match merger
+```
+
+## Tests
+
+Run the standalone regression scripts from the repository root:
+
+```sh
+php football-stats/tests/competition-rules-test.php
+php football-stats/tests/table-view-movement-test.php
+php football-stats/tests/table-view-team-crests-test.php
+```
+
+## Security
+
+Do not commit API credentials. Move provider tokens out of legacy scripts and into environment variables before deployment, restrict setup/debug scripts from public access, and back up SQLite files before schema or import operations.

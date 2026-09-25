@@ -1,18 +1,19 @@
-# Championship 2025-2026 Tabs
+# Championship 2025/26 Tabs
 
-This directory contains all the PHP files for the Championship 2025-2026 dashboard tabs. Each file provides a different view or feature for the season, including tables, blocks, relegation, and comparison tools.
+These PHP views power the Championship section selected with `?tab=2025-2026&league=championship`.
 
 
-## Tabs Overview
-- `table.php`, `table2.php`: Main league table views.
-- `blocks-1.php`, `blocks-2.php`, `blocks-3.php`, `blocks-4.php`, `blocks-5.php`: Block-based analytics for different season segments.
-- `blocks-dynamic.php`, `blocks-overview.php`: Dynamic and overview block analytics.
-- `promotion.php`: Promotion race analytics and summary.
-- `playoff.php`: Playoff qualification and analysis.
-- `relegation.php`, `relegation2.php`: Relegation battle analysis.
-- `leeds.php`, `leeds2.php`, `leeds3.php`: Leeds United focused views (if applicable).
-- `compare.php`: Compare any two matchweeks or live vs. snapshot.
+## Views
+
+- `table.php` and `table2.php` — regular and deep-dive league tables.
+- `matches.php` — match list and results.
+- `compare.php` and `compare-seasons.php` — matchweek and season comparisons.
+- `blocks-overview.php`, `blocks-dynamic.php`, and `blocks-1.php` through `blocks-5.php` — block analysis.
+- `team-tracker.php`, `team-tracker-2.php`, and `team-tracker-3.php` — alternate team-focused views.
+- `whatifs.php` and `simulation.php` — projections and simulations.
+- `playoffs.php` — the routed playoff view.
+- `promotion.php`, `playoff.php`, and `relegation.php` — additional specialist views retained in this directory but not currently registered in the main router.
 
 ---
 
-For more details, see each file or the main project README.
+When adding a routed view, register an explicit key and file path in `football-stats/index.php`.
