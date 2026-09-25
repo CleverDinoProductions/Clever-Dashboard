@@ -1,8 +1,7 @@
 <?php
 /**
  * fetch-englishfootball.php
- * Reconstructs English football seasons from the checked-in api/*.txt files.
- * TheSportsDB remains the source of live tables and team emblems only.
+ * Syncs all available historical English football seasons from TheSportsDB.
  * Covers PL/Championship/L1/L2/NL including pre-1992 eras:
  *   PL(4328)  → First Division before 1992
  *   ELC(4329) → Second Division before 1992
@@ -20,7 +19,6 @@ echo "⚽ Initializing Optimized Sync & Badge Injector...\n";
 $API_KEY  = '876419';
 $BASE_URL = "https://www.thesportsdb.com/api/v1/json/$API_KEY/";
 $db       = new SQLite3('football-stats.sqlite3');
-$DATA_DIR = __DIR__ . '/api';
 
 // --- 1. Database Schema ---
 $tables = [
@@ -73,89 +71,6 @@ function era_name(string $code, int $year): string {
 }
 
 /**
- * Find the local fixture export for a league.  The numbered prefix is stable
- * even where the competition's display name changed (for example Division 1
- * became the Championship).  The verbose "-full" export is intentionally
- * ignored because it contains line-ups as well as fixtures.
- */
-function local_season_files(string $data_dir, string $code): array {
-    $prefixes = ['PL' => '1-', 'ELC' => '2-', 'L1' => '3-', 'L2' => '4-', 'NL' => '5-'];
-    if (!isset($prefixes[$code])) return [];
-
-    $files = [];
-    foreach (glob($data_dir . '/*/' . $prefixes[$code] . '*.txt') ?: [] as $path) {
-        if (str_ends_with($path, '-full.txt')) continue;
-        $directory = basename(dirname($path));
-        if (!preg_match('/^(\d{4})-(\d{2})$/', $directory, $m)) continue;
-        $files[$m[1] . '-' . ((int)$m[1] + 1)] = $path;
-    }
-    ksort($files);
-    return $files;
-}
-
-/** Parse a footballcsv/football.db text export into TheSportsDB-like events. */
-function parse_fixture_file(string $path, string $season): array {
-    $events = [];
-    $round = 0;
-    $date = null;
-    $start_year = (int)substr($season, 0, 4);
-
-    foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
-        if (preg_match('/^\s*▪\s*(?:(?:Regular,\s*)?Matchday\s+|Regular Season\s*-\s*|)(\d+)(?:\.\s*Round)?\s*$/u', $line, $m)) {
-            $round = (int)$m[1];
-            continue;
-        }
-        if (preg_match('/^\s*▪\s*(?:Playoffs|Finals)\s*$/u', $line)) {
-            $round = 47;
-            continue;
-        }
-        if (preg_match('/^\s*(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Z][a-z]{2})\s+(\d{1,2})(?:\s+(\d{4}))?\s*$/', $line, $m)) {
-            $month = (int)date('n', strtotime($m[1] . ' 1'));
-            $year = isset($m[3]) && $m[3] !== '' ? (int)$m[3] : ($month >= 7 ? $start_year : $start_year + 1);
-            $date = sprintf('%04d-%02d-%02d', $year, $month, (int)$m[2]);
-            continue;
-        }
-
-        $home = $away = null;
-        $home_goals = $away_goals = null;
-        // Newer exports put "v" between the clubs and the result at the end.
-        if (preg_match('/^\s*(?:(\d{1,2}:\d{2})\s+)?(.+?)\s+v\s+(.+?)(?:\s{2,}(\d+)-(\d+)(?:\s+(?:a\.e\.t\.\s+)?\([^)]*\))?)?\s*$/', $line, $m)) {
-            $home = trim($m[2]); $away = trim($m[3]);
-            if (isset($m[4]) && $m[4] !== '') { $home_goals = (int)$m[4]; $away_goals = (int)$m[5]; }
-        // Older exports put the result between two padded team columns.
-        } elseif (preg_match('/^\s*(?:(\d{1,2}:\d{2})\s+)?(.+?)\s{2,}(?:\d+-\d+\s+pen\.\s+)?(\d+)-(\d+)(?:\s+(?:a\.e\.t\.\s+)?\([^)]*\))?\s{2,}(.+?)\s*$/', $line, $m)) {
-            $home = trim($m[2]); $away = trim($m[5]);
-            $home_goals = (int)$m[3]; $away_goals = (int)$m[4];
-        }
-        if ($home === null || $away === null || $date === null || $round === 0) continue;
-
-        $events[] = [
-            'intRound' => $round, 'dateEvent' => $date,
-            'strTimestamp' => isset($m[1]) && $m[1] !== '' ? $date . 'T' . $m[1] . ':00Z' : null,
-            'strHomeTeam' => $home, 'strAwayTeam' => $away,
-            'intHomeScore' => $home_goals, 'intAwayScore' => $away_goals,
-            'strStatus' => $home_goals === null ? 'Scheduled' : 'Match Finished',
-            'strPostponed' => 'no',
-        ];
-    }
-    return $events;
-}
-
-/** Fill missing crests from TheSportsDB without using it as a fixture source. */
-function add_thesportsdb_emblems(array $teams, array &$crest_map, string $base_url): void {
-    foreach ($teams as $team) {
-        if (!empty($crest_map[$team])) continue;
-        $response = json_decode(@file_get_contents($base_url . 'searchteams.php?t=' . urlencode($team)), true);
-        foreach (($response['teams'] ?? []) as $candidate) {
-            if (!empty($candidate['strBadge'])) {
-                $crest_map[$team] = $candidate['strBadge'];
-                break;
-            }
-        }
-    }
-}
-
-/**
  * Era-aware English Football Sorting Callback
  * Implements Goal Average (pre-1976/77) vs Goal Difference & Goals Scored (1976/77 onwards).
  */
@@ -195,7 +110,7 @@ $sort_league_table = function(array $a, array $b, string $a_name, string $b_name
 
 // --- 2. Core League Processing ---
 
-function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
+function sync_league($db, $BASE_URL, $code, $id) {
     global $sort_league_table;
     echo "\n[Syncing $code (ID: $id)]\n";
     $timestamp = round(microtime(true) * 1000);
@@ -237,9 +152,12 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
         $meta->execute();
     }
 
-    // STEP C: Process the local fixture archive. TheSportsDB is deliberately
-    // not used here: its historical event coverage can be incomplete.
-    foreach (local_season_files($DATA_DIR, $code) as $season => $fixture_file) {
+    // STEP C: Process Seasons
+    $seasons_json = json_decode(@file_get_contents("{$BASE_URL}search_all_seasons.php?id=$id"), true);
+    if (!$seasons_json || !isset($seasons_json['seasons'])) return;
+
+    foreach (array_reverse($seasons_json['seasons']) as $s_obj) {
+        $season      = $s_obj['strSeason'];
         $season_year = (int)substr($season, 0, 4);
         $comp_name   = era_name($code, $season_year);
 
@@ -259,15 +177,8 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
         }
         echo "  -> " . ($res === false ? "Reconstructing" : "Updating") . " Season: $season [$comp_name]... ";
 
-        $fixtures = ['events' => parse_fixture_file($fixture_file, $season)];
-        if (empty($fixtures['events'])) { echo "No parseable data in " . basename($fixture_file) . ".\n"; continue; }
-
-        $fixture_teams = [];
-        foreach ($fixtures['events'] as $event) {
-            $fixture_teams[$event['strHomeTeam']] = true;
-            $fixture_teams[$event['strAwayTeam']] = true;
-        }
-        add_thesportsdb_emblems(array_keys($fixture_teams), $crest_map, $BASE_URL);
+        $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=" . urlencode($season)), true);
+        if (!$fixtures || empty($fixtures['events'])) { echo "No data.\n"; continue; }
 
         $db->exec("BEGIN TRANSACTION");
         $db->exec("DELETE FROM matches WHERE competition_code = '$code' AND season_label = '$season'");
@@ -329,7 +240,7 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
             $m_ins->bindValue(6, $kickoffTimestamp, $kickoffTimestamp === null ? SQLITE3_NULL : SQLITE3_TEXT);
             $m_ins->bindValue(7, $e['strHomeTeam']); $m_ins->bindValue(8, $e['strAwayTeam']);
             $m_ins->bindValue(9, $hg); $m_ins->bindValue(10, $ag);
-            $m_ins->bindValue(11, $matchStatus); $m_ins->bindValue(12, 'local_text_archive');
+            $m_ins->bindValue(11, $matchStatus); $m_ins->bindValue(12, 'tsdb_v2_optimized');
             $m_ins->execute();
 
             if ($hg !== null && $ag !== null) {
@@ -432,7 +343,7 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
 // --- 3. Execution ---
 $leagues = ['D1' => '4525', 'PL' => '4328', 'ELC' => '4329', 'L1' => '4396', 'L2' => '4397', 'NL' => '4590'];
 foreach ($leagues as $code => $id) {
-    sync_league($db, $BASE_URL, $DATA_DIR, $code, $id);
+    sync_league($db, $BASE_URL, $code, $id);
 }
 
 echo "\n🏁 Optimized Sync Complete.\n";
