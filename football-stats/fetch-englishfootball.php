@@ -256,27 +256,7 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
         $season_year = (int)substr($season, 0, 4);
         $comp_name   = era_name($code, $season_year);
 
-        // Resolve fixtures before consulting the cache. This keeps source
-        // priority deterministic: TheSportsDB is always attempted first and
-        // the local archive is considered only when it returns no events.
-        $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=" . urlencode($season)), true);
-        $fixture_source = 'tsdb_v2_optimized';
-        if (empty($fixtures['events']) && isset($local_files[$season])) {
-            $fixtures = ['events' => parse_fixture_file($local_files[$season], $season)];
-            $fixture_source = 'local_text_archive';
-        }
-        if (empty($fixtures['events'])) {
-            echo "  -> Season $season [$comp_name]: No fixture data.\n";
-            continue;
-        }
-
-        $check = $db->prepare("SELECT s.team_crest, m.source
-            FROM league_table_snapshots s
-            LEFT JOIN matches m
-              ON m.competition_code = s.competition_code
-             AND m.season_label = s.season_label
-            WHERE s.competition_code = ? AND s.season_label = ?
-            LIMIT 1");
+        $check = $db->prepare("SELECT team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? LIMIT 1");
         $check->bindValue(1, $code); $check->bindValue(2, $season);
         $res = $check->execute()->fetchArray(SQLITE3_ASSOC);
 
@@ -286,15 +266,24 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
 
         $is_current  = ($season === $current_season || $season === $date_based_season);
         $is_historic = $season_year < 1992;
-        $cached_source_matches = $res !== false && ($res['source'] ?? null) === $fixture_source;
-        if (!$is_current && $cached_source_matches && $has_mw0 && (!empty($res['team_crest']) || $is_historic)) {
+        if (!$is_current && $res !== false && $has_mw0 && (!empty($res['team_crest']) || $is_historic)) {
             echo "  -> Season $season [$comp_name]: Cached. Skipping.\n";
             continue;
         }
         echo "  -> " . ($res === false ? "Reconstructing" : "Updating") . " Season: $season [$comp_name]... ";
-        if ($fixture_source === 'local_text_archive') {
+
+        $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=" . urlencode($season)), true);
+        $fixture_source = 'tsdb_v2_optimized';
+
+        // Some historical seasons are listed by TheSportsDB but have no event
+        // data. Use the checked-in export only in that case, so complete
+        // results and the snapshots derived from them are not lost.
+        if (empty($fixtures['events']) && isset($local_files[$season])) {
+            $fixtures = ['events' => parse_fixture_file($local_files[$season], $season)];
+            $fixture_source = 'local_text_archive';
             echo "[using local fixture archive] ";
         }
+        if (empty($fixtures['events'])) { echo "No fixture data.\n"; continue; }
 
         $fixture_teams = [];
         foreach ($fixtures['events'] as $event) {
