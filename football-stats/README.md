@@ -31,6 +31,20 @@ A PHP and Python-powered dashboard for football statistics, league tables, match
 2. Run `python3 fetch-worldfootball.py` to fetch/update data
 3. Serve the project with a PHP server (e.g., `php -S localhost:8000`)
 
+### Filling API gaps
+
+`sync-matches.py` merges fixtures from football-data.org and API-Football instead
+of replacing one provider's rows. Set `FOOTBALL_DATA_TOKEN` and/or
+`API_FOOTBALL_KEY`, then run (for example):
+
+```sh
+python3 sync-matches.py PL 2025-2026
+```
+
+Matches are de-duplicated by competition, season, clubs and date. After every
+merge, matchweek 0 and every completed matchweek snapshot are reconstructed from
+the combined results, so historic table views cannot remain stale.
+
 ---
 
 For details on each tab, see the README in each tab directory.

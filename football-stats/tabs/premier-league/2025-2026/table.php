@@ -50,28 +50,20 @@ $team_info = $team_info_PL;
 /**
  * Evaluates position highlight classes for min/max thresholds
  */
-function get_table_row_style(array $team, int $uclMin = 4, int $uclMax = 5, int $uelMin = 5, int $uelMax = 7, int $ueclMax = 8, int $relegationMin = 18): string {
+function get_table_row_style(array $team, string $seasonLabel): string {
     $pos = (int)$team['position'];
     $classes = [];
-
-    // Left Border & Fill (Minimum Guaranteed Spots)
-    if ($pos <= $uclMin) {
+    $zone = football_stats_get_position_zone('PL', $seasonLabel, $pos);
+    $key = $zone['key'] ?? '';
+    if ($key === 'champions-league') {
         $classes[] = 'row-ucl-min';
-    } elseif ($pos <= $uelMin) {
-        $classes[] = 'row-uel-min';
-    }
-
-    // Right Border (Maximum Potential Spots via Cup Drop-Downs)
-    if ($pos <= $uclMax) {
         $classes[] = 'row-ucl';
-    } elseif ($pos <= $uelMax) {
+    } elseif ($key === 'europa-league') {
+        $classes[] = 'row-uel-min';
         $classes[] = 'row-uel';
-    } elseif ($pos <= $ueclMax) {
+    } elseif ($key === 'conference-league') {
         $classes[] = 'row-uecl';
-    }
-
-    // Relegation Check
-    if ($pos >= $relegationMin) {
+    } elseif ($key === 'relegation') {
         $classes[] = 'row-relegation';
     }
 
@@ -147,8 +139,8 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
             // Get team info
             $info = getTeamInfo($team['team_name'], $team_info);    
             
-            // Dynamic row highlight class (Defaults: UCL 1-4, UEL 5-6, UECL 7, Relegation 18-20)
-            $row_attribute = get_table_row_style($team, 4, 5, 5, 7, 8, 18);
+            // Apply the qualification and relegation zones configured for this season.
+            $row_attribute = get_table_row_style($team, $_split_season);
 
             //remaining games
             $games_remaining = max(0, $total_games - $team['played']);
