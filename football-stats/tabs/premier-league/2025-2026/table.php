@@ -6,19 +6,20 @@ $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
+$_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
+$competitionRules = football_stats_get_competition_rules('PL', $_split_season);
 
 // Safety calculation
-$halfway_games = 19; // Halfway point in season
-$safety_target_halfway = 20; // Points needed by game 19 to stay safe
-$total_games = 38; // Total games in season
-$max_regular_mw = 38; // Playoff matches have matchweek > 38
+$total_games = (int)$competitionRules['regular_matchweeks'];
+$halfway_games = (int)($total_games / 2); // Halfway point in season
+$safety_target_halfway = 20; // Points needed by halfway to stay safe
+$max_regular_mw = $total_games;
 if (isset($tableView['active_matchweek'])) {
     $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
 }
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
-$_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
     $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', $max_regular_mw);
     if (!empty($filteredStandings)) {
