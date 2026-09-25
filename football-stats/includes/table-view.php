@@ -78,9 +78,9 @@ if (!function_exists('football_stats_get_final_matchweek')) {
 
 /** Remove playoff and other post-season matchweeks from selector controls. */
 if (!function_exists('football_stats_limit_matchweeks_to_regular_season')) {
-    function football_stats_limit_matchweeks_to_regular_season(array $matchweeks, $competitionCode, $seasonLabel = null)
+    function football_stats_limit_matchweeks_to_regular_season(array $matchweeks, $competitionCode)
     {
-        $finalMatchweek = football_stats_get_final_matchweek($competitionCode, $seasonLabel);
+        $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
 
         return array_values(array_filter($matchweeks, static function ($matchweek) use ($finalMatchweek) {
             return (int)$matchweek >= 1 && (int)$matchweek <= $finalMatchweek;
@@ -282,7 +282,7 @@ if (!function_exists('football_stats_render_matches_controls')) {
             'division-one' => 'D1',
         ];
         $competitionCode = $leagueMap[$league] ?? strtoupper((string)$league);
-        $availableMatchweeks = football_stats_limit_matchweeks_to_regular_season($availableMatchweeks, $competitionCode, $selectedSeason);
+        $availableMatchweeks = football_stats_limit_matchweeks_to_regular_season($availableMatchweeks, $competitionCode);
 
         $controlId = 'matches-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
         ?>
@@ -416,7 +416,7 @@ if (!function_exists('football_stats_get_table_view')) {
             $requestedSeasonLabel = $liveSeasonLabel;
         }
 
-        $finalMatchweek = football_stats_get_final_matchweek($competitionCode, $requestedSeasonLabel);
+        $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
         $snapshotWeeksStmt = $db->prepare('SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? ORDER BY matchweek DESC');
         $snapshotWeeksStmt->execute([$competitionCode, $requestedSeasonLabel, $finalMatchweek]);
         $availableMatchweeks = array_map('intval', $snapshotWeeksStmt->fetchAll(PDO::FETCH_COLUMN));
@@ -507,7 +507,7 @@ if (!function_exists('football_stats_get_table_view_by_date')) {
                 : ($availableSeasons[0] ?? $liveSeasonLabel);
         }
 
-        $finalMatchweek = football_stats_get_final_matchweek($competitionCode, $requestedSeasonLabel);
+        $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
         $availableDatesStmt = $db->prepare(
             'SELECT DISTINCT snapshot_date FROM league_table_snapshots_by_date '
             . 'WHERE competition_code = ? AND season_label = ? '
@@ -689,7 +689,7 @@ if (!function_exists('football_stats_resolve_selected_match')) {
         $params = [
             $competitionCode,
             $seasonLabel,
-            football_stats_get_final_matchweek($competitionCode, $seasonLabel),
+            football_stats_get_final_matchweek($competitionCode),
         ];
 
         $hasFilter = false;
@@ -777,7 +777,7 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
             $mMatchesStmt->execute([
                 $competitionCode,
                 $requestedSeasonLabel,
-                football_stats_get_final_matchweek($competitionCode, $requestedSeasonLabel),
+                football_stats_get_final_matchweek($competitionCode),
                 $targetKickoff,
                 $targetKickoff,
                 $targetMatch['id']
@@ -901,7 +901,7 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
                 $selectedMatchId,
                 $competitionCode,
                 $requestedSeasonLabel,
-                football_stats_get_final_matchweek($competitionCode, $requestedSeasonLabel),
+                football_stats_get_final_matchweek($competitionCode),
             ]);
             $targetMatch = $mStmt->fetch(PDO::FETCH_ASSOC) ?: null;
         } else {
@@ -932,7 +932,7 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
             $mMatchesStmt->execute([
                 $competitionCode,
                 $requestedSeasonLabel,
-                football_stats_get_final_matchweek($competitionCode, $requestedSeasonLabel),
+                football_stats_get_final_matchweek($competitionCode),
                 $targetKickoff,
                 $targetKickoff,
                 $targetMatch['id']
@@ -1131,7 +1131,7 @@ if (!function_exists('football_stats_apply_outcome_override')) {
 if (!function_exists('football_stats_compute_custom_match_standings')) {
     function football_stats_compute_custom_match_standings(PDO $db, $competitionCode, $seasonLabel, $liveTableName, array $excludedResults, array $outcomeOverrides = [])
     {
-        $finalMatchweek = football_stats_get_final_matchweek($competitionCode, $seasonLabel);
+        $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
         $stmt = $db->prepare(
             'SELECT id, home_team, away_team, home_goals, away_goals FROM matches '
             . 'WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? '
@@ -1380,7 +1380,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $previousMatchStmt->execute([
                 $competitionCode,
                 $seasonLabel,
-                football_stats_get_final_matchweek($competitionCode, $seasonLabel),
+                football_stats_get_final_matchweek($competitionCode),
                 $targetKickoff,
                 $targetKickoff,
                 $targetMatch['id'],
@@ -1890,7 +1890,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         $availableMatches = [];
 
         if (isset($GLOBALS['db']) && $GLOBALS['db'] instanceof PDO) {
-            $finalMatchweek = football_stats_get_final_matchweek($competitionCode, $activeSeason);
+            $finalMatchweek = football_stats_get_final_matchweek($competitionCode);
 
             if (empty($availableDates)) {
                 $dStmt = $GLOBALS['db']->prepare('SELECT DISTINCT match_date FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? AND match_date IS NOT NULL AND match_date != "" ORDER BY match_date DESC');
@@ -1903,7 +1903,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 $mwStmt->execute([$competitionCode, $activeSeason]);
                 $availableMatchweeks = array_map('intval', $mwStmt->fetchAll(PDO::FETCH_COLUMN));
             }
-            $availableMatchweeks = football_stats_limit_matchweeks_to_regular_season($availableMatchweeks, $competitionCode, $activeSeason);
+            $availableMatchweeks = football_stats_limit_matchweeks_to_regular_season($availableMatchweeks, $competitionCode);
 
             $mQuery = 'SELECT id, matchweek, match_date, match_timestamp, home_team, away_team, home_goals, away_goals FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ?';
             $params = [$competitionCode, $activeSeason, $finalMatchweek];

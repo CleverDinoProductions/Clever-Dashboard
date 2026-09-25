@@ -20,23 +20,6 @@ return [
             ['key' => 'conference-league', 'label' => 'Conference League', 'from' => 6, 'to' => 6],
             ['key' => 'relegation', 'label' => 'Relegation', 'from' => 18, 'to' => 20],
         ]],
-        // The first three Premier League seasons had 22 clubs. European
-        // qualification and relegation places reflect each season's format.
-        '1992-1993' => ['team_count' => 22, 'regular_matchweeks' => 42, 'zones' => [
-            ['key' => 'champions-league', 'label' => 'Champions League', 'from' => 1, 'to' => 1],
-            ['key' => 'europa-league', 'label' => 'UEFA Cup', 'from' => 2, 'to' => 3],
-            ['key' => 'relegation', 'label' => 'Relegation', 'from' => 20, 'to' => 22],
-        ]],
-        '1993-1994' => ['team_count' => 22, 'regular_matchweeks' => 42, 'zones' => [
-            ['key' => 'champions-league', 'label' => 'Champions League', 'from' => 1, 'to' => 1],
-            ['key' => 'europa-league', 'label' => 'UEFA Cup', 'from' => 2, 'to' => 3],
-            ['key' => 'relegation', 'label' => 'Relegation', 'from' => 20, 'to' => 22],
-        ]],
-        '1994-1995' => ['team_count' => 22, 'regular_matchweeks' => 42, 'zones' => [
-            ['key' => 'champions-league', 'label' => 'Champions League', 'from' => 1, 'to' => 1],
-            ['key' => 'europa-league', 'label' => 'UEFA Cup', 'from' => 2, 'to' => 5],
-            ['key' => 'relegation', 'label' => 'Relegation', 'from' => 19, 'to' => 22],
-        ]],
         // England earned a fifth Champions League place for 2025/26.
         '2025-2026' => ['zones' => [
             ['key' => 'champions-league', 'label' => 'Champions League', 'from' => 1, 'to' => 5],
