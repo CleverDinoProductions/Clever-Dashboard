@@ -2346,6 +2346,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             var matchweek = this.value;
                             if (!matchweek) return;
                             boxes.forEach(function (box) {
+                                box.checked = box.dataset.matchweek === matchweek;
                                 if (box.dataset.matchweek === matchweek) box.checked = true;
                             });
                             this.value = '';
