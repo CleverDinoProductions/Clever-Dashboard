@@ -8,6 +8,7 @@
  *   ELC(4329) → Second Division before 1992
  *   L1(4396)  → Third Division before 1992 / First Division (new) 1992-2004
  *   L2(4397)  → Fourth Division before 1992 / Second Division (new) 1992-2004
+ *   NL(4398)  → National League
  * Matches are stored with matchweek (intRound) for all available seasons.
  */
 
@@ -91,6 +92,20 @@ function local_season_files(string $data_dir, string $code): array {
     }
     ksort($files);
     return $files;
+}
+
+/**
+ * Add every season in an inclusive range to a set keyed by season label.
+ *
+ * search_all_seasons.php does not consistently include recent seasons for the
+ * lower English tiers.  eventsseason.php can still return those seasons when
+ * addressed directly, so the sync must not use the discovery response as an
+ * exhaustive list.
+ */
+function add_season_range(array &$seasons, int $first_year, int $last_year): void {
+    for ($year = $first_year; $year <= $last_year; $year++) {
+        $seasons[$year . '-' . ($year + 1)] = true;
+    }
 }
 
 /** Parse a footballcsv/football.db text export into TheSportsDB-like events. */
@@ -249,6 +264,16 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
     }
     foreach (array_keys($local_files) as $local_season) {
         $seasons[$local_season] = true;
+    }
+
+    // TheSportsDB's season catalogue for these competitions is incomplete from
+    // 2017/18 onward. Probe each expected season explicitly; an empty response
+    // is handled below in exactly the same way as any other unavailable season.
+    if (in_array($code, ['L1', 'L2', 'NL'], true)) {
+        $month = (int)date('n');
+        $year = (int)date('Y');
+        $current_season_start = $month >= 7 ? $year : $year - 1;
+        add_season_range($seasons, 2017, $current_season_start);
     }
     ksort($seasons);
 
@@ -464,7 +489,7 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
 }
 
 // --- 3. Execution ---
-$leagues = ['D1' => '4525', 'PL' => '4328', 'ELC' => '4329', 'L1' => '4396', 'L2' => '4397', 'NL' => '4590'];
+$leagues = ['D1' => '4525', 'PL' => '4328', 'ELC' => '4329', 'L1' => '4396', 'L2' => '4397', 'NL' => '4398'];
 foreach ($leagues as $code => $id) {
     sync_league($db, $BASE_URL, $DATA_DIR, $code, $id);
 }
