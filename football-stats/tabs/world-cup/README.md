@@ -1,13 +1,15 @@
 # World Cup Tabs
 
-This directory contains the PHP files for the World Cup dashboard tabs. Each file provides a different view for the World Cup competition.
+These PHP files provide the World Cup section of the Football Stats Dashboard. Open it with `?tab=world-cup&subtab=groups` and replace `groups` with another registered subtab.
 
-## Tabs Overview
-- `groups.php`: Group stage standings and results.
-- `knockout.php`: Knockout stage bracket and results.
-- `predictions.php`: World Cup predictions and analytics.
-- `standings.php`: Overall World Cup standings.
+## Views
+
+- `groups.php` — group-stage standings and results.
+- `knockout.php` — knockout bracket and results.
+- `predictions.php` — predictions and analytics.
+- `standings.php` — overall standings.
+- `simulation.php` — tournament simulation.
 
 ---
 
-For more details, see each file or the main project README.
+The main router allow-lists each view. World Cup data uses the separate `world-cup-stats.sqlite3` connection configured in `football-stats/config.php`.

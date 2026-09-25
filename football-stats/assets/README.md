@@ -1,8 +1,9 @@
-# Assets Directory
+# Football Dashboard Assets
 
-This directory contains static assets for the Football Stats Dashboard.
+This directory contains the presentation assets for the Football Stats Dashboard.
 
-## Files
-- `style.css`: Main stylesheet for dashboard UI
+## Contents
 
-Add images, icons, or additional CSS/JS here as needed.
+- `style.css` — shared layout, navigation, table, card, block-analysis, and responsive styles.
+
+Keep reusable dashboard styling here rather than embedding it in individual tabs. When adding an asset, use paths relative to `/football-stats/` and verify both desktop and mobile layouts.
