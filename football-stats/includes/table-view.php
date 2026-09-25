@@ -42,11 +42,37 @@ if (!function_exists('football_stats_format_kickoff')) {
 
 require_once __DIR__ . '/table-view-date-helper.php';
 
+if (!function_exists('football_stats_get_competition_rules')) {
+    function football_stats_get_competition_rules($competitionCode, $seasonLabel = null)
+    {
+        static $rules = null;
+        if ($rules === null) {
+            $rules = require __DIR__ . '/../config/competition-rules.php';
+        }
+        $competition = $rules[(string)$competitionCode] ?? [];
+        $resolved = array_replace($rules['default'], $competition['default'] ?? []);
+        if ($seasonLabel !== null && isset($competition[(string)$seasonLabel])) {
+            $resolved = array_replace($resolved, $competition[(string)$seasonLabel]);
+        }
+        return $resolved;
+    }
+}
+
+if (!function_exists('football_stats_get_position_zone')) {
+    function football_stats_get_position_zone($competitionCode, $seasonLabel, $position)
+    {
+        foreach (football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'] as $zone) {
+            if ((int)$position >= (int)$zone['from'] && (int)$position <= (int)$zone['to']) return $zone;
+        }
+        return null;
+    }
+}
+
 /** Return the final regular-season matchweek for a competition. */
 if (!function_exists('football_stats_get_final_matchweek')) {
-    function football_stats_get_final_matchweek($competitionCode)
+    function football_stats_get_final_matchweek($competitionCode, $seasonLabel = null)
     {
-        return in_array((string)$competitionCode, ['PL', 'D1'], true) ? 38 : 46;
+        return (int)football_stats_get_competition_rules($competitionCode, $seasonLabel)['regular_matchweeks'];
     }
 }
 
