@@ -1870,7 +1870,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .table-view-switcher { margin: 14px 0 16px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.03); }
             .table-view-summary { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; color: #dcddde; font-size: 13px; }
             .table-view-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(88, 101, 242, 0.15); border: 1px solid rgba(88, 101, 242, 0.35); color: #c7d2fe; font-weight: 600; }
-            .custom-rules-applied { flex: 1 1 100%; display: grid; gap: 7px; padding: 10px 12px; border: 1px solid rgba(88,101,242,.28); border-radius: 8px; background: rgba(88,101,242,.07); }
+            .custom-rules-applied { flex: 1 1 100%; padding: 10px 12px; border: 1px solid rgba(88,101,242,.28); border-radius: 8px; background: rgba(88,101,242,.07); }
+            .custom-rules-applied summary { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; color: #dcddde; cursor: pointer; list-style-position: inside; }
+            .custom-rules-applied[open] summary { margin-bottom: 8px; }
+            .custom-rules-applied-details { display: grid; gap: 7px; padding-top: 2px; }
             .custom-rules-applied-heading { color: #c7d2fe; font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; }
             .custom-rules-applied-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
             .custom-rules-applied-label { color: #b9bbbe; font-weight: 700; }
@@ -1911,6 +1914,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-outcome-rule button { grid-column: 1 / -1; }
             .custom-match-toolbar .custom-match-reset { background: #3a3c41; }
             .custom-match-toolbar .custom-match-apply { margin-left: auto; background: #5865f2; font-weight: 700; }
+            .custom-match-pending { flex: 1 1 100%; min-width: 260px; }
+            .custom-match-pending .custom-rules-applied-heading { margin-right: 3px; }
             .custom-match-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 7px; max-height: 420px; overflow: auto; padding: 0 14px 14px; }
             .custom-match-week { border: 1px solid rgba(255,255,255,.09); border-radius: 7px; background: rgba(255,255,255,.02); }
             .custom-match-week > summary { padding: 9px 10px; color: #c7d2fe; font-size: 12px; font-weight: 700; cursor: pointer; }
@@ -1947,8 +1952,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <span><?php echo (count($availableMatches) * 2) - $excludedCount; ?> of <?php echo count($availableMatches) * 2; ?> team results included</span>
                     <span><?php echo $alteredOutcomeCount; ?> match outcome<?php echo $alteredOutcomeCount === 1 ? '' : 's'; ?> altered</span>
                     <?php $appliedCustomRules = football_stats_describe_custom_rules($availableMatches, football_stats_get_excluded_result_keys(), football_stats_get_outcome_overrides()); ?>
-                    <div class="custom-rules-applied" aria-label="Applied custom rules">
-                        <span class="custom-rules-applied-heading">Applied custom rules</span>
+                    <details class="custom-rules-applied" aria-label="Applied custom rules">
+                        <summary>
+                            <span class="custom-rules-applied-heading">Applied custom rules</span>
+                            <span><?php echo count($appliedCustomRules['filters']); ?> filter<?php echo count($appliedCustomRules['filters']) === 1 ? '' : 's'; ?> &bull; <?php echo count($appliedCustomRules['outcomes']); ?> altered outcome<?php echo count($appliedCustomRules['outcomes']) === 1 ? '' : 's'; ?></span>
+                            <span class="custom-rules-applied-empty">(toggle details)</span>
+                        </summary>
+                        <div class="custom-rules-applied-details">
                         <?php if (empty($appliedCustomRules['filters']) && empty($appliedCustomRules['outcomes'])): ?>
                             <span class="custom-rules-applied-empty">No filters or altered outcomes are applied. All actual team results are included.</span>
                         <?php else: ?>
@@ -1963,7 +1973,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 </span>
                             <?php endif; ?>
                         <?php endif; ?>
-                    </div>
+                        </div>
+                    </details>
                 <?php endif; ?>
                 <?php if ($calcMode === 'by_matchweek'): ?>
                     <span>Matchweek <?php echo (int)($tableView['active_matchweek'] ?? 0); ?><?php if ($summaryDate): ?> <strong style="color:#00ff88; font-size:12px;">[<?php echo htmlspecialchars($summaryDate); ?>]</strong><?php endif; ?></span>
@@ -2191,6 +2202,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             <div class="custom-match-toolbar-actions" style="margin-top:10px; margin-bottom:0;">
                                 <button type="button" class="custom-match-reset" data-match-reset>Reset to actual results</button>
                                 <span data-match-selection-status aria-live="polite"></span>
+                                <details class="custom-rules-applied custom-match-pending" data-match-pending-rules>
+                                    <summary><span class="custom-rules-applied-heading">Ready to calculate</span> <span data-match-pending-summary></span> <span class="custom-rules-applied-empty">(toggle details)</span></summary>
+                                    <div class="custom-rules-applied-details" data-match-pending-details></div>
+                                </details>
                                 <button type="button" class="custom-match-apply" data-match-apply>Recalculate table</button>
                             </div>
                         </div>
@@ -2241,10 +2256,54 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
                         var outcomeSelects = Array.prototype.slice.call(panel.querySelectorAll('[data-outcome-match]'));
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
+                        var pendingSummary = panel.querySelector('[data-match-pending-summary]');
+                        var pendingDetails = panel.querySelector('[data-match-pending-details]');
+                        function addPendingGroup(label, items) {
+                            var group = document.createElement('span');
+                            group.className = 'custom-rules-applied-group';
+                            var heading = document.createElement('span');
+                            heading.className = 'custom-rules-applied-label';
+                            heading.textContent = label + ':';
+                            group.appendChild(heading);
+                            items.forEach(function (item) {
+                                var tag = document.createElement('span');
+                                tag.className = 'custom-rules-applied-item';
+                                tag.textContent = item;
+                                group.appendChild(tag);
+                            });
+                            pendingDetails.appendChild(group);
+                        }
+                        function updatePendingRules() {
+                            var excluded = boxes.filter(function (box) { return !box.checked; });
+                            var altered = outcomeSelects.filter(function (select) { return select.value !== 'actual'; });
+                            var filters = excluded.map(function (box) {
+                                var fixture = box.closest('.custom-match-option').querySelector('span').textContent.trim();
+                                return 'Exclude ' + box.dataset.team + "'s result from MW" + box.dataset.matchweek + ': ' + fixture;
+                            });
+                            var outcomes = altered.map(function (select) {
+                                var fixture = select.closest('.custom-match-option').querySelector('span').textContent.trim();
+                                var label = select.options[select.selectedIndex].text;
+                                if (label === 'Team A wins') label = select.dataset.homeTeam + ' wins';
+                                if (label === 'Team B wins') label = select.dataset.awayTeam + ' wins';
+                                return 'MW' + select.dataset.matchweek + ': ' + fixture + ' \u2192 ' + label;
+                            });
+                            pendingSummary.textContent = filters.length + ' filter' + (filters.length === 1 ? '' : 's') + ' \u2022 ' + altered.length + ' altered outcome' + (altered.length === 1 ? '' : 's');
+                            pendingDetails.textContent = '';
+                            if (!filters.length && !outcomes.length) {
+                                var empty = document.createElement('span');
+                                empty.className = 'custom-rules-applied-empty';
+                                empty.textContent = 'All actual team results will be included.';
+                                pendingDetails.appendChild(empty);
+                                return;
+                            }
+                            if (filters.length) addPendingGroup('Filters', filters);
+                            if (outcomes.length) addPendingGroup('Outcomes', outcomes);
+                        }
                         function updateSelectionStatus() {
                             var selected = boxes.filter(function (box) { return box.checked; }).length;
                             var altered = outcomeSelects.filter(function (select) { return select.value !== 'actual'; }).length;
                             selectionStatus.textContent = selected + ' of ' + boxes.length + ' team results selected; ' + altered + ' outcomes altered';
+                            updatePendingRules();
                         }
                         panel.querySelector('[data-match-select-all]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
