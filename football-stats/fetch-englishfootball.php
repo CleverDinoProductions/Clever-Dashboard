@@ -1,8 +1,8 @@
 <?php
 /**
  * fetch-englishfootball.php
- * Reconstructs English football seasons from the checked-in api/*.txt files.
- * TheSportsDB remains the source of live tables and team emblems only.
+ * Syncs English football seasons from TheSportsDB, falling back to the
+ * checked-in api/*.txt files when TheSportsDB has no fixtures for a season.
  * Covers PL/Championship/L1/L2/NL including pre-1992 eras:
  *   PL(4328)  → First Division before 1992
  *   ELC(4329) → Second Division before 1992
@@ -237,9 +237,22 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
         $meta->execute();
     }
 
-    // STEP C: Process the local fixture archive. TheSportsDB is deliberately
-    // not used here: its historical event coverage can be incomplete.
-    foreach (local_season_files($DATA_DIR, $code) as $season => $fixture_file) {
+    // STEP C: Retain TheSportsDB as the primary historical source, while also
+    // considering locally archived seasons that TheSportsDB does not list.
+    $local_files = local_season_files($DATA_DIR, $code);
+    $seasons_json = json_decode(@file_get_contents("{$BASE_URL}search_all_seasons.php?id=$id"), true);
+    $seasons = [];
+    foreach (($seasons_json['seasons'] ?? []) as $season_object) {
+        if (!empty($season_object['strSeason'])) {
+            $seasons[$season_object['strSeason']] = true;
+        }
+    }
+    foreach (array_keys($local_files) as $local_season) {
+        $seasons[$local_season] = true;
+    }
+    ksort($seasons);
+
+    foreach (array_keys($seasons) as $season) {
         $season_year = (int)substr($season, 0, 4);
         $comp_name   = era_name($code, $season_year);
 
@@ -259,8 +272,18 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
         }
         echo "  -> " . ($res === false ? "Reconstructing" : "Updating") . " Season: $season [$comp_name]... ";
 
-        $fixtures = ['events' => parse_fixture_file($fixture_file, $season)];
-        if (empty($fixtures['events'])) { echo "No parseable data in " . basename($fixture_file) . ".\n"; continue; }
+        $fixtures = json_decode(@file_get_contents("{$BASE_URL}eventsseason.php?id=$id&s=" . urlencode($season)), true);
+        $fixture_source = 'tsdb_v2_optimized';
+
+        // Some historical seasons are listed by TheSportsDB but have no event
+        // data. Use the checked-in export only in that case, so complete
+        // results and the snapshots derived from them are not lost.
+        if (empty($fixtures['events']) && isset($local_files[$season])) {
+            $fixtures = ['events' => parse_fixture_file($local_files[$season], $season)];
+            $fixture_source = 'local_text_archive';
+            echo "[using local fixture archive] ";
+        }
+        if (empty($fixtures['events'])) { echo "No fixture data.\n"; continue; }
 
         $fixture_teams = [];
         foreach ($fixtures['events'] as $event) {
@@ -329,7 +352,7 @@ function sync_league($db, $BASE_URL, $DATA_DIR, $code, $id) {
             $m_ins->bindValue(6, $kickoffTimestamp, $kickoffTimestamp === null ? SQLITE3_NULL : SQLITE3_TEXT);
             $m_ins->bindValue(7, $e['strHomeTeam']); $m_ins->bindValue(8, $e['strAwayTeam']);
             $m_ins->bindValue(9, $hg); $m_ins->bindValue(10, $ag);
-            $m_ins->bindValue(11, $matchStatus); $m_ins->bindValue(12, 'local_text_archive');
+            $m_ins->bindValue(11, $matchStatus); $m_ins->bindValue(12, $fixture_source);
             $m_ins->execute();
 
             if ($hg !== null && $ag !== null) {
