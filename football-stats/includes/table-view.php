@@ -572,6 +572,69 @@ if (!function_exists('football_stats_get_match_roster')) {
     }
 }
 
+if (!function_exists('football_stats_get_team_crest_map')) {
+    /**
+     * Return crests for the clubs in one competition season.
+     *
+     * The live table only represents the current season, so it cannot be the
+     * primary source when a historic season is selected. Prefer that season's
+     * archived tables and use the live table only to fill any remaining gaps.
+     */
+    function football_stats_get_team_crest_map(PDO $db, $competitionCode, $seasonLabel, $liveTableName)
+    {
+        $crestMap = [];
+        $archiveQueries = [
+            'SELECT team_name, team_crest FROM league_table_snapshots '
+                . "WHERE competition_code = ? AND season_label = ? AND team_crest IS NOT NULL AND team_crest != '' "
+                . 'ORDER BY matchweek DESC',
+            'SELECT team_name, team_crest FROM league_table_snapshots_by_date '
+                . "WHERE competition_code = ? AND season_label = ? AND team_crest IS NOT NULL AND team_crest != '' "
+                . 'ORDER BY snapshot_date DESC',
+        ];
+
+        foreach ($archiveQueries as $query) {
+            try {
+                $stmt = $db->prepare($query);
+                $stmt->execute([$competitionCode, $seasonLabel]);
+                foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $team) {
+                    if (!isset($crestMap[$team['team_name']])) {
+                        $crestMap[$team['team_name']] = $team['team_crest'];
+                    }
+                }
+            } catch (Exception $exception) {
+                // Older schemas may not have a crest column on every archive.
+            }
+        }
+
+        try {
+            foreach ($db->query("SELECT team_name, team_crest FROM $liveTableName")->fetchAll(PDO::FETCH_ASSOC) as $team) {
+                if (!isset($crestMap[$team['team_name']]) && trim((string)$team['team_crest']) !== '') {
+                    $crestMap[$team['team_name']] = $team['team_crest'];
+                }
+            }
+        } catch (Exception $exception) {
+            // Computed tables still render correctly when no crest source exists.
+        }
+
+        return $crestMap;
+    }
+}
+
+if (!function_exists('football_stats_add_team_crests')) {
+    /** Fill missing badges without replacing a crest stored on the standing. */
+    function football_stats_add_team_crests(array $standings, array $crestMap)
+    {
+        foreach ($standings as &$team) {
+            if (empty($team['team_crest']) && isset($crestMap[$team['team_name']])) {
+                $team['team_crest'] = $crestMap[$team['team_name']];
+            }
+        }
+        unset($team);
+
+        return $standings;
+    }
+}
+
 if (!function_exists('football_stats_empty_team_stats')) {
     function football_stats_empty_team_stats()
     {
@@ -696,13 +759,12 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
 
             $playedMatches = $mMatchesStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $crestMap = [];
-            try {
-                $cStmt = $db->query("SELECT team_name, team_crest FROM $liveTableName");
-                foreach ($cStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                    $crestMap[$row['team_name']] = $row['team_crest'];
-                }
-            } catch (Exception $e) {}
+            $crestMap = football_stats_get_team_crest_map(
+                $db,
+                $competitionCode,
+                $requestedSeasonLabel,
+                $liveTableName
+            );
 
             $stats = [];
             foreach (football_stats_get_match_roster($db, $competitionCode, $requestedSeasonLabel) as $teamName) {
@@ -852,13 +914,12 @@ if (!function_exists('football_stats_get_table_view_by_match_before')) {
 
             $playedMatches = $mMatchesStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $crestMap = [];
-            try {
-                $cStmt = $db->query("SELECT team_name, team_crest FROM $liveTableName");
-                foreach ($cStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                    $crestMap[$row['team_name']] = $row['team_crest'];
-                }
-            } catch (Exception $e) {}
+            $crestMap = football_stats_get_team_crest_map(
+                $db,
+                $competitionCode,
+                $requestedSeasonLabel,
+                $liveTableName
+            );
 
             $stats = [];
             foreach (football_stats_get_match_roster($db, $competitionCode, $requestedSeasonLabel) as $teamName) {
@@ -1104,12 +1165,7 @@ if (!function_exists('football_stats_compute_custom_match_standings')) {
             return $b['gf'] - $a['gf'];
         });
 
-        $crestMap = [];
-        try {
-            foreach ($db->query("SELECT team_name, team_crest FROM $liveTableName")->fetchAll(PDO::FETCH_ASSOC) as $team) {
-                $crestMap[$team['team_name']] = $team['team_crest'];
-            }
-        } catch (Exception $e) {}
+        $crestMap = football_stats_get_team_crest_map($db, $competitionCode, $seasonLabel, $liveTableName);
         $standings = []; $position = 1;
         foreach ($stats as $teamName => $team) {
             $standings[] = [
@@ -1177,6 +1233,8 @@ if (!function_exists('football_stats_get_table_view_combined')) {
 
         $tableView['calc_mode'] = $calcMode;
         $seasonLabel = (string)($tableView['active_season_label'] ?? $tableView['requested_season_label'] ?? '');
+        $crestMap = football_stats_get_team_crest_map($db, $competitionCode, $seasonLabel, $liveTableName);
+        $tableView['standings'] = football_stats_add_team_crests($tableView['standings'], $crestMap);
         // Keep one canonical, completed-results table available to every view.
         // Table filters are applied by the individual league templates, so
         // movement arrows can use this as an alternative to the contextually
@@ -2686,23 +2744,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
 if (!function_exists('football_stats_compute_filtered_standings')) {
     function football_stats_compute_filtered_standings(PDO $db, $competitionCode, $seasonLabel, $filter, $halfwayMatchweek, $liveTableName, $maxRegularMW = null)
     {
-        // Build crest map from live table, fallback to snapshots
-        $crestMap = [];
-        try {
-            $stmt = $db->query("SELECT team_name, team_crest FROM $liveTableName");
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                $crestMap[$row['team_name']] = $row['team_crest'];
-            }
-        } catch (Exception $e) {}
-        try {
-            $stmt = $db->prepare("SELECT team_name, MAX(team_crest) AS team_crest FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND team_crest != '' GROUP BY team_name");
-            $stmt->execute([$competitionCode, $seasonLabel]);
-            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-                if (empty($crestMap[$row['team_name']])) {
-                    $crestMap[$row['team_name']] = $row['team_crest'];
-                }
-            }
-        } catch (Exception $e) {}
+        $crestMap = football_stats_get_team_crest_map($db, $competitionCode, $seasonLabel, $liveTableName);
 
         // Fetch relevant matches (exclude playoff matches: mw=0 or mw>maxRegularMW)
         if ($filter === 'first_half') {
