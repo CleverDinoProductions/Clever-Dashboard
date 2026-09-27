@@ -17,14 +17,13 @@ return [
         'default' => ['team_count' => 20, 'regular_matchweeks' => 38, 'zones' => [
             ['key' => 'champions-league', 'label' => 'Champions League', 'from' => 1, 'to' => 4],
             ['key' => 'europa-league', 'label' => 'Europa League', 'from' => 5, 'to' => 5],
-            ['key' => 'conference-league', 'label' => 'Conference League', 'from' => 6, 'to' => 6],
             ['key' => 'relegation', 'label' => 'Relegation', 'from' => 18, 'to' => 20],
         ]],
         // England earned a fifth Champions League place for 2025/26.
         '2025-2026' => ['zones' => [
             ['key' => 'champions-league', 'label' => 'Champions League', 'from' => 1, 'to' => 5],
-            ['key' => 'europa-league', 'label' => 'Europa League', 'from' => 6, 'to' => 6],
-            ['key' => 'conference-league', 'label' => 'Conference League', 'from' => 7, 'to' => 7],
+            ['key' => 'europa-league', 'label' => 'Europa League', 'from' => 6, 'to' => 7],
+            ['key' => 'conference-league', 'label' => 'Conference League', 'from' => 8, 'to' => 8],
             ['key' => 'relegation', 'label' => 'Relegation', 'from' => 18, 'to' => 20],
         ]],
     ],
