@@ -68,6 +68,14 @@ if (!function_exists('football_stats_get_position_zone')) {
     }
 }
 
+/** Return the competition's normal placing zone without applying a season override. */
+if (!function_exists('football_stats_get_default_position_zone')) {
+    function football_stats_get_default_position_zone($competitionCode, $position)
+    {
+        return football_stats_get_position_zone($competitionCode, null, $position);
+    }
+}
+
 /** Return the final regular-season matchweek for a competition. */
 if (!function_exists('football_stats_get_final_matchweek')) {
     function football_stats_get_final_matchweek($competitionCode, $seasonLabel = null)
