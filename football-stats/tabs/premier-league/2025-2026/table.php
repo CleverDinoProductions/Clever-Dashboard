@@ -48,23 +48,30 @@ require_once __DIR__ . '/../../../includes/team-info.php';
 $team_info = $team_info_PL;
 
 /**
- * Evaluates position highlight classes for min/max thresholds
+ * Builds separate default-rule and season-rule position highlights.
  */
 function get_table_row_style(array $team, string $seasonLabel): string {
-    $pos = (int)$team['position'];
+    $position = (int)$team['position'];
     $classes = [];
-    $zone = football_stats_get_position_zone('PL', $seasonLabel, $pos);
-    $key = $zone['key'] ?? '';
-    if ($key === 'champions-league') {
-        $classes[] = 'row-ucl-min';
-        $classes[] = 'row-ucl';
-    } elseif ($key === 'europa-league') {
-        $classes[] = 'row-uel-min';
-        $classes[] = 'row-uel';
-    } elseif ($key === 'conference-league') {
-        $classes[] = 'row-uecl';
-    } elseif ($key === 'relegation') {
-        $classes[] = 'row-relegation';
+    $classSuffixes = [
+        'champions-league' => 'ucl',
+        'europa-league' => 'uel',
+        'conference-league' => 'uecl',
+        'relegation' => 'relegation',
+    ];
+
+    // The left edge is a stable reference for the competition's usual places.
+    $defaultZone = football_stats_get_default_position_zone('PL', $position);
+    $defaultKey = $defaultZone['key'] ?? '';
+    if (isset($classSuffixes[$defaultKey])) {
+        $classes[] = 'row-default-' . $classSuffixes[$defaultKey];
+    }
+
+    // The fill and right edge show the rules which actually apply that season.
+    $seasonZone = football_stats_get_position_zone('PL', $seasonLabel, $position);
+    $seasonKey = $seasonZone['key'] ?? '';
+    if (isset($classSuffixes[$seasonKey])) {
+        $classes[] = 'row-season-' . $classSuffixes[$seasonKey];
     }
 
     return !empty($classes) ? 'class="' . implode(' ', $classes) . '"' : '';
@@ -96,18 +103,17 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
   --color-relegation: #f04747;/* Relegation: Red */
 }
 
-/* Left Borders & Background Fills (Minimum Spots) */
-.row-ucl-min { background: rgba(0, 100, 0, 0.15); border-left: 4px solid var(--color-ucl); }
-.row-uel-min { background: rgba(88, 101, 242, 0.15); border-left: 4px solid var(--color-uel); }
-.row-uecl-min { background: rgba(255, 205, 0, 0.15); border-left: 4px solid var(--color-uecl); }
+/* Left edge: the Premier League's default placing rules. */
+.row-default-ucl { border-left: 4px solid var(--color-ucl); }
+.row-default-uel { border-left: 4px solid var(--color-uel); }
+.row-default-uecl { border-left: 4px solid var(--color-uecl); }
+.row-default-relegation { border-left: 4px solid var(--color-relegation); }
 
-/* Right Borders (Maximum Potential Spots) */
-.row-ucl { border-right: 4px solid var(--color-ucl); }
-.row-uel { border-right: 4px solid var(--color-uel); }
-.row-uecl { border-right: 4px solid var(--color-uecl); }
-
-/* Relegation */
-.row-relegation { background: rgba(240, 71, 71, 0.15); border-left: 4px solid var(--color-relegation); }
+/* Row fill and right edge: the rules which apply to the selected season. */
+.row-season-ucl { background: rgba(0, 100, 0, 0.15); border-right: 4px solid var(--color-ucl); }
+.row-season-uel { background: rgba(88, 101, 242, 0.15); border-right: 4px solid var(--color-uel); }
+.row-season-uecl { background: rgba(255, 205, 0, 0.15); border-right: 4px solid var(--color-uecl); }
+.row-season-relegation { background: rgba(240, 71, 71, 0.15); border-right: 4px solid var(--color-relegation); }
 </style>
 
 <div class="panel">
