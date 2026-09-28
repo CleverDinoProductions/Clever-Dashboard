@@ -213,6 +213,21 @@ assert_same(3, $simulatedByTeam['Alpha']['played'], 'A selected unplayed fixture
 assert_same(6, $simulatedByTeam['Alpha']['points'], 'A simulated home win should award three what-if points.');
 assert_same(3, $simulatedByTeam['Beta']['played'], 'Both teams should receive a played match for a simulated fixture.');
 
+$_GET = ['calc_mode' => 'custom_matches', 'snapshot_season' => '2025-2026'];
+ob_start();
+football_stats_render_table_view_controls([
+    'active_season_label' => '2025-2026',
+    'available_seasons' => ['2025-2026'],
+    'available_matchweeks' => [1, 3, 46],
+    'available_dates' => ['2025-08-03', '2025-08-10', '2026-05-02'],
+], '2025-2026', 'test', 'table');
+$customControlsMarkup = ob_get_clean();
+assert_same(true, strpos($customControlsMarkup, 'data-result-filter-action="exclude"') !== false, 'Custom rules should provide a combined expunge-results action.');
+assert_same(true, strpos($customControlsMarkup, 'data-result-filter-opponent') !== false, 'Expunging should be composable with an opponent filter.');
+assert_same(true, strpos($customControlsMarkup, 'data-fixture-status="unplayed"') !== false, 'Unplayed fixtures should be identified for bulk simulation operations.');
+assert_same(true, strpos($customControlsMarkup, 'data-bulk-fixture-status') !== false, 'Bulk outcomes should allow played and unplayed fixtures to be targeted independently.');
+assert_same(true, strpos($customControlsMarkup, '<option value="3">MW3</option>') !== false, 'Bulk matchweek choices should include a matchweek containing only unplayed fixtures.');
+
 $_GET = [
     'calc_mode' => 'custom_matches',
     'snapshot_season' => '2025-2026',
