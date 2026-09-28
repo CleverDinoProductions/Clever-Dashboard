@@ -8,6 +8,7 @@ This PHP and SQLite application presents English football and World Cup data thr
 - Regular and deep-dive tables, matches, snapshot and season comparisons
 - Four-team block analysis and live block movement
 - Team trackers, what-if projections, and season simulations
+- Custom-rule tables with per-team points deductions and deterministic outcomes for unplayed fixtures
 - Playoff views for supported lower divisions
 - World Cup groups, knockout bracket, standings, predictions, and simulation
 
