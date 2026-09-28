@@ -194,6 +194,36 @@ assert_same([
     'MW46: Alpha 3-0 Beta → Draw',
 ], $customRuleDescriptions['outcomes'], 'Custom rules should describe each applied outcome override.');
 
+$_GET = ['custom_points_deductions' => '{"Alpha":5,"Beta":0,"Invalid":"nope"}'];
+assert_same(['Alpha' => 5], football_stats_get_custom_points_deductions(), 'Custom rules should accept positive numeric points deductions and discard invalid or zero entries.');
+
+$db->exec("INSERT INTO matches VALUES
+    (3, 'TEST', '2025-2026', 3, '2025-08-10', '2025-08-10 15:00:00', 'Alpha', 'Beta', NULL, NULL)");
+$simulatedStandings = football_stats_compute_custom_match_standings(
+    $db,
+    'TEST',
+    '2025-2026',
+    'league_table_TEST',
+    [],
+    [3 => 'home']
+);
+$simulatedByTeam = [];
+foreach ($simulatedStandings as $team) $simulatedByTeam[$team['team_name']] = $team;
+assert_same(3, $simulatedByTeam['Alpha']['played'], 'A selected unplayed fixture should be added to the what-if table.');
+assert_same(6, $simulatedByTeam['Alpha']['points'], 'A simulated home win should award three what-if points.');
+assert_same(3, $simulatedByTeam['Beta']['played'], 'Both teams should receive a played match for a simulated fixture.');
+
+$_GET = [
+    'calc_mode' => 'custom_matches',
+    'snapshot_season' => '2025-2026',
+    'outcome_overrides' => '3-h',
+    'custom_points_deductions' => '{"Alpha":5}',
+];
+$deductedView = football_stats_get_table_view_combined($db, 'TEST', 'league_table_TEST', '2025-2026');
+$deductedByTeam = [];
+foreach ($deductedView['standings'] as $team) $deductedByTeam[$team['team_name']] = $team;
+assert_same(1, $deductedByTeam['Alpha']['points'], 'A custom deduction should be applied after simulated fixture points.');
+
 $_GET = [];
 $defaultStyleView = football_stats_apply_movement_preference(['position_movements' => []], [], []);
 assert_same('detailed', $defaultStyleView['movement_style'] ?? null, 'The original detailed movement display should remain the default.');
