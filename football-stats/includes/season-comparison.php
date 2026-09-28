@@ -54,16 +54,69 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
             $_GET[$normalKey] = $savedGet[$comparisonKey];
         }
     }
-    // A season change can submit the point selected for the previous season.
-    // Let the standard engine choose its newest point instead of falling back
-    // to the current live table when that matchweek is not valid here.
-    if ($calcMode === 'by_matchweek' && isset($_GET['matchweek'])) {
-        $validPointStmt = $db->prepare(
-            'SELECT 1 FROM league_table_snapshots WHERE competition_code = ? '
-            . 'AND season_label = ? AND matchweek = ? LIMIT 1'
+
+    // Each side needs a real point before the shared table engine runs. In
+    // particular, the match-based engine returns an empty table when no match
+    // ID is supplied. This happens on the first request after changing the
+    // comparison mode because the previous form did not contain match selects.
+    // It also happens when a season change carries a point from the other
+    // season. Validate the submitted point and otherwise select the newest
+    // available point for this side.
+    if ($calcMode === 'by_matchweek') {
+        $pointStmt = $db->prepare(
+            'SELECT MAX(matchweek) FROM league_table_snapshots WHERE competition_code = ? '
+            . 'AND season_label = ? AND matchweek BETWEEN 1 AND ?'
+            . (isset($_GET['matchweek']) ? ' AND matchweek = ?' : '')
         );
-        $validPointStmt->execute([$competitionCode, $season, (int)$_GET['matchweek']]);
-        if (!$validPointStmt->fetchColumn()) unset($_GET['matchweek']);
+        $pointParams = [$competitionCode, $season, $totalGames];
+        if (isset($_GET['matchweek'])) $pointParams[] = (int)$_GET['matchweek'];
+        $pointStmt->execute($pointParams);
+        $point = $pointStmt->fetchColumn();
+        if ($point === false || $point === null) {
+            unset($_GET['matchweek']);
+        } else {
+            $_GET['matchweek'] = (int)$point;
+        }
+    } elseif ($calcMode === 'by_date') {
+        $pointStmt = $db->prepare(
+            'SELECT MAX(snapshot_date) FROM league_table_snapshots_by_date '
+            . 'WHERE competition_code = ? AND season_label = ?'
+            . (isset($_GET['snapshot_date']) ? ' AND snapshot_date = ?' : '')
+        );
+        $pointParams = [$competitionCode, $season];
+        if (isset($_GET['snapshot_date'])) $pointParams[] = (string)$_GET['snapshot_date'];
+        $pointStmt->execute($pointParams);
+        $point = $pointStmt->fetchColumn();
+        if ($point === false || $point === null) {
+            unset($_GET['snapshot_date']);
+        } else {
+            $_GET['snapshot_date'] = (string)$point;
+        }
+    } elseif (in_array($calcMode, ['by_match', 'by_match_before'], true)) {
+        $pointStmt = $db->prepare(
+            'SELECT id FROM matches WHERE competition_code = ? AND season_label = ? '
+            . 'AND matchweek BETWEEN 1 AND ?'
+            . (isset($_GET['match_id']) ? ' AND id = ?' : '')
+            . " ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date) DESC, id DESC LIMIT 1"
+        );
+        $pointParams = [$competitionCode, $season, $totalGames];
+        if (isset($_GET['match_id'])) $pointParams[] = (int)$_GET['match_id'];
+        $pointStmt->execute($pointParams);
+        $point = $pointStmt->fetchColumn();
+        if (($point === false || $point === null) && isset($_GET['match_id'])) {
+            $pointStmt = $db->prepare(
+                'SELECT id FROM matches WHERE competition_code = ? AND season_label = ? '
+                . 'AND matchweek BETWEEN 1 AND ? '
+                . "ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date) DESC, id DESC LIMIT 1"
+            );
+            $pointStmt->execute([$competitionCode, $season, $totalGames]);
+            $point = $pointStmt->fetchColumn();
+        }
+        if ($point === false || $point === null) {
+            unset($_GET['match_id']);
+        } else {
+            $_GET['match_id'] = (int)$point;
+        }
     }
 
     $view = football_stats_get_table_view_combined($db, $competitionCode, $liveTableName, $season);
@@ -108,9 +161,7 @@ $getPointOptions = static function ($season) use ($db, $competitionCode, $calcMo
 $pointField = $calcMode === 'by_date' ? 'date' : (in_array($calcMode, ['by_match', 'by_match_before'], true) ? 'match' : 'matchweek');
 $leftOptions = $getPointOptions($leftView['comparison_season']);
 $rightOptions = $getPointOptions($rightView['comparison_season']);
-$selectedPoint = static function ($side, array $view) use ($pointField) {
-    $requestKey = 'compare_' . $pointField . '_' . $side;
-    if (isset($_GET[$requestKey])) return (string)$_GET[$requestKey];
+$selectedPoint = static function (array $view) use ($pointField) {
     if ($pointField === 'date') return (string)($view['active_date'] ?? '');
     if ($pointField === 'match') return (string)($view['selected_match_id'] ?? '');
     return (string)($view['active_matchweek'] ?? '');
@@ -146,7 +197,7 @@ $selectedPoint = static function ($side, array $view) use ($pointField) {
         <?php endforeach; ?>
         <?php if ($calcMode !== 'custom_matches'): foreach (['left'=>[$leftView,$leftOptions],'right'=>[$rightView,$rightOptions]] as $side=>$data): ?>
             <div><label for="point-<?= $side ?>"><?= ucfirst($side) ?> point</label><select id="point-<?= $side ?>" name="compare_<?= $pointField ?>_<?= $side ?>">
-                <?php $activePoint=$selectedPoint($side,$data[0]); foreach ($data[1] as $option): ?><option value="<?= htmlspecialchars((string)$option['value'], ENT_QUOTES, 'UTF-8') ?>" <?= $activePoint === (string)$option['value'] ? 'selected' : '' ?>><?= htmlspecialchars((string)$option['label'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?>
+                <?php $activePoint=$selectedPoint($data[0]); foreach ($data[1] as $option): ?><option value="<?= htmlspecialchars((string)$option['value'], ENT_QUOTES, 'UTF-8') ?>" <?= $activePoint === (string)$option['value'] ? 'selected' : '' ?>><?= htmlspecialchars((string)$option['label'], ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?>
             </select></div>
         <?php endforeach; endif; ?>
         <button type="submit">Compare seasons</button>
