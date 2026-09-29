@@ -257,6 +257,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'excluded_matches',
             'excluded_results',
             'outcome_overrides',
+            'custom_points_deductions',
         ];
         
         foreach ($persistentKeys as $key) {
@@ -1077,6 +1078,25 @@ if (!function_exists('football_stats_get_outcome_overrides')) {
     }
 }
 
+/** Return user-entered what-if points deductions as [team name => points]. */
+if (!function_exists('football_stats_get_custom_points_deductions')) {
+    function football_stats_get_custom_points_deductions()
+    {
+        $decoded = json_decode((string)($_GET['custom_points_deductions'] ?? ''), true);
+        if (!is_array($decoded)) return [];
+
+        $deductions = [];
+        foreach ($decoded as $teamName => $points) {
+            $teamName = trim((string)$teamName);
+            if ($teamName === '' || !is_numeric($points)) continue;
+            $points = max(0, min(100, (int)$points));
+            if ($points > 0) $deductions[$teamName] = $points;
+        }
+        ksort($deductions, SORT_NATURAL | SORT_FLAG_CASE);
+        return $deductions;
+    }
+}
+
 /** Build human-readable labels for the filters and outcomes used by custom rules. */
 if (!function_exists('football_stats_describe_custom_rules')) {
     function football_stats_describe_custom_rules(array $matches, array $excludedResults, array $outcomeOverrides)
@@ -1093,9 +1113,10 @@ if (!function_exists('football_stats_describe_custom_rules')) {
             $awayKey = 'a' . $matchId;
             $homeExcluded = isset($excludedLookup[$homeKey]);
             $awayExcluded = isset($excludedLookup[$awayKey]);
+            $played = $match['home_goals'] !== null && $match['away_goals'] !== null;
+            $score = $played ? (string)$match['home_goals'] . '-' . (string)$match['away_goals'] : 'vs';
             $matchLabel = 'MW' . (int)($match['matchweek'] ?? 0) . ': '
-                . (string)($match['home_team'] ?? '') . ' '
-                . (string)($match['home_goals'] ?? '') . '-' . (string)($match['away_goals'] ?? '') . ' '
+                . (string)($match['home_team'] ?? '') . ' ' . $score . ' '
                 . (string)($match['away_team'] ?? '');
 
             if ($homeExcluded && $awayExcluded) {
@@ -1135,7 +1156,7 @@ if (!function_exists('football_stats_apply_outcome_override')) {
     }
 }
 
-/** Calculate a league table from completed regular-season matches chosen by the user. */
+/** Calculate a table from completed results plus selected unplayed what-if fixtures. */
 if (!function_exists('football_stats_compute_custom_match_standings')) {
     function football_stats_compute_custom_match_standings(PDO $db, $competitionCode, $seasonLabel, $liveTableName, array $excludedResults, array $outcomeOverrides = [])
     {
@@ -1143,7 +1164,6 @@ if (!function_exists('football_stats_compute_custom_match_standings')) {
         $stmt = $db->prepare(
             'SELECT id, home_team, away_team, home_goals, away_goals FROM matches '
             . 'WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? '
-            . 'AND home_goals IS NOT NULL AND away_goals IS NOT NULL '
             . 'ORDER BY COALESCE(NULLIF(match_timestamp, ""), match_date), id'
         );
         $stmt->execute([$competitionCode, $seasonLabel, $finalMatchweek]);
@@ -1156,13 +1176,15 @@ if (!function_exists('football_stats_compute_custom_match_standings')) {
 
         foreach ($matches as $match) {
             $matchId = (int)$match['id'];
+            $isPlayed = $match['home_goals'] !== null && $match['away_goals'] !== null;
+            if (!$isPlayed && !isset($outcomeOverrides[$matchId])) continue;
             $includeHome = !isset($excludedLookup['h' . $matchId]);
             $includeAway = !isset($excludedLookup['a' . $matchId]);
             if (!$includeHome && !$includeAway) continue;
             $home = $match['home_team'];
             $away = $match['away_team'];
-            $homeGoals = (int)$match['home_goals'];
-            $awayGoals = (int)$match['away_goals'];
+            $homeGoals = $isPlayed ? (int)$match['home_goals'] : 0;
+            $awayGoals = $isPlayed ? (int)$match['away_goals'] : 0;
             if (isset($outcomeOverrides[$matchId])) {
                 [$homeGoals, $awayGoals] = football_stats_apply_outcome_override(
                     $homeGoals,
@@ -1227,6 +1249,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $seasonLabel = (string)($tableView['active_season_label'] ?? $fallbackSeasonLabel);
             $excludedIds = football_stats_get_excluded_result_keys();
             $outcomeOverrides = football_stats_get_outcome_overrides();
+            $customPointsDeductions = football_stats_get_custom_points_deductions();
             $tableView['standings'] = football_stats_compute_custom_match_standings(
                 $db,
                 $competitionCode,
@@ -1235,6 +1258,13 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $excludedIds,
                 $outcomeOverrides
             );
+            if ($customPointsDeductions) {
+                $deductions = [];
+                foreach ($customPointsDeductions as $teamName => $points) {
+                    $deductions[] = ['team_name' => $teamName, 'points' => $points, 'reason' => 'Custom what-if deduction'];
+                }
+                $tableView['standings'] = football_stats_apply_points_deductions($tableView['standings'], $deductions);
+            }
             // Keep separate baselines so movement can explain either half of a
             // custom calculation: changed outcomes or omitted team results.
             $tableView['custom_selected_original_standings'] = football_stats_compute_custom_match_standings(
@@ -1255,6 +1285,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $tableView['is_snapshot_view'] = true;
             $tableView['excluded_match_ids'] = $excludedIds;
             $tableView['outcome_overrides'] = $outcomeOverrides;
+            $tableView['custom_points_deductions'] = $customPointsDeductions;
         } elseif ($calcMode === 'by_match') {
             $tableView = football_stats_get_table_view_by_match($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
         } elseif ($calcMode === 'by_match_before') {
@@ -1916,10 +1947,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             $mQuery = 'SELECT id, matchweek, match_date, match_timestamp, home_team, away_team, home_goals, away_goals FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ?';
             $params = [$competitionCode, $activeSeason, $finalMatchweek];
 
-            if ($calcMode === 'custom_matches') {
-                $mQuery .= ' AND home_goals IS NOT NULL AND away_goals IS NOT NULL';
-            }
-
             if ($calcMode !== 'custom_matches' && $matchFilterMode === 'matchweek' && $selectedMatchweek !== null) {
                 $mQuery .= ' AND matchweek = ?';
                 $params[] = $selectedMatchweek;
@@ -2035,14 +2062,18 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <?php
                     $availableResultKeys = [];
                     foreach ($availableMatches as $availableMatch) {
-                        $availableResultKeys[] = 'h' . (int)$availableMatch['id'];
-                        $availableResultKeys[] = 'a' . (int)$availableMatch['id'];
+                        if ($availableMatch['home_goals'] !== null && $availableMatch['away_goals'] !== null) {
+                            $availableResultKeys[] = 'h' . (int)$availableMatch['id'];
+                            $availableResultKeys[] = 'a' . (int)$availableMatch['id'];
+                        }
                     }
                     $excludedCount = count(array_intersect($availableResultKeys, football_stats_get_excluded_result_keys()));
                     ?>
                     <?php $alteredOutcomeCount = count(football_stats_get_outcome_overrides()); ?>
-                    <span><?php echo (count($availableMatches) * 2) - $excludedCount; ?> of <?php echo count($availableMatches) * 2; ?> team results included</span>
+                    <?php $customPointsDeductions = football_stats_get_custom_points_deductions(); ?>
+                    <span><?php echo count($availableResultKeys) - $excludedCount; ?> of <?php echo count($availableResultKeys); ?> completed team results included</span>
                     <span><?php echo $alteredOutcomeCount; ?> match outcome<?php echo $alteredOutcomeCount === 1 ? '' : 's'; ?> altered</span>
+                    <span><?php echo count($customPointsDeductions); ?> points deduction<?php echo count($customPointsDeductions) === 1 ? '' : 's'; ?></span>
                     <?php $appliedCustomRules = football_stats_describe_custom_rules($availableMatches, football_stats_get_excluded_result_keys(), football_stats_get_outcome_overrides()); ?>
                     <details class="custom-rules-applied" aria-label="Applied custom rules">
                         <summary>
@@ -2051,7 +2082,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             <span class="custom-rules-applied-empty">(toggle details)</span>
                         </summary>
                         <div class="custom-rules-applied-details">
-                        <?php if (empty($appliedCustomRules['filters']) && empty($appliedCustomRules['outcomes'])): ?>
+                        <?php if (empty($appliedCustomRules['filters']) && empty($appliedCustomRules['outcomes']) && empty($customPointsDeductions)): ?>
                             <span class="custom-rules-applied-empty">No filters or altered outcomes are applied. All actual team results are included.</span>
                         <?php else: ?>
                             <?php if (!empty($appliedCustomRules['filters'])): ?>
@@ -2062,6 +2093,11 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             <?php if (!empty($appliedCustomRules['outcomes'])): ?>
                                 <span class="custom-rules-applied-group"><span class="custom-rules-applied-label">Outcomes:</span>
                                 <?php foreach ($appliedCustomRules['outcomes'] as $appliedOutcome): ?><span class="custom-rules-applied-item"><?php echo htmlspecialchars($appliedOutcome, ENT_QUOTES, 'UTF-8'); ?></span><?php endforeach; ?>
+                                </span>
+                            <?php endif; ?>
+                            <?php if (!empty($customPointsDeductions)): ?>
+                                <span class="custom-rules-applied-group"><span class="custom-rules-applied-label">Deductions:</span>
+                                <?php foreach ($customPointsDeductions as $teamName => $points): ?><span class="custom-rules-applied-item"><?php echo htmlspecialchars($teamName, ENT_QUOTES, 'UTF-8'); ?>: &minus;<?php echo (int)$points; ?> pts</span><?php endforeach; ?>
                                 </span>
                             <?php endif; ?>
                         <?php endif; ?>
@@ -2105,7 +2141,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_match'])); ?>" <?php echo ($calcMode === 'by_match') ? 'selected="selected"' : ''; ?>>
                             By Specific Match (After)
                         </option>
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null, 'custom_points_deductions' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
                             By Custom Rules
                         </option>
                     </select>
@@ -2116,7 +2152,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
                     <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
                         <?php foreach ($tableView['available_seasons'] as $season): ?>
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season, 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null])); ?>" <?php echo ((string)$season === $activeSeason) ? 'selected="selected"' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season, 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null, 'custom_points_deductions' => null])); ?>" <?php echo ((string)$season === $activeSeason) ? 'selected="selected"' : ''; ?>>
                                 Season <?php echo htmlspecialchars($season); ?>
                             </option>
                         <?php endforeach; ?>
@@ -2127,14 +2163,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <?php
                     $excludedLookup = array_fill_keys(football_stats_get_excluded_result_keys(), true);
                     $outcomeOverrides = football_stats_get_outcome_overrides();
+                    $customPointsDeductions = football_stats_get_custom_points_deductions();
                     $completedMatchweeks = [];
+                    $allMatchweeks = [];
                     foreach ($availableMatches as $availableMatch) {
+                        $allMatchweeks[(int)$availableMatch['matchweek']] = true;
                         if ($availableMatch['home_goals'] !== null && $availableMatch['away_goals'] !== null) {
                             $completedMatchweeks[(int)$availableMatch['matchweek']] = true;
                         }
                     }
                     $completedMatchweeks = array_keys($completedMatchweeks);
                     sort($completedMatchweeks, SORT_NUMERIC);
+                    $allMatchweeks = array_keys($allMatchweeks);
+                    sort($allMatchweeks, SORT_NUMERIC);
                     $customRuleTeams = [];
                     foreach ($availableMatches as $availableMatch) {
                         $customRuleTeams[$availableMatch['home_team']] = true;
@@ -2246,8 +2287,60 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     </div>
                                 </details>
                                 <details class="custom-match-section">
+                                    <summary>Filter / expunge</summary>
+                                    <div class="custom-match-section-controls">
+                                        <p style="margin:0;color:#b9bbbe;line-height:1.45;">Combine every field below to include or expunge matching team results. “All” leaves that field unrestricted.</p>
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $controlId; ?>-result-filter-team">Team</label>
+                                            <select id="<?php echo $controlId; ?>-result-filter-team" data-result-filter-team>
+                                                <option value="all">All teams</option>
+                                                <?php foreach ($customRuleTeams as $customRuleTeam): ?><option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
+                                            </select>
+                                        </span>
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $controlId; ?>-result-filter-opponent">Opponent</label>
+                                            <select id="<?php echo $controlId; ?>-result-filter-opponent" data-result-filter-opponent>
+                                                <option value="all">All opponents</option>
+                                                <?php foreach ($customRuleTeams as $customRuleTeam): ?><option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
+                                            </select>
+                                        </span>
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $controlId; ?>-result-filter-matchweek">Matchweek</label>
+                                            <select id="<?php echo $controlId; ?>-result-filter-matchweek" data-result-filter-matchweek>
+                                                <option value="all">All matchweeks</option>
+                                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?><option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option><?php endforeach; ?>
+                                            </select>
+                                        </span>
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $controlId; ?>-result-filter-venue">Venue</label>
+                                            <select id="<?php echo $controlId; ?>-result-filter-venue" data-result-filter-venue>
+                                                <option value="all">Home or away</option><option value="home">Home only</option><option value="away">Away only</option>
+                                            </select>
+                                        </span>
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $controlId; ?>-result-filter-outcome">Result</label>
+                                            <select id="<?php echo $controlId; ?>-result-filter-outcome" data-result-filter-outcome>
+                                                <option value="all">Every result</option><option value="win">Wins only</option><option value="draw">Draws only</option><option value="loss">Losses only</option>
+                                            </select>
+                                        </span>
+                                        <span class="custom-match-rule custom-match-outcome-rule">
+                                            <label>Apply combined filter</label>
+                                            <button type="button" data-result-filter-action="exclude">Expunge matching results</button>
+                                            <button type="button" data-result-filter-action="include">Restore matching results</button>
+                                        </span>
+                                    </div>
+                                </details>
+                                <details class="custom-match-section">
                                     <summary>Alter outcomes</summary>
                                     <div class="custom-match-section-controls">
+                                        <span class="custom-match-rule">
+                                            <label for="<?php echo $controlId; ?>-bulk-fixture-status">Fixtures</label>
+                                            <select id="<?php echo $controlId; ?>-bulk-fixture-status" data-bulk-fixture-status>
+                                                <option value="all">Played and unplayed</option>
+                                                <option value="played">Played only</option>
+                                                <option value="unplayed">Unplayed only</option>
+                                            </select>
+                                        </span>
                                         <span class="custom-match-rule custom-match-outcome-rule">
                                             <label for="<?php echo $controlId; ?>-bulk-outcome">All fixtures</label>
                                             <select data-bulk-current-outcome aria-label="Current outcomes to change across all fixtures">
@@ -2255,6 +2348,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="home">Current Team A wins only</option>
                                                 <option value="draw">Current draws only</option>
                                                 <option value="away">Current Team B wins only</option>
+                                                <option value="actual">Currently not simulated only</option>
                                             </select>
                                             <select id="<?php echo $controlId; ?>-bulk-outcome" data-bulk-outcome>
                                                 <option value="actual">Change to actual outcome</option>
@@ -2267,8 +2361,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                         <span class="custom-match-rule custom-match-outcome-rule">
                                             <label for="<?php echo $controlId; ?>-bulk-outcome-matchweek">By matchweek</label>
                                             <select id="<?php echo $controlId; ?>-bulk-outcome-matchweek" data-bulk-outcome-matchweek>
-                                                <?php foreach ($completedMatchweeks as $completedMatchweek): ?>
-                                                    <option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option>
+                                                <?php foreach ($allMatchweeks as $matchweek): ?>
+                                                    <option value="<?php echo $matchweek; ?>">MW<?php echo $matchweek; ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                             <select data-bulk-matchweek-current-outcome aria-label="Current outcomes to change in selected matchweek">
@@ -2276,6 +2370,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="home">Current Team A wins only</option>
                                                 <option value="draw">Current draws only</option>
                                                 <option value="away">Current Team B wins only</option>
+                                                <option value="actual">Currently not simulated only</option>
                                             </select>
                                             <select data-bulk-matchweek-outcome aria-label="Outcome for selected matchweek">
                                                 <option value="actual">Change to actual outcome</option>
@@ -2297,6 +2392,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="win">Current wins only</option>
                                                 <option value="draw">Current draws only</option>
                                                 <option value="loss">Current losses only</option>
+                                                <option value="unplayed">Currently not simulated only</option>
                                             </select>
                                             <select data-bulk-team-venue aria-label="Fixture venue for selected team">
                                                 <option value="all">All venues</option>
@@ -2317,6 +2413,17 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                             </select>
                                             <button type="button" data-bulk-outcome-apply="team">Apply to team</button>
                                         </span>
+                                    </div>
+                                </details>
+                                <details class="custom-match-section">
+                                    <summary>Deduct points</summary>
+                                    <div class="custom-match-section-controls">
+                                        <?php foreach ($customRuleTeams as $customRuleTeam): ?>
+                                        <label class="custom-match-rule">
+                                            <span><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <input type="number" min="0" max="100" step="1" value="<?php echo (int)($customPointsDeductions[$customRuleTeam] ?? 0); ?>" data-points-deduction="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Points to deduct from <?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>">
+                                        </label>
+                                        <?php endforeach; ?>
                                     </div>
                                 </details>
                             </div>
@@ -2355,9 +2462,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     ?>
                                     <div class="custom-match-option">
                                         <span><?php echo htmlspecialchars("{$match['home_team']} {$match['home_goals']}-{$match['away_goals']} {$match['away_team']}", ENT_QUOTES, 'UTF-8'); ?></span>
-                                        <label class="custom-match-result"><input type="checkbox" value="h<?php echo $matchId; ?>" data-result-side="home" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $homeResult; ?>" <?php echo isset($excludedLookup['h' . $matchId]) ? '' : 'checked'; ?>> Team A</label>
-                                        <label class="custom-match-result"><input type="checkbox" value="a<?php echo $matchId; ?>" data-result-side="away" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $awayResult; ?>" <?php echo isset($excludedLookup['a' . $matchId]) ? '' : 'checked'; ?>> Team B</label>
-                                        <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" data-matchweek="<?php echo $matchweek; ?>" data-home-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-away-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-home-result="<?php echo $homeResult; ?>" data-away-result="<?php echo $awayResult; ?>" data-actual-outcome="<?php echo $actualOutcome; ?>" aria-label="What-if outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
+                                        <label class="custom-match-result"><input type="checkbox" value="h<?php echo $matchId; ?>" data-result-side="home" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-opponent="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $homeResult; ?>" <?php echo isset($excludedLookup['h' . $matchId]) ? '' : 'checked'; ?>> Team A</label>
+                                        <label class="custom-match-result"><input type="checkbox" value="a<?php echo $matchId; ?>" data-result-side="away" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-opponent="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $awayResult; ?>" <?php echo isset($excludedLookup['a' . $matchId]) ? '' : 'checked'; ?>> Team B</label>
+                                        <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" data-fixture-status="played" data-matchweek="<?php echo $matchweek; ?>" data-home-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-away-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-home-result="<?php echo $homeResult; ?>" data-away-result="<?php echo $awayResult; ?>" data-actual-outcome="<?php echo $actualOutcome; ?>" aria-label="What-if outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <option value="actual"<?php echo $selectedOutcome === 'actual' ? ' selected' : ''; ?>>Actual: <?php echo ucfirst($actualOutcome); ?></option>
                                             <option value="home"<?php echo $selectedOutcome === 'home' ? ' selected' : ''; ?>>Team A wins</option>
                                             <option value="draw"<?php echo $selectedOutcome === 'draw' ? ' selected' : ''; ?>>Draw</option>
@@ -2368,6 +2475,35 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 </div>
                             </details>
                             <?php endforeach; ?>
+                            <?php
+                            $unplayedByMatchweek = [];
+                            foreach ($availableMatches as $match) {
+                                if ($match['home_goals'] === null || $match['away_goals'] === null) {
+                                    $unplayedByMatchweek[(int)$match['matchweek']][] = $match;
+                                }
+                            }
+                            if ($unplayedByMatchweek):
+                            ?>
+                            <details class="custom-match-week" open>
+                                <summary>Simulate unplayed fixtures (<?php echo array_sum(array_map('count', $unplayedByMatchweek)); ?> remaining)</summary>
+                                <div class="custom-match-week-options">
+                                <?php foreach ($unplayedByMatchweek as $matchweek => $fixtures): foreach ($fixtures as $match):
+                                    $matchId = (int)$match['id'];
+                                    $selectedOutcome = $outcomeOverrides[$matchId] ?? 'actual';
+                                ?>
+                                    <div class="custom-match-option custom-match-unplayed">
+                                        <span>MW<?php echo $matchweek; ?>: <?php echo htmlspecialchars($match['home_team'] . ' vs ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" data-fixture-status="unplayed" data-matchweek="<?php echo $matchweek; ?>" data-home-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-away-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-home-result="unplayed" data-away-result="unplayed" data-actual-outcome="actual" aria-label="Simulated outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
+                                            <option value="actual"<?php echo $selectedOutcome === 'actual' ? ' selected' : ''; ?>>Not simulated</option>
+                                            <option value="home"<?php echo $selectedOutcome === 'home' ? ' selected' : ''; ?>><?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?> wins</option>
+                                            <option value="draw"<?php echo $selectedOutcome === 'draw' ? ' selected' : ''; ?>>Draw</option>
+                                            <option value="away"<?php echo $selectedOutcome === 'away' ? ' selected' : ''; ?>><?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?> wins</option>
+                                        </select>
+                                    </div>
+                                <?php endforeach; endforeach; ?>
+                                </div>
+                            </details>
+                            <?php endif; ?>
                         </div>
                     </details>
                     <script>
@@ -2376,6 +2512,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         if (!panel) return;
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
                         var outcomeSelects = Array.prototype.slice.call(panel.querySelectorAll('[data-outcome-match]'));
+                        var deductionInputs = Array.prototype.slice.call(panel.querySelectorAll('[data-points-deduction]'));
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
                         var pendingSummary = panel.querySelector('[data-match-pending-summary]');
                         var pendingDetails = panel.querySelector('[data-match-pending-details]');
@@ -2397,6 +2534,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         function updatePendingRules() {
                             var excluded = boxes.filter(function (box) { return !box.checked; });
                             var altered = outcomeSelects.filter(function (select) { return select.value !== 'actual'; });
+                            var deductions = deductionInputs.filter(function (input) { return Number(input.value) > 0; });
                             var filters = excluded.map(function (box) {
                                 var fixture = box.closest('.custom-match-option').querySelector('span').textContent.trim();
                                 return 'Exclude ' + box.dataset.team + "'s result from MW" + box.dataset.matchweek + ': ' + fixture;
@@ -2408,9 +2546,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 if (label === 'Team B wins') label = select.dataset.awayTeam + ' wins';
                                 return 'MW' + select.dataset.matchweek + ': ' + fixture + ' \u2192 ' + label;
                             });
-                            pendingSummary.textContent = filters.length + ' filter' + (filters.length === 1 ? '' : 's') + ' \u2022 ' + altered.length + ' altered outcome' + (altered.length === 1 ? '' : 's');
+                            pendingSummary.textContent = filters.length + ' filter' + (filters.length === 1 ? '' : 's') + ' \u2022 ' + altered.length + ' simulated/altered outcome' + (altered.length === 1 ? '' : 's') + ' \u2022 ' + deductions.length + ' deduction' + (deductions.length === 1 ? '' : 's');
                             pendingDetails.textContent = '';
-                            if (!filters.length && !outcomes.length) {
+                            if (!filters.length && !outcomes.length && !deductions.length) {
                                 var empty = document.createElement('span');
                                 empty.className = 'custom-rules-applied-empty';
                                 empty.textContent = 'All actual team results will be included.';
@@ -2419,6 +2557,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             }
                             if (filters.length) addPendingGroup('Filters', filters);
                             if (outcomes.length) addPendingGroup('Outcomes', outcomes);
+                            if (deductions.length) addPendingGroup('Deductions', deductions.map(function (input) { return input.dataset.pointsDeduction + ': -' + Number(input.value) + ' pts'; }));
                         }
                         function updateSelectionStatus() {
                             var selected = boxes.filter(function (box) { return box.checked; }).length;
@@ -2510,13 +2649,34 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 updateSelectionStatus();
                             });
                         });
+                        Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-action]'), function (button) {
+                            button.addEventListener('click', function () {
+                                var team = panel.querySelector('[data-result-filter-team]').value;
+                                var opponent = panel.querySelector('[data-result-filter-opponent]').value;
+                                var matchweek = panel.querySelector('[data-result-filter-matchweek]').value;
+                                var venue = panel.querySelector('[data-result-filter-venue]').value;
+                                var outcome = panel.querySelector('[data-result-filter-outcome]').value;
+                                var include = this.dataset.resultFilterAction === 'include';
+                                boxes.forEach(function (box) {
+                                    if (team !== 'all' && box.dataset.team !== team) return;
+                                    if (opponent !== 'all' && box.dataset.opponent !== opponent) return;
+                                    if (matchweek !== 'all' && box.dataset.matchweek !== matchweek) return;
+                                    if (venue !== 'all' && box.dataset.resultSide !== venue) return;
+                                    if (outcome !== 'all' && box.dataset.result !== outcome) return;
+                                    box.checked = include;
+                                });
+                                updateSelectionStatus();
+                            });
+                        });
                         panel.querySelector('[data-match-reset]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
                             outcomeSelects.forEach(function (select) { select.value = 'actual'; });
+                            deductionInputs.forEach(function (input) { input.value = 0; });
                             var url = new URL(window.location.href);
                             url.searchParams.delete('excluded_matches');
                             url.searchParams.delete('excluded_results');
                             url.searchParams.delete('outcome_overrides');
+                            url.searchParams.delete('custom_points_deductions');
                             window.location.assign(url.toString());
                         });
                         boxes.forEach(function (box) {
@@ -2525,8 +2685,17 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         outcomeSelects.forEach(function (select) {
                             select.addEventListener('change', updateSelectionStatus);
                         });
-                        function hasActualOutcome(select, outcome) {
-                            return outcome === 'all' || select.dataset.actualOutcome === outcome;
+                        deductionInputs.forEach(function (input) { input.addEventListener('input', updateSelectionStatus); });
+                        function hasCurrentFixtureOutcome(select, outcome) {
+                            if (outcome === 'all') return true;
+                            var current = select.value === 'actual' ? select.dataset.actualOutcome : select.value;
+                            return current === outcome;
+                        }
+                        function getCurrentTeamOutcome(select, isHomeTeam) {
+                            var fixtureOutcome = select.value === 'actual' ? select.dataset.actualOutcome : select.value;
+                            if (fixtureOutcome === 'actual') return 'unplayed';
+                            if (fixtureOutcome === 'draw') return 'draw';
+                            return (fixtureOutcome === 'home') === isHomeTeam ? 'win' : 'loss';
                         }
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-bulk-outcome-apply]'), function (button) {
                             button.addEventListener('click', function () {
@@ -2536,6 +2705,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var currentTeamOutcome = panel.querySelector('[data-bulk-team-current-outcome]').value;
                                 var teamVenue = panel.querySelector('[data-bulk-team-venue]').value;
                                 var teamOpponent = panel.querySelector('[data-bulk-team-opponent]').value;
+                                var fixtureStatus = panel.querySelector('[data-bulk-fixture-status]').value;
                                 var currentFixtureOutcome = scope === 'all'
                                     ? panel.querySelector('[data-bulk-current-outcome]').value
                                     : panel.querySelector('[data-bulk-matchweek-current-outcome]').value;
@@ -2544,8 +2714,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     : panel.querySelector(scope === 'matchweek' ? '[data-bulk-matchweek-outcome]' : '[data-bulk-team-outcome]').value;
 
                                 outcomeSelects.forEach(function (select) {
-                                    if (scope === 'all' && !hasActualOutcome(select, currentFixtureOutcome)) return;
-                                    if (scope === 'matchweek' && (select.dataset.matchweek !== matchweek || !hasActualOutcome(select, currentFixtureOutcome))) return;
+                                    if (fixtureStatus !== 'all' && select.dataset.fixtureStatus !== fixtureStatus) return;
+                                    if (scope === 'all' && !hasCurrentFixtureOutcome(select, currentFixtureOutcome)) return;
+                                    if (scope === 'matchweek' && (select.dataset.matchweek !== matchweek || !hasCurrentFixtureOutcome(select, currentFixtureOutcome))) return;
                                     if (scope === 'team') {
                                         var isHomeTeam = select.dataset.homeTeam === team;
                                         var isAwayTeam = select.dataset.awayTeam === team;
@@ -2553,8 +2724,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                         if (teamVenue !== 'all' && (teamVenue === 'home') !== isHomeTeam) return;
                                         var opponent = isHomeTeam ? select.dataset.awayTeam : select.dataset.homeTeam;
                                         if (teamOpponent !== 'all' && opponent !== teamOpponent) return;
-                                        var actualTeamOutcome = isHomeTeam ? select.dataset.homeResult : select.dataset.awayResult;
-                                        if (currentTeamOutcome !== 'all' && actualTeamOutcome !== currentTeamOutcome) return;
+                                        var effectiveTeamOutcome = getCurrentTeamOutcome(select, isHomeTeam);
+                                        if (currentTeamOutcome !== 'all' && effectiveTeamOutcome !== currentTeamOutcome) return;
                                         if (outcome === 'actual' || outcome === 'draw') {
                                             select.value = outcome;
                                         } else if (outcome === 'win') {
@@ -2584,6 +2755,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             });
                             if (overrides.length) url.searchParams.set('outcome_overrides', overrides.join(','));
                             else url.searchParams.delete('outcome_overrides');
+                            var deductions = {};
+                            deductionInputs.forEach(function (input) {
+                                var points = Math.max(0, Math.min(100, Math.floor(Number(input.value) || 0)));
+                                if (points) deductions[input.dataset.pointsDeduction] = points;
+                            });
+                            if (Object.keys(deductions).length) url.searchParams.set('custom_points_deductions', JSON.stringify(deductions));
+                            else url.searchParams.delete('custom_points_deductions');
                             window.location.assign(url.toString());
                         });
                     }());
