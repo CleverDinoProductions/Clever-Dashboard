@@ -125,7 +125,7 @@ if ($games_remaining > 0) {
 
 // Calculate 75% rule metrics
 $halfway_progress_pct = ($team['points'] / 23) * 100;
-$target_75pct = 17; // 75% of 23
+$target_75pct = 17.25// 75% of 23
 $target_100pct = 23; // 100% of 23
 $points_to_75pct = max(0, $target_75pct - $team['points']);
 $points_to_100pct = max(0, $target_100pct - $team['points']);
