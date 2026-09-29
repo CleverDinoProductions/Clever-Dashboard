@@ -543,9 +543,9 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 
 <!-- 75% Rule Progress Bar -->
 <div class="panel">
-    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Halfway Point Progress (20-Point Target)</h2>
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Halfway Point Progress (23-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        The <strong style="color: <?= $teamTextColor ?>;">75% Rule</strong>: Teams with 15+ points (75% of 23) at halfway have an 85-90% survival rate
+        The <strong style="color: <?= $teamTextColor ?>;">75% Rule</strong>: Teams with 17+ points (75% of 23) at halfway have an 85-90% survival rate
     </p>
 
     <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
