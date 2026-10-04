@@ -8,6 +8,14 @@ function assert_contains($needle, $haystack, $message)
     }
 }
 
+function assert_not_contains($needle, $haystack, $message)
+{
+    if (strpos($haystack, $needle) !== false) {
+        fwrite(STDERR, $message . "\nUnexpected: " . $needle . "\n");
+        exit(1);
+    }
+}
+
 $db = new PDO('sqlite::memory:');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->exec('CREATE TABLE live_table_metadata (competition_code TEXT, season_label TEXT, matchweek INTEGER, updated_at INTEGER)');
@@ -45,6 +53,20 @@ assert_contains('<td class="team">Old Alpha</td>', $markup, 'Match comparison sh
 assert_contains('<td class="team">New Alpha</td>', $markup, 'Match comparison should calculate the newer season on its first request.');
 assert_contains('value="1" selected', $markup, 'The older season should select its available match.');
 assert_contains('value="3" selected', $markup, 'The newer season should select its newest available match.');
+preg_match('/<select id="compare-calc"[^>]*>(.*?)<\/select>/s', $markup, $calcSelectorMatch);
+assert_not_contains('value="pre_season"', $calcSelectorMatch[1] ?? '', 'Pre-season should not be offered as a calculation mode.');
+if (strrpos($markup, 'value="pre_season"') < strrpos($markup, 'value="3"')) {
+    fwrite(STDERR, "Pre-season should be the final point in each calculation selector.\n");
+    exit(1);
+}
+
+$preSeasonMarkup = $renderComparison([
+    'compare_calc_mode' => 'by_match',
+    'compare_match_left' => 'pre_season',
+    'compare_match_right' => 'pre_season',
+]);
+assert_contains('value="pre_season" selected', $preSeasonMarkup, 'Each side should select pre-season within the active calculation mode.');
+assert_contains('<td>0</td><td><strong>0</strong>', $preSeasonMarkup, 'A pre-season point should render a zero-game, zero-point table.');
 
 $staleMarkup = $renderComparison([
     'compare_calc_mode' => 'by_match_before',

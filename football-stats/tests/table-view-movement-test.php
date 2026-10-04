@@ -41,12 +41,18 @@ $db->exec("INSERT INTO matches VALUES
     (1, 'TEST', '2025-2026', 1, '2025-08-03', '2025-08-03 15:00:00', 'Alpha', 'Beta', 0, 1),
     (2, 'TEST', '2025-2026', 46, '2026-05-02', '2026-05-02 15:00:00', 'Alpha', 'Beta', 3, 0)");
 
+foreach (['by_matchweek', 'by_date', 'by_match', 'by_match_before'] as $preSeasonCalcMode) {
+    $_GET = ['calc_mode' => $preSeasonCalcMode, 'pre_season' => '1', 'snapshot_season' => '2025-2026'];
+    $preSeasonView = football_stats_get_table_view_combined($db, 'TEST', 'league_table_TEST', '2025-2026');
+    assert_same($preSeasonCalcMode, $preSeasonView['calc_mode'], 'Pre-season should retain the selected calculation mode.');
+    assert_same(['Alpha', 'Beta'], array_column($preSeasonView['standings'], 'team_name'), 'Pre-season should include the season roster in a stable order.');
+    assert_same([0, 0], array_column($preSeasonView['standings'], 'played'), 'Pre-season teams should have no matches played.');
+    assert_same([0, 0], array_column($preSeasonView['standings'], 'points'), 'Pre-season teams should start on zero points.');
+}
+
 $_GET = ['calc_mode' => 'pre_season', 'snapshot_season' => '2025-2026'];
-$preSeasonView = football_stats_get_table_view_combined($db, 'TEST', 'league_table_TEST', '2025-2026');
-assert_same('pre_season', $preSeasonView['calc_mode'], 'Pre-season should be preserved as the active calculation mode.');
-assert_same(['Alpha', 'Beta'], array_column($preSeasonView['standings'], 'team_name'), 'Pre-season should include the season roster in a stable order.');
-assert_same([0, 0], array_column($preSeasonView['standings'], 'played'), 'Pre-season teams should have no matches played.');
-assert_same([0, 0], array_column($preSeasonView['standings'], 'points'), 'Pre-season teams should start on zero points.');
+$legacyPreSeasonView = football_stats_get_table_view_combined($db, 'TEST', 'league_table_TEST', '2025-2026');
+assert_same('by_matchweek', $legacyPreSeasonView['calc_mode'], 'Legacy pre-season links should fall back to the matchweek calculation.');
 
 $_GET = [
     'calc_mode' => 'by_date',
