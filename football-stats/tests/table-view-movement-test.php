@@ -41,6 +41,22 @@ $db->exec("INSERT INTO matches VALUES
     (1, 'TEST', '2025-2026', 1, '2025-08-03', '2025-08-03 15:00:00', 'Alpha', 'Beta', 0, 1),
     (2, 'TEST', '2025-2026', 46, '2026-05-02', '2026-05-02 15:00:00', 'Alpha', 'Beta', 3, 0)");
 
+$_GET = ['calc_mode' => 'by_date', 'pre_season' => '1', 'snapshot_season' => '2025-2026'];
+$preSeasonView = football_stats_get_table_view_combined($db, 'TEST', 'league_table_TEST', '2025-2026');
+assert_same('by_date', $preSeasonView['calc_mode'], 'Pre-season should preserve the selected calculation mode.');
+assert_same(['Alpha', 'Beta'], array_column($preSeasonView['standings'], 'team_name'), 'Pre-season should include the season roster in a stable order.');
+assert_same([0, 0], array_column($preSeasonView['standings'], 'played'), 'Pre-season teams should have no matches played.');
+assert_same([0, 0], array_column($preSeasonView['standings'], 'points'), 'Pre-season teams should start on zero points.');
+
+$GLOBALS['db'] = $db;
+foreach (['by_matchweek', 'by_date', 'by_match', 'by_match_before'] as $calculationMode) {
+    $_GET = ['calc_mode' => $calculationMode, 'pre_season' => '1', 'snapshot_season' => '2025-2026'];
+    ob_start();
+    football_stats_render_table_view_controls($preSeasonView + ['calc_mode' => $calculationMode], '2025-2026', 'test', 'table');
+    $controls = ob_get_clean();
+    assert_same(true, strpos($controls, '>Pre-season<') !== false, "{$calculationMode} controls should offer a pre-season navigation point.");
+}
+
 $_GET = [
     'calc_mode' => 'by_date',
     'snapshot_season' => '2025-2026',
