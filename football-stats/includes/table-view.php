@@ -1271,8 +1271,16 @@ if (!function_exists('football_stats_get_table_view_combined')) {
     function football_stats_get_table_view_combined(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
     {
         $calcMode = $_GET['calc_mode'] ?? 'by_matchweek';
-        
+        $isPreSeason = (isset($_GET['pre_season']) && $_GET['pre_season'] === '1')
+            || $calcMode === 'pre_season';
+        // Pre-season is a navigation point within each time-based calculation,
+        // rather than a calculation mode of its own. Keep old bookmarked URLs
+        // working by treating the retired mode as the matchweek calculation.
         if ($calcMode === 'pre_season') {
+            $calcMode = 'by_matchweek';
+        }
+
+        if ($isPreSeason) {
             $tableView = football_stats_get_table_view_pre_season($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
         } elseif ($calcMode === 'custom_matches') {
             $tableView = football_stats_get_table_view($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
@@ -1327,6 +1335,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         }
 
         $tableView['calc_mode'] = $calcMode;
+        $tableView['is_pre_season'] = $isPreSeason;
         $seasonLabel = (string)($tableView['active_season_label'] ?? $tableView['requested_season_label'] ?? '');
         $crestMap = football_stats_get_team_crest_map($db, $competitionCode, $seasonLabel, $liveTableName);
         $tableView['standings'] = football_stats_add_team_crests($tableView['standings'], $crestMap);
@@ -1341,9 +1350,9 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $liveTableName,
             []
         );
-        $isHistoricTable = in_array($calcMode, ['by_date', 'custom_matches'], true)
+        $isHistoricTable = !$isPreSeason && (in_array($calcMode, ['by_date', 'custom_matches'], true)
             || (in_array($calcMode, ['by_match', 'by_match_before'], true) && !empty($tableView['target_match']))
-            || ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view']));
+            || ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view'])));
         $tableView['points_deductions'] = $isHistoricTable
             ? football_stats_get_points_deductions($db, $competitionCode, $seasonLabel)
             : [];
@@ -1354,7 +1363,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         $tableView['position_movements'] = [];
         $tableView['movement_comparison_matchweek'] = null;
         $tableView['movement_comparison_season_label'] = null;
-        if ($calcMode === 'by_matchweek' && !empty($tableView['active_matchweek'])) {
+        if (!$isPreSeason && $calcMode === 'by_matchweek' && !empty($tableView['active_matchweek'])) {
             $activeMatchweek = (int)($tableView['active_matchweek'] ?? 0);
             $seasonLabel = (string)($tableView['active_season_label'] ?? '');
 
@@ -1386,7 +1395,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $tableView['movement_comparison_matchweek'] = (int)$previousMatchweek;
                 $tableView['movement_comparison_label'] = 'since matchweek ' . (int)$previousMatchweek;
             }
-        } elseif ($calcMode === 'custom_matches') {
+        } elseif (!$isPreSeason && $calcMode === 'custom_matches') {
             // Show how each team's position changes when the unchecked matches
             // are removed, using the complete played-match table as the baseline.
             $completeStandings = $tableView['completed_standings'];
@@ -1805,8 +1814,12 @@ if (!function_exists('football_stats_render_navigation_slider')) {
 if (!function_exists('football_stats_render_historic_league_table_slider')) {
     function football_stats_render_historic_league_table_slider(array $tableView, $tab = null, $league = null, $subtab = null)
     {
-        $matchweeks = array_values(array_unique(array_merge([0], array_map('intval', $tableView['available_matchweeks'] ?? []))));
+        $matchweeks = array_values(array_filter(
+            array_unique(array_map('intval', $tableView['available_matchweeks'] ?? [])),
+            static function ($matchweek) { return $matchweek !== 0; }
+        ));
         sort($matchweeks, SORT_NUMERIC);
+        $matchweeks[] = 0;
 
         if (empty($matchweeks)) {
             echo '<p class="historic-slider-empty">No historic matchweek snapshots are available for this season.</p>';
@@ -1936,6 +1949,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         $competitionCode = $leagueMap[$league] ?? strtoupper((string)$league);
 
         $calcMode = $_GET['calc_mode'] ?? $tableView['calc_mode'] ?? 'by_matchweek';
+        if ($calcMode === 'pre_season') $calcMode = 'by_matchweek';
         $activeSeason = (string)($_GET['snapshot_season'] ?? $tableView['active_season_label'] ?? $tableView['requested_season_label'] ?? '');
         $controlId = 'table-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
 
@@ -1950,7 +1964,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         }
 
         $matchFilterMode = $_GET['match_filter_mode'] ?? 'matchweek';
-        $isPreSeason = isset($_GET['pre_season']) && $_GET['pre_season'] === '1';
+        $isPreSeason = (isset($_GET['pre_season']) && $_GET['pre_season'] === '1')
+            || !empty($tableView['is_pre_season']);
         $selectedMatchweek = isset($_GET['matchweek']) ? (int)$_GET['matchweek'] : null;
         $selectedDate = $_GET['snapshot_date'] ?? '';
         $selectedMatchId = isset($tableView['selected_match_id'])
@@ -1996,14 +2011,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
         }
 
         $dateSliderItems = [];
-        $dateSliderItems[] = [
-            'value' => 'pre_season',
-            'label' => 'Pre-season',
-            'url' => football_stats_build_table_view_url($tab, $league, $subtab, [
-                'calc_mode' => 'by_date', 'snapshot_season' => $activeSeason,
-                'snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null,
-            ]),
-        ];
         foreach (array_reverse($availableDates) as $date) {
             $dateSliderItems[] = [
                 'value' => $date,
@@ -2014,15 +2021,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 ]),
             ];
         }
-        $matchSliderItems = [];
-        $matchSliderItems[] = [
+        $dateSliderItems[] = [
             'value' => 'pre_season',
             'label' => 'Pre-season',
             'url' => football_stats_build_table_view_url($tab, $league, $subtab, [
-                'match_id' => null, 'matchweek' => null, 'snapshot_date' => null,
-                'pre_season' => '1', 'table_filter' => null,
+                'calc_mode' => 'by_date', 'snapshot_season' => $activeSeason,
+                'snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null,
             ]),
         ];
+        $matchSliderItems = [];
         foreach ($availableMatches as $match) {
             $score = ($match['home_goals'] !== null && $match['away_goals'] !== null)
                 ? " {$match['home_goals']}-{$match['away_goals']} " : ' vs ';
@@ -2033,6 +2040,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 'url' => football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => (int)$match['id'], 'pre_season' => null]),
             ];
         }
+        $matchSliderItems[] = [
+            'value' => 'pre_season',
+            'label' => 'Pre-season',
+            'url' => football_stats_build_table_view_url($tab, $league, $subtab, [
+                'match_id' => null, 'matchweek' => null, 'snapshot_date' => null,
+                'pre_season' => '1', 'table_filter' => null,
+            ]),
+        ];
 
         ?>
         <style>
@@ -2100,8 +2115,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             <div class="table-view-summary">
                 <span class="table-view-pill">
                     <?php 
-                        if ($calcMode === 'pre_season') echo 'Pre-season';
-                        elseif ($calcMode === 'custom_matches') echo 'Selected Matches';
+                        if ($calcMode === 'custom_matches') echo 'Selected Matches';
                         elseif ($calcMode === 'by_match') echo 'By Specific Match';
                         elseif ($calcMode === 'by_match_before') echo 'By Matchweek Before Specific Match';
                         elseif ($calcMode === 'by_date') echo 'By Date';
@@ -2181,9 +2195,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label">Calculation Mode</label>
                     <select class="table-view-select" onchange="window.location.href=this.value;">
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'pre_season', 'table_filter' => null])); ?>" <?php echo ($calcMode === 'pre_season') ? 'selected="selected"' : ''; ?>>
-                            Pre-season
-                        </option>
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_matchweek'])); ?>" <?php echo ($calcMode === 'by_matchweek') ? 'selected="selected"' : ''; ?>>
                             By Matchweek (original)
                         </option>
@@ -2871,9 +2882,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <div class="table-view-group">
                         <label class="table-view-label">Select Game</label>
                         <select class="table-view-select" onchange="window.location.href=this.value;">
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => null, 'matchweek' => null, 'snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>
-                                Pre-season
-                            </option>
                             <?php foreach ($availableMatches as $m):
                                 $mId = (int)$m['id'];
                                 $score = ($m['home_goals'] !== null && $m['away_goals'] !== null) ? " ({$m['home_goals']}-{$m['away_goals']})" : ' (vs)';
@@ -2884,6 +2892,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     <?php echo htmlspecialchars($label); ?>
                                 </option>
                             <?php endforeach; ?>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => null, 'matchweek' => null, 'snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>
+                                Pre-season
+                            </option>
                         </select>
                     </div>
                     <?php football_stats_render_navigation_slider($matchSliderItems, $isPreSeason ? 'pre_season' : $selectedMatchId, 'Browse games', implode('|', [$controlId, 'after', $matchFilterMode, $selectedMatchweek, $selectedDate]), 'Move through the filtered games, then release to view the table after that result.'); ?>
@@ -2938,9 +2949,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <div class="table-view-group">
                         <label class="table-view-label">Select Game</label>
                         <select class="table-view-select" onchange="window.location.href=this.value;">
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => null, 'matchweek' => null, 'snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>
-                                Pre-season
-                            </option>
                             <?php foreach ($availableMatches as $m):
                                 $mId = (int)$m['id'];
                                 $score = ($m['home_goals'] !== null && $m['away_goals'] !== null) ? " ({$m['home_goals']}-{$m['away_goals']})" : ' (vs)';
@@ -2951,6 +2959,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     <?php echo htmlspecialchars($label); ?>
                                 </option>
                             <?php endforeach; ?>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['match_id' => null, 'matchweek' => null, 'snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>
+                                Pre-season
+                            </option>
                         </select>
                     </div>
                     <?php football_stats_render_navigation_slider($matchSliderItems, $isPreSeason ? 'pre_season' : $selectedMatchId, 'Browse games', implode('|', [$controlId, 'before', $matchFilterMode, $selectedMatchweek, $selectedDate]), 'Move through the filtered games, then release to view the table before that result.'); ?>
@@ -2960,7 +2971,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-date">Select Date</label>
                     <select id="<?php echo $controlId; ?>-date" class="table-view-select" onchange="window.location.href=this.value;">
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>Pre-season</option>
                         <?php foreach ($tableView['available_dates'] as $date):
                             $dateMW = '';
                             if (isset($GLOBALS['db']) && function_exists('football_stats_get_matchweek_for_date')) {
@@ -2972,6 +2982,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 <?php echo htmlspecialchars($date); ?><?php if ($dateMW) echo ' [' . htmlspecialchars($dateMW) . ']'; ?>
                             </option>
                         <?php endforeach; ?>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_date' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>Pre-season</option>
                     </select>
                 </div>
                 <?php football_stats_render_navigation_slider($dateSliderItems, $isPreSeason ? 'pre_season' : ($tableView['active_date'] ?? $selectedDate), 'Browse dates', $controlId . '|date', 'Move through available snapshot dates, then release to view the standings.'); ?>
@@ -2983,7 +2994,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'live', 'matchweek' => null, 'pre_season' => null])); ?>" <?php echo (!$isSnapshot && !$isPreSeason) ? 'selected="selected"' : ''; ?>>
                             Latest Live Table
                         </option>
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'snapshot', 'matchweek' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>Pre-season</option>
                         <?php
                         $activeMW = (int)($tableView['active_matchweek'] ?? 0);
                         foreach ($tableView['available_matchweeks'] as $mw):
@@ -3003,6 +3013,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 <?php if ((int)$mw === 0): ?>Pre-season<?php else: ?>Matchweek <?php echo (int)$mw; ?><?php if ($mwDate) echo ' [' . htmlspecialchars($mwDate) . ']'; ?><?php endif; ?>
                             </option>
                         <?php endforeach; ?>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['table_view' => 'snapshot', 'matchweek' => null, 'pre_season' => '1', 'table_filter' => null])); ?>" <?php echo $isPreSeason ? 'selected="selected"' : ''; ?>>Pre-season</option>
                     </select>
                 </div>
                 <?php football_stats_render_historic_league_table_slider($tableView, $tab, $league, $subtab); ?>

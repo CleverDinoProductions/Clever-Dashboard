@@ -26,7 +26,7 @@ $availableSeasons = $seasonStmt->fetchAll(PDO::FETCH_COLUMN);
 $defaultLeftSeason = $availableSeasons[1] ?? $availableSeasons[0] ?? ($currentMainTab ?? '2025-2026');
 $defaultRightSeason = $availableSeasons[0] ?? ($currentMainTab ?? '2025-2026');
 
-$validCalcModes = ['pre_season', 'by_matchweek', 'by_date', 'by_match', 'by_match_before', 'custom_matches'];
+$validCalcModes = ['by_matchweek', 'by_date', 'by_match', 'by_match_before', 'custom_matches'];
 $calcMode = in_array($_GET['compare_calc_mode'] ?? '', $validCalcModes, true)
     ? $_GET['compare_calc_mode']
     : 'by_matchweek';
@@ -54,6 +54,13 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
             $_GET[$normalKey] = $savedGet[$comparisonKey];
         }
     }
+    $isPreSeason = in_array('pre_season', array_values(array_intersect_key($_GET, array_flip(array_keys($pointKeys)))), true);
+    if ($isPreSeason) {
+        unset($_GET['matchweek'], $_GET['snapshot_date'], $_GET['match_id']);
+        $_GET['pre_season'] = '1';
+    } else {
+        unset($_GET['pre_season']);
+    }
 
     // Each side needs a real point before the shared table engine runs. In
     // particular, the match-based engine returns an empty table when no match
@@ -62,7 +69,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
     // It also happens when a season change carries a point from the other
     // season. Validate the submitted point and otherwise select the newest
     // available point for this side.
-    if ($calcMode === 'by_matchweek') {
+    if (!$isPreSeason && $calcMode === 'by_matchweek') {
         $pointStmt = $db->prepare(
             'SELECT MAX(matchweek) FROM league_table_snapshots WHERE competition_code = ? '
             . 'AND season_label = ? AND matchweek BETWEEN 1 AND ?'
@@ -77,7 +84,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
         } else {
             $_GET['matchweek'] = (int)$point;
         }
-    } elseif ($calcMode === 'by_date') {
+    } elseif (!$isPreSeason && $calcMode === 'by_date') {
         $pointStmt = $db->prepare(
             'SELECT MAX(snapshot_date) FROM league_table_snapshots_by_date '
             . 'WHERE competition_code = ? AND season_label = ?'
@@ -92,7 +99,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
         } else {
             $_GET['snapshot_date'] = (string)$point;
         }
-    } elseif (in_array($calcMode, ['by_match', 'by_match_before'], true)) {
+    } elseif (!$isPreSeason && in_array($calcMode, ['by_match', 'by_match_before'], true)) {
         $pointStmt = $db->prepare(
             'SELECT id FROM matches WHERE competition_code = ? AND season_label = ? '
             . 'AND matchweek BETWEEN 1 AND ?'
@@ -120,17 +127,18 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
     }
 
     $view = football_stats_get_table_view_combined($db, $competitionCode, $liveTableName, $season);
+    $view['is_pre_season'] = $isPreSeason;
     $_GET = $savedGet;
     $standings = $view['standings'];
     $effectiveGames = $totalGames;
-    if ($calcMode !== 'pre_season' && $tableFilter !== 'all') {
+    if (!$isPreSeason && $tableFilter !== 'all') {
         $limit = isset($view['active_matchweek']) ? min($totalGames, (int)$view['active_matchweek']) : $totalGames;
         $filtered = football_stats_compute_filtered_standings($db, $competitionCode, $season, $tableFilter, $halfwayGames, $liveTableName, $limit);
         if ($filtered) $standings = $filtered;
         $effectiveGames = $tableFilter === 'first_half' ? $halfwayGames
             : ($tableFilter === 'second_half' ? $totalGames - $halfwayGames : (int)($totalGames / 2));
     }
-    $deductions = $calcMode === 'pre_season' ? [] : football_stats_get_points_deductions($db, $competitionCode, $season);
+    $deductions = $isPreSeason ? [] : football_stats_get_points_deductions($db, $competitionCode, $season);
     if ($deductions) $standings = football_stats_apply_points_deductions($standings, $deductions);
     $view['standings'] = $standings;
     $view['effective_games'] = $effectiveGames;
@@ -148,20 +156,27 @@ $getPointOptions = static function ($season) use ($db, $competitionCode, $calcMo
     } elseif (in_array($calcMode, ['by_match', 'by_match_before'], true)) {
         $stmt = $db->prepare("SELECT id AS value, ('MW' || matchweek || ': ' || home_team || ' v ' || away_team) AS label FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek BETWEEN 1 AND ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
         $stmt->execute([$competitionCode, $season, $totalGames]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $options[] = ['value' => 'pre_season', 'label' => 'Pre-season'];
+        return $options;
     } else {
         $stmt = $db->prepare("SELECT DISTINCT matchweek AS value, ('Matchweek ' || matchweek) AS label FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek BETWEEN 1 AND ? ORDER BY matchweek DESC");
         $stmt->execute([$competitionCode, $season, $totalGames]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $options[] = ['value' => 'pre_season', 'label' => 'Pre-season'];
+        return $options;
     }
     $stmt->execute([$competitionCode, $season]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $options[] = ['value' => 'pre_season', 'label' => 'Pre-season'];
+    return $options;
 };
 
 $pointField = $calcMode === 'by_date' ? 'date' : (in_array($calcMode, ['by_match', 'by_match_before'], true) ? 'match' : 'matchweek');
 $leftOptions = $getPointOptions($leftView['comparison_season']);
 $rightOptions = $getPointOptions($rightView['comparison_season']);
 $selectedPoint = static function (array $view) use ($pointField) {
+    if (!empty($view['is_pre_season'])) return 'pre_season';
     if ($pointField === 'date') return (string)($view['active_date'] ?? '');
     if ($pointField === 'match') return (string)($view['selected_match_id'] ?? '');
     return (string)($view['active_matchweek'] ?? '');
@@ -180,7 +195,6 @@ $selectedPoint = static function (array $view) use ($pointField) {
         <input type="hidden" name="league" value="<?= htmlspecialchars($currentLeague ?? '', ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="subtab" value="compare-seasons">
         <div><label for="compare-calc">Calculation mode</label><select id="compare-calc" name="compare_calc_mode">
-            <option value="pre_season" <?= $calcMode === 'pre_season' ? 'selected' : '' ?>>Pre-season</option>
             <option value="by_matchweek" <?= $calcMode === 'by_matchweek' ? 'selected' : '' ?>>By matchweek</option>
             <option value="by_date" <?= $calcMode === 'by_date' ? 'selected' : '' ?>>By date</option>
             <option value="by_match" <?= $calcMode === 'by_match' ? 'selected' : '' ?>>After a match</option>
