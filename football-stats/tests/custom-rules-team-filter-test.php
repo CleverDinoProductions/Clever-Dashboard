@@ -10,6 +10,14 @@ function team_filter_assert_contains($needle, $haystack, $message)
     }
 }
 
+function team_filter_assert_not_contains($needle, $haystack, $message)
+{
+    if (strpos($haystack, $needle) !== false) {
+        fwrite(STDERR, $message . "\nUnexpected: " . $needle . "\n");
+        exit(1);
+    }
+}
+
 team_filter_assert_contains('data-team-filter-option', $source, 'The custom-rules team filter should render team checkboxes.');
 team_filter_assert_contains('data-team-filter-preset="big-six"', $source, 'The custom-rules team filter should offer a Big Six preset.');
 foreach (['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur'] as $team) {
@@ -20,5 +28,6 @@ team_filter_assert_contains("'exclude' => ['title' => 'Include everything but ma
 team_filter_assert_contains("box.checked = includeOnly ? matches : !matches", $source, 'Each filtering section should replace the selection with its matching or inverse result set.');
 team_filter_assert_contains("section.querySelectorAll('[data-team-filter-option]')", $source, 'Each filtering section should use its own selected teams.');
 team_filter_assert_contains(".custom-match-option input[type=\"checkbox\"]", $source, 'Result selection must not include the team-filter checkboxes.');
+team_filter_assert_not_contains("});\n                        updateTeamFilterSummary();\n                        updateSelectionStatus();", $source, 'The panel initializer must not call the section-scoped summary helper before wiring the recalculate button.');
 
 echo "Custom-rules team filter tests passed.\n";
