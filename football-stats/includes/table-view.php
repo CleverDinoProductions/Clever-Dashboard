@@ -852,6 +852,54 @@ if (!function_exists('football_stats_get_table_view_by_match')) {
 }
 
 /**
+ * Build the blank table for a season before any regular-season matches have
+ * been played. Teams are ordered by name so the zero-point table is stable.
+ */
+if (!function_exists('football_stats_get_table_view_pre_season')) {
+    function football_stats_get_table_view_pre_season(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
+    {
+        $metadataStmt = $db->prepare('SELECT season_label FROM live_table_metadata WHERE competition_code = ?');
+        $metadataStmt->execute([$competitionCode]);
+        $metadata = $metadataStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $liveSeasonLabel = $metadata['season_label'] ?? $fallbackSeasonLabel;
+
+        $requestedSeasonLabel = isset($_GET['snapshot_season'])
+            ? preg_replace('/[^0-9\-]/', '', (string)$_GET['snapshot_season'])
+            : $liveSeasonLabel;
+        if ($requestedSeasonLabel === '') $requestedSeasonLabel = $liveSeasonLabel;
+
+        $seasonsStmt = $db->prepare('SELECT DISTINCT season_label FROM matches WHERE competition_code = ? ORDER BY season_label DESC');
+        $seasonsStmt->execute([$competitionCode]);
+        $availableSeasons = $seasonsStmt->fetchAll(PDO::FETCH_COLUMN);
+        $teams = football_stats_get_match_roster($db, $competitionCode, $requestedSeasonLabel);
+        natcasesort($teams);
+        $crestMap = football_stats_get_team_crest_map($db, $competitionCode, $requestedSeasonLabel, $liveTableName);
+
+        $standings = [];
+        $position = 1;
+        foreach ($teams as $teamName) {
+            $standings[] = [
+                'position' => $position++, 'team_name' => $teamName,
+                'team_crest' => $crestMap[$teamName] ?? '', 'played' => 0,
+                'won' => 0, 'drawn' => 0, 'lost' => 0, 'gf' => 0,
+                'ga' => 0, 'gd' => 0, 'points' => 0,
+            ];
+        }
+
+        return [
+            'standings' => $standings,
+            'last_update' => ['ts' => null],
+            'updated_label' => 'Pre-season',
+            'is_snapshot_view' => true,
+            'requested_season_label' => $requestedSeasonLabel,
+            'available_seasons' => $availableSeasons,
+            'active_season_label' => $requestedSeasonLabel,
+            'live_season_label' => $liveSeasonLabel,
+        ];
+    }
+}
+
+/**
  * Fetch standings calculated precisely before a specific match ID.
  *
  * The optional override supports internal comparisons without changing the
@@ -1224,7 +1272,9 @@ if (!function_exists('football_stats_get_table_view_combined')) {
     {
         $calcMode = $_GET['calc_mode'] ?? 'by_matchweek';
         
-        if ($calcMode === 'custom_matches') {
+        if ($calcMode === 'pre_season') {
+            $tableView = football_stats_get_table_view_pre_season($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
+        } elseif ($calcMode === 'custom_matches') {
             $tableView = football_stats_get_table_view($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
             $seasonLabel = (string)($tableView['active_season_label'] ?? $fallbackSeasonLabel);
             $excludedIds = football_stats_get_excluded_result_keys();
@@ -2030,7 +2080,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             <div class="table-view-summary">
                 <span class="table-view-pill">
                     <?php 
-                        if ($calcMode === 'custom_matches') echo 'Selected Matches';
+                        if ($calcMode === 'pre_season') echo 'Pre-season';
+                        elseif ($calcMode === 'custom_matches') echo 'Selected Matches';
                         elseif ($calcMode === 'by_match') echo 'By Specific Match';
                         elseif ($calcMode === 'by_match_before') echo 'By Matchweek Before Specific Match';
                         elseif ($calcMode === 'by_date') echo 'By Date';
@@ -2109,6 +2160,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label">Calculation Mode</label>
                     <select class="table-view-select" onchange="window.location.href=this.value;">
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'pre_season', 'table_filter' => null])); ?>" <?php echo ($calcMode === 'pre_season') ? 'selected="selected"' : ''; ?>>
+                            Pre-season
+                        </option>
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_matchweek'])); ?>" <?php echo ($calcMode === 'by_matchweek') ? 'selected="selected"' : ''; ?>>
                             By Matchweek (original)
                         </option>
