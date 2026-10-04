@@ -2925,7 +2925,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 updateSelectionStatus();
                             });
                         });
-                        updateTeamFilterSummary();
                         updateSelectionStatus();
                         panel.querySelector('[data-match-apply]').addEventListener('click', function () {
                             var excluded = boxes.filter(function (box) { return !box.checked; }).map(function (box) { return box.value; });
