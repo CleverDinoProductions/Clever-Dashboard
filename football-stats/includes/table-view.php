@@ -2604,7 +2604,17 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
                         var pendingSummary = panel.querySelector('[data-match-pending-summary]');
                         var pendingDetails = panel.querySelector('[data-match-pending-details]');
-                        var bigSixTeams = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Tottenham'];
+                        var bigSixTeams = ['arsenal', 'chelsea', 'liverpool', 'manchester city', 'manchester united', 'tottenham hotspur'];
+                        function normalizedTeamName(teamName) {
+                            return String(teamName || '')
+                                .trim()
+                                .toLowerCase()
+                                .replace(/\s+(?:football club|fc)$/i, '')
+                                .replace(/^tottenham$/, 'tottenham hotspur');
+                        }
+                        function isBigSixTeam(teamName) {
+                            return bigSixTeams.indexOf(normalizedTeamName(teamName)) !== -1;
+                        }
                         function selectedTeamValues(select) {
                             return Array.prototype.filter.call(select.options, function (option) {
                                 return option.selected && option.value && option.value !== 'all' && option.value !== '__all__';
@@ -2657,7 +2667,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var preset = event.target.dataset.generatedTeamPreset;
                                 if (!preset) return;
                                 Array.prototype.forEach.call(options.querySelectorAll('input[type="checkbox"]'), function (checkbox) {
-                                    checkbox.checked = preset === 'all' || (preset === 'big-six' && bigSixTeams.indexOf(checkbox.value) !== -1);
+                                    checkbox.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(checkbox.value));
                                     Array.prototype.forEach.call(select.options, function (option) {
                                         if (option.value === checkbox.value) option.selected = checkbox.checked;
                                     });
@@ -2739,7 +2749,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 button.addEventListener('click', function () {
                                     var preset = this.dataset.teamFilterPreset;
                                     filterTeamBoxes.forEach(function (box) {
-                                        box.checked = preset === 'all' || (preset === 'big-six' && bigSixTeams.indexOf(box.value) !== -1);
+                                        box.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(box.value));
                                     });
                                     updateTeamFilterSummary();
                                 });
