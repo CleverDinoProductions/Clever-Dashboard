@@ -184,7 +184,7 @@ $siteUser = clever_current_user();
             <?php if ($siteUser): ?>
                 <span>Signed in as <strong><?= htmlspecialchars($siteUser['username']) ?></strong></span>
                 <a href="/account/">My account</a>
-                <?php if ($siteUser['is_admin']): ?><a href="/control-panel.php">Admin</a><?php endif; ?>
+                <?php if ($siteUser['is_admin']): ?><a href="/admin/admin.php">Admin</a><?php endif; ?>
                 <a href="/account/logout.php">Sign out</a>
             <?php else: ?>
                 <a href="/account/login.php">Sign in</a><a href="/account/register.php">Create account</a>

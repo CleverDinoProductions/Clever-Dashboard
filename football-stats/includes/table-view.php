@@ -118,7 +118,7 @@ if (!function_exists('football_stats_get_points_deductions')) {
                 $deductions = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
         } catch (Exception $exception) {
-            // A read-only or older database simply has no configurable entries.
+            // A read-only or older database can still use the bundled entries.
         }
 
         $normalised = [];

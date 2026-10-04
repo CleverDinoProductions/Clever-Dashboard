@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $groupId = (int)$db->query("SELECT id FROM user_groups WHERE is_admin = 1 ORDER BY id LIMIT 1")->fetchColumn();
         clever_create_user($username, $email, $password, $groupId);
         clever_login($username, $password);
-        header('Location: /control-panel.php');
+        header('Location: /admin/admin.php');
         exit;
     }
 }

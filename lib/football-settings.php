@@ -36,43 +36,6 @@ CREATE TABLE IF NOT EXISTS points_deductions (
     PRIMARY KEY (competition_code, season_label, team_name, reason)
 );
 SQL);
-
-    // A missing/empty database should render an empty dashboard rather than a
-    // partially generated page followed by a fatal "no such table" error.
-    $standingColumns = 'team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER';
-    foreach (['D1', 'PL', 'ELC', 'L1', 'L2', 'NL'] as $code) {
-        $db->exec("CREATE TABLE IF NOT EXISTS league_table_$code ($standingColumns)");
-    }
-    $db->exec(<<<'SQL'
-CREATE TABLE IF NOT EXISTS matches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, competition_code TEXT, competition_name TEXT,
-    season_label TEXT, matchweek INTEGER, match_date TEXT, match_timestamp TEXT,
-    home_team TEXT, away_team TEXT, home_goals INTEGER, away_goals INTEGER,
-    home_pens INTEGER, away_pens INTEGER, status TEXT, source TEXT
-);
-CREATE TABLE IF NOT EXISTS league_table_snapshots (
-    competition_code TEXT, season_label TEXT, matchweek INTEGER, team_crest TEXT,
-    team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER,
-    lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER,
-    source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT,
-    PRIMARY KEY (competition_code, season_label, matchweek, team_name)
-);
-CREATE TABLE IF NOT EXISTS league_table_snapshots_by_date (
-    competition_code TEXT, season_label TEXT, snapshot_date TEXT, team_crest TEXT,
-    team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER,
-    lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER,
-    source_updated_at INTEGER, archived_at INTEGER, competition_name TEXT,
-    PRIMARY KEY (competition_code, season_label, snapshot_date, team_name)
-);
-CREATE TABLE IF NOT EXISTS live_table_metadata (
-    competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL,
-    season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_matches_competition_season
-ON matches (competition_code, season_label, match_date);
-CREATE INDEX IF NOT EXISTS idx_snapshots_lookup
-ON league_table_snapshots (competition_code, season_label, matchweek, position);
-SQL);
 }
 
 function clever_seed_team_metadata(PDO $db, array $sets): void

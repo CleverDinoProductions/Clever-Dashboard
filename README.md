@@ -35,7 +35,7 @@ Clever Dashboard is a collection of PHP dashboards and maintenance scripts serve
 
 ### Accounts and administration
 
-On a new installation, visit `/control-panel.php`. You will be redirected to a
+On a new installation, visit `/admin/admin.php`. You will be redirected to a
 one-time setup form that creates the first user in the **Administrators** group.
 After that, visitors can register as standard **Members** at `/account/register.php`.
 Administrators can create access groups, manage users and group membership, and
@@ -45,11 +45,6 @@ Account data is stored in `data/accounts.sqlite3` by default. Set
 `CLEVER_ACCOUNTS_DB` to place it outside the web root. Set `CLEVER_FOOTBALL_DB`
 to point the configuration editor at a non-default football database. Both
 locations must be writable by the PHP process and should be backed up.
-
-The control panel intentionally lives outside `/admin/` because some existing
-deployments protect that directory with web-server HTTP Basic authentication.
-Using `/control-panel.php` ensures that accounts use the site's HTML sign-in
-page rather than the browser's built-in username/password dialog.
 
 The built-in PHP server is intended for local development only. In production, configure the web server document root to this repository, restrict access to administrative and diagnostic scripts, and keep writable databases outside public access where possible.
 
@@ -79,7 +74,6 @@ php football-stats/tests/competition-rules-test.php
 php football-stats/tests/table-view-movement-test.php
 php football-stats/tests/table-view-team-crests-test.php
 php tests/account-system-test.php
-php tests/football-settings-test.php
 ```
 
 Python importers contact third-party services and may require credentials and network access. Review their configuration before running them.
