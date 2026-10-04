@@ -44,13 +44,19 @@ if ($currentMainTab === 'world-cup') {
 }
 
 $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'blocks') === 0;
+$dashboardAccent = preg_match('/^#[0-9A-Fa-f]{6}$/', (string)($dashboardPreferences['accent_color'] ?? '')) ? $dashboardPreferences['accent_color'] : '#FFD700';
+$dashboardTitle = trim((string)($dashboardSettings['dashboard_title'] ?? 'Football Stats Dashboard'));
+$dashboardSubtitle = trim((string)($dashboardSettings['dashboard_subtitle'] ?? ''));
+$compactNavigation = !empty($dashboardPreferences['compact_navigation']);
+$hideUpdateControls = ($dashboardSettings['show_update_controls'] ?? '1') !== '1' || !$dashboardCanUpdate;
 ?>
 <style>
+:root { --dashboard-accent: <?php echo htmlspecialchars($dashboardAccent, ENT_QUOTES, 'UTF-8'); ?>; }
 .site-header {
     background: #1a237e; /* Match the dark blue in your screenshot */
     padding: 30px 20px;
     text-align: center;
-    border-bottom: 2px solid #ffd700; /* Gold accent */
+    border-bottom: 2px solid var(--dashboard-accent); /* Gold accent */
 }
 
 .site-title {
@@ -62,7 +68,7 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
 
 .site-subtitle {
     font-size: 1.1rem;
-    color: #ffd700; /* Matching the yellow text in image_e19c41.png */
+    color: var(--dashboard-accent); /* Matching the yellow text in image_e19c41.png */
     margin: 5px 0;
     font-weight: 600;
 }
@@ -71,6 +77,12 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
     color: #5865f2; /* Discord-ish blue for the TSDB link */
     text-decoration: underline;
 }
+.dashboard-account-bar { display:flex; justify-content:flex-end; align-items:center; gap:10px; padding:9px 18px; background:#202225; color:#c8c9cc; }
+.dashboard-account-bar a { color:#fff; text-decoration:none; font-weight:600; }
+.compact-navigation .pill-nav { gap:4px; padding-top:6px; padding-bottom:6px; }
+.compact-navigation .pill-tab { padding:6px 10px; font-size:.88rem; }
+.compact-navigation .nav-icon { display:none; }
+.hide-update-controls #update-el-data-btn, .hide-update-controls #update-wc-data-btn, .hide-update-controls #update-el-status, .hide-update-controls #update-wc-status { display:none !important; }
 </style>
 <!DOCTYPE html>
 <html lang="en">
@@ -83,16 +95,25 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
     <script>tailwind.config = { corePlugins: { preflight: false } };</script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚽</text></svg>">
 </head>
-<body>
+<body class="<?php echo trim(($compactNavigation ? 'compact-navigation ' : '') . ($hideUpdateControls ? 'hide-update-controls' : '')); ?>">
     <div class="site-container">
+        <div class="dashboard-account-bar">
+            <?php if ($dashboardUser): ?>
+                <span>Signed in as <?php echo htmlspecialchars($dashboardUser['username'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <a href="/account/">Customise</a>
+                <?php if ($dashboardUser['is_admin']): ?><a href="/admin/admin.php">Admin</a><?php endif; ?>
+            <?php else: ?>
+                <a href="/account/login.php?return=<?php echo rawurlencode($_SERVER['REQUEST_URI'] ?? '/football-stats/'); ?>">Sign in to customise</a>
+            <?php endif; ?>
+        </div>
         <!-- Header Section -->
         <header class="site-header">
             <div class="header-content">
-                <h1 class="site-title">⚽ Football Stats Dashboard</h1>
-                <p class="site-subtitle">FA Premier League, EFL, National Leagues & World Cup Standings, Analytics and Poisson Model based Simulations</p>
+                <h1 class="site-title">⚽ <?php echo htmlspecialchars($dashboardTitle, ENT_QUOTES, 'UTF-8'); ?></h1>
+                <?php if ($dashboardSubtitle !== ''): ?><p class="site-subtitle"><?php echo htmlspecialchars($dashboardSubtitle, ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
                 <p class="site-subtitle">Entire Football Pyramid Past & Present</p>
-                <p class="site-subtitle">English League Data provided by <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer">SportsDB API</a></p>
-                <p class="site-subtitle">World Cup Data provided by <a href="https://www.football-data.org/" target="_blank" rel="noopener noreferrer">Football-Data API</a></p>
+                <p class="site-subtitle">English League Data provided by <a href="https://www.thesportsdb.com/" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($dashboardSettings['english_data_provider'] ?? 'SportsDB API', ENT_QUOTES, 'UTF-8'); ?></a></p>
+                <p class="site-subtitle">World Cup Data provided by <a href="https://www.football-data.org/" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($dashboardSettings['world_cup_data_provider'] ?? 'Football-Data API', ENT_QUOTES, 'UTF-8'); ?></a></p>
             </div>
         </header>
         
@@ -113,7 +134,7 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
                     status.style.display = 'inline';
                     status.style.color = '#888';
                     status.textContent = 'Updating...';
-                    fetch('update-el-data.php', {method: 'POST'})
+                    fetch('update-el-data.php', {method: 'POST', headers: {'X-CSRF-Token': <?php echo json_encode(clever_csrf_token()); ?>}})
                     .then(r => r.json())
                     .then(data => {
                         status.style.color = data.success ? '#2a8c2a' : '#c00';
@@ -144,7 +165,7 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
                     status.style.display = 'inline';
                     status.style.color = '#888';
                     status.textContent = 'Updating...';
-                    fetch('update-wc-data.php', {method: 'POST'})
+                    fetch('update-wc-data.php', {method: 'POST', headers: {'X-CSRF-Token': <?php echo json_encode(clever_csrf_token()); ?>}})
                     .then(r => r.json())
                     .then(data => {
                         status.style.color = data.success ? '#2a8c2a' : '#c00';
@@ -170,11 +191,11 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
         <nav class="pill-nav main-pills">
             <a href="<?php echo htmlspecialchars(build_tab_url('2025-2026', 'premier-league', 'table'), ENT_QUOTES, 'UTF-8'); ?>"
                class="pill-tab <?php echo ($currentMainTab === '2025-2026') ? 'active' : ''; ?>">
-                🏴 English Leagues
+                <span class="nav-icon">🏴</span> English Leagues
             </a>
             <a href="<?php echo htmlspecialchars(build_tab_url('world-cup', null, 'groups'), ENT_QUOTES, 'UTF-8'); ?>"
                class="pill-tab <?php echo ($currentMainTab === 'world-cup') ? 'active' : ''; ?>">
-                🌍 World Cup 2026
+                <span class="nav-icon">🌍</span> World Cup 2026
             </a>
         </nav>
         
@@ -184,14 +205,14 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
                 <?php foreach ($worldCupTabs as $tabKey => $tabConfig): ?>
                     <a href="<?php echo htmlspecialchars(build_tab_url('world-cup', null, $tabKey), ENT_QUOTES, 'UTF-8'); ?>"
                        class="pill-tab <?php echo ($currentSubTab === $tabKey) ? 'active' : ''; ?>">
-                        <?php echo $tabConfig['icon']; ?> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
+                        <span class="nav-icon"><?php echo $tabConfig['icon']; ?></span> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
                     </a>
                 <?php endforeach; ?>
             <?php else: ?>
                 <?php foreach ($seasonLeagueConfigs[$currentMainTab] as $leagueKey => $leagueConfig): ?>
                     <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $leagueKey, $leagueConfig['defaultSubTab']), ENT_QUOTES, 'UTF-8'); ?>"
                        class="pill-tab <?php echo ($currentLeague === $leagueKey) ? 'active' : ''; ?>">
-                        🏆 <?php echo htmlspecialchars($leagueConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
+                        <span class="nav-icon">🏆</span> <?php echo htmlspecialchars($leagueConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
                     </a>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -215,7 +236,7 @@ $isBlocksSection = $currentMainTab !== 'world-cup' && strpos($currentSubTab, 'bl
                 ?>
                 <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, $tabKey, $extraParams), ENT_QUOTES, 'UTF-8'); ?>"
                    class="pill-tab <?php echo ($currentSubTab === $tabKey) ? 'active' : ''; ?>">
-                    <?php echo $tabConfig['icon']; ?> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
+                    <span class="nav-icon"><?php echo $tabConfig['icon']; ?></span> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php endforeach; ?>
         </nav>

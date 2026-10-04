@@ -39,7 +39,17 @@ On a new installation, visit `/admin/admin.php`. You will be redirected to a
 one-time setup form that creates the first user in the **Administrators** group.
 After that, visitors can register as standard **Members** at `/account/register.php`.
 Administrators can create access groups, manage users and group membership, and
-edit football team metadata and points deductions from the admin panel.
+edit football team metadata, points deductions, and dashboard copy from the
+admin panel. Built-in **Football Editors**, **Analysts**, and **Data Operators**
+groups provide clearer starting roles in addition to Members and Administrators;
+group permissions can be changed in the admin panel. Football editors can use
+the football configuration sections without receiving account administration
+access, while data operators can run the protected data refresh actions.
+
+Signed-in users can choose their default competition, league, view, favourite
+team, accent colour, and navigation density from **My account**. Preferences are
+stored per account and applied whenever the football dashboard is opened without
+an explicit destination in its URL.
 
 Account data is stored in `data/accounts.sqlite3` by default. Set
 `CLEVER_ACCOUNTS_DB` to place it outside the web root. Set `CLEVER_FOOTBALL_DB`

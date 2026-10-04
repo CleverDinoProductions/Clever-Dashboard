@@ -1,6 +1,15 @@
 <?php
 // Include database configuration
 require_once 'config.php';
+require_once dirname(__DIR__) . '/lib/auth.php';
+require_once dirname(__DIR__) . '/lib/football-settings.php';
+$dashboardUser = clever_current_user();
+$dashboardPreferences = $dashboardUser ? clever_user_preferences((int)$dashboardUser['id']) : [
+    'default_season'=>'2025-2026', 'default_league'=>'premier-league', 'default_view'=>'table',
+    'favourite_team'=>'', 'accent_color'=>'#FFD700', 'compact_navigation'=>0,
+];
+$dashboardSettings = clever_dashboard_settings($db);
+$dashboardCanUpdate = $dashboardUser !== null && !empty($dashboardUser['can_update_data']);
 
 // Tab model: tab = season/competition, league = league within that season, subtab = page within that league.
 $seasonLabels = [
@@ -163,9 +172,14 @@ $worldCupTabs = [
     'simulation' => ['label' => 'Simulation', 'icon' => '🎲', 'file' => 'tabs/world-cup/simulation.php'],
 ];
 
-$currentMainTab = isset($_GET['tab']) ? $_GET['tab'] : '2025-2026';
-$currentLeague = isset($_GET['league']) ? $_GET['league'] : null;
-$currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : null;
+$hasExplicitDestination = isset($_GET['tab']) || isset($_GET['league']) || isset($_GET['subtab']);
+$currentMainTab = isset($_GET['tab']) ? $_GET['tab'] : ($dashboardPreferences['default_season'] ?: '2025-2026');
+$currentLeague = isset($_GET['league']) ? $_GET['league'] : ($hasExplicitDestination ? null : $dashboardPreferences['default_league']);
+$currentSubTab = isset($_GET['subtab']) ? $_GET['subtab'] : ($hasExplicitDestination ? null : $dashboardPreferences['default_view']);
+
+if (!$hasExplicitDestination && $dashboardPreferences['favourite_team'] !== '' && !isset($_GET['tracker_team'])) {
+    $_GET['tracker_team'] = $dashboardPreferences['favourite_team'];
+}
 
 $tabAliases = [
     '2025/26' => '2025-2026',

@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS user_groups (
     name TEXT NOT NULL UNIQUE COLLATE NOCASE,
     description TEXT NOT NULL DEFAULT '',
     is_admin INTEGER NOT NULL DEFAULT 0 CHECK (is_admin IN (0, 1)),
+    can_manage_football INTEGER NOT NULL DEFAULT 0 CHECK (can_manage_football IN (0, 1)),
+    can_update_data INTEGER NOT NULL DEFAULT 0 CHECK (can_update_data IN (0, 1)),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS users (
@@ -73,11 +75,73 @@ CREATE TABLE IF NOT EXISTS user_group_memberships (
     group_id INTEGER NOT NULL REFERENCES user_groups(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, group_id)
 );
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    default_season TEXT NOT NULL DEFAULT '2025-2026',
+    default_league TEXT NOT NULL DEFAULT 'premier-league',
+    default_view TEXT NOT NULL DEFAULT 'table',
+    favourite_team TEXT NOT NULL DEFAULT '',
+    accent_color TEXT NOT NULL DEFAULT '#FFD700',
+    compact_navigation INTEGER NOT NULL DEFAULT 0 CHECK (compact_navigation IN (0, 1)),
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_memberships_group ON user_group_memberships(group_id);
 SQL);
 
+    $groupColumns = array_column($db->query('PRAGMA table_info(user_groups)')->fetchAll(), 'name');
+    if (!in_array('can_manage_football', $groupColumns, true)) $db->exec('ALTER TABLE user_groups ADD COLUMN can_manage_football INTEGER NOT NULL DEFAULT 0');
+    if (!in_array('can_update_data', $groupColumns, true)) $db->exec('ALTER TABLE user_groups ADD COLUMN can_update_data INTEGER NOT NULL DEFAULT 0');
+
     $db->exec("INSERT OR IGNORE INTO user_groups (name, description, is_admin) VALUES ('Members', 'Standard dashboard accounts', 0)");
     $db->exec("INSERT OR IGNORE INTO user_groups (name, description, is_admin) VALUES ('Administrators', 'Full access to account and dashboard configuration', 1)");
+    $db->exec("INSERT OR IGNORE INTO user_groups (name, description, is_admin, can_manage_football, can_update_data) VALUES ('Football Editors', 'Maintainers of football teams, rules and dashboard content', 0, 1, 1)");
+    $db->exec("INSERT OR IGNORE INTO user_groups (name, description, is_admin) VALUES ('Analysts', 'Users who focus on tables, comparisons and simulations', 0)");
+    $db->exec("INSERT OR IGNORE INTO user_groups (name, description, is_admin, can_update_data) VALUES ('Data Operators', 'Users responsible for keeping dashboard data current', 0, 1)");
+}
+
+function clever_user_preferences(int $userId): array
+{
+    $defaults = [
+        'default_season' => '2025-2026', 'default_league' => 'premier-league',
+        'default_view' => 'table', 'favourite_team' => '', 'accent_color' => '#FFD700',
+        'compact_navigation' => 0,
+    ];
+    $stmt = clever_accounts_db()->prepare('SELECT default_season, default_league, default_view, favourite_team, accent_color, compact_navigation FROM user_preferences WHERE user_id = ?');
+    $stmt->execute([$userId]);
+    $stored = $stmt->fetch();
+    return $stored ? array_merge($defaults, $stored) : $defaults;
+}
+
+function clever_save_user_preferences(int $userId, array $values): array
+{
+    $preferences = [
+        'default_season' => trim((string)($values['default_season'] ?? '2025-2026')),
+        'default_league' => trim((string)($values['default_league'] ?? 'premier-league')),
+        'default_view' => trim((string)($values['default_view'] ?? 'table')),
+        'favourite_team' => trim((string)($values['favourite_team'] ?? '')),
+        'accent_color' => strtoupper(trim((string)($values['accent_color'] ?? '#FFD700'))),
+        'compact_navigation' => !empty($values['compact_navigation']) ? 1 : 0,
+    ];
+    if (!preg_match('/^[a-z0-9-]{1,40}$/', $preferences['default_season'])
+        || !preg_match('/^[a-z0-9-]{1,40}$/', $preferences['default_league'])
+        || !preg_match('/^[a-z0-9-]{1,40}$/', $preferences['default_view'])) {
+        throw new InvalidArgumentException('The selected dashboard destination is invalid.');
+    }
+    if (!preg_match('/^#[0-9A-F]{6}$/', $preferences['accent_color'])) {
+        throw new InvalidArgumentException('Accent colour must be a six-digit hex colour.');
+    }
+    if (strlen($preferences['favourite_team']) > 100) {
+        throw new InvalidArgumentException('Favourite team must be 100 characters or fewer.');
+    }
+    $stmt = clever_accounts_db()->prepare(<<<'SQL'
+INSERT INTO user_preferences (user_id, default_season, default_league, default_view, favourite_team, accent_color, compact_navigation, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+ON CONFLICT(user_id) DO UPDATE SET default_season=excluded.default_season, default_league=excluded.default_league,
+default_view=excluded.default_view, favourite_team=excluded.favourite_team, accent_color=excluded.accent_color,
+compact_navigation=excluded.compact_navigation, updated_at=CURRENT_TIMESTAMP
+SQL);
+    $stmt->execute([$userId, $preferences['default_season'], $preferences['default_league'], $preferences['default_view'], $preferences['favourite_team'], $preferences['accent_color'], $preferences['compact_navigation']]);
+    return $preferences;
 }
 
 function clever_current_user(): ?array
@@ -91,6 +155,8 @@ function clever_current_user(): ?array
     $stmt = clever_accounts_db()->prepare(<<<'SQL'
 SELECT u.id, u.username, u.email, u.status, u.created_at, u.last_login_at,
        COALESCE(MAX(g.is_admin), 0) AS is_admin,
+       COALESCE(MAX(g.can_manage_football), 0) AS can_manage_football,
+       COALESCE(MAX(g.can_update_data), 0) AS can_update_data,
        GROUP_CONCAT(g.name, ', ') AS groups
 FROM users u
 LEFT JOIN user_group_memberships ugm ON ugm.user_id = u.id
@@ -105,6 +171,8 @@ SQL);
         return null;
     }
     $user['is_admin'] = (bool)$user['is_admin'];
+    $user['can_manage_football'] = $user['is_admin'] || (bool)$user['can_manage_football'];
+    $user['can_update_data'] = $user['is_admin'] || (bool)$user['can_update_data'];
     return $user;
 }
 
@@ -185,7 +253,8 @@ function clever_csrf_token(): string
 function clever_verify_csrf(): void
 {
     clever_start_session();
-    if (!hash_equals((string)($_SESSION['clever_csrf'] ?? ''), (string)($_POST['csrf_token'] ?? ''))) {
+    $provided = (string)($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    if (!hash_equals((string)($_SESSION['clever_csrf'] ?? ''), $provided)) {
         http_response_code(419);
         exit('Your session expired. Please go back and try again.');
     }

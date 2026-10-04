@@ -41,17 +41,39 @@ CREATE TABLE IF NOT EXISTS points_deductions (
     reason TEXT NOT NULL DEFAULT '',
     PRIMARY KEY (competition_code, season_label, team_name, reason)
 );
+CREATE TABLE IF NOT EXISTS dashboard_settings (
+    setting_key TEXT PRIMARY KEY,
+    setting_value TEXT NOT NULL
+);
 SQL);
+    $defaults = [
+        'dashboard_title' => 'Football Stats Dashboard',
+        'dashboard_subtitle' => 'FA Premier League, EFL, National Leagues & World Cup Standings, Analytics and Poisson Model based Simulations',
+        'english_data_provider' => 'SportsDB API',
+        'world_cup_data_provider' => 'Football-Data API',
+        'show_update_controls' => '1',
+    ];
+    $stmt = $db->prepare('INSERT OR IGNORE INTO dashboard_settings (setting_key, setting_value) VALUES (?, ?)');
+    foreach ($defaults as $key => $value) $stmt->execute([$key, $value]);
+}
+
+function clever_dashboard_settings(PDO $db): array
+{
+    clever_migrate_football_settings($db);
+    return $db->query('SELECT setting_key, setting_value FROM dashboard_settings')->fetchAll(PDO::FETCH_KEY_PAIR);
 }
 
 function clever_seed_team_metadata(PDO $db, array $sets): void
 {
+    $seeded = $db->query("SELECT setting_value FROM dashboard_settings WHERE setting_key = 'team_metadata_seeded'")->fetchColumn();
+    if ($seeded === '1') return;
     $stmt = $db->prepare('INSERT OR IGNORE INTO team_metadata (competition_code, team_name, display_name, common_name, nickname, short_code, color) VALUES (?, ?, ?, ?, ?, ?, ?)');
     foreach ($sets as $code => $teams) {
         foreach ($teams as $key => $info) {
             $stmt->execute([$code, $key, $info['name'], $info['common_name'], $info['nickname'], $info['short'], $info['color']]);
         }
     }
+    $db->exec("INSERT INTO dashboard_settings (setting_key, setting_value) VALUES ('team_metadata_seeded', '1') ON CONFLICT(setting_key) DO UPDATE SET setting_value='1'");
 }
 
 function clever_team_metadata(PDO $db, string $competitionCode): array
