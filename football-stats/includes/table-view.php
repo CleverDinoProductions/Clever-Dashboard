@@ -2093,6 +2093,16 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-rule { display: inline-flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.035); }
             .custom-match-rule label { flex: 1; white-space: nowrap; }
             .custom-match-rule select { min-width: 0; max-width: 145px; }
+            .custom-team-filter { position: relative; align-items: stretch; flex-direction: column; }
+            .custom-team-filter > span { font-weight: 700; color: #dcddde; }
+            .custom-team-filter-menu { width: 100%; }
+            .custom-team-filter-menu > summary { padding: 7px 9px; border: 1px solid #4f545c; border-radius: 6px; background: #1e1f22; color: #fff; font-weight: 400; cursor: pointer; list-style-position: inside; }
+            .custom-team-filter-menu[open] > summary { border-color: #5865f2; }
+            .custom-team-filter-options { display: grid; gap: 5px; max-height: 230px; overflow-y: auto; margin-top: 5px; padding: 8px; border: 1px solid #4f545c; border-radius: 6px; background: #18191c; }
+            .custom-team-filter-presets { display: flex; flex-wrap: wrap; gap: 5px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
+            .custom-match-toolbar .custom-team-filter-presets button { padding: 5px 7px; font-size: 11px; }
+            .custom-team-filter-option { display: flex; gap: 7px; align-items: center; padding: 3px; font-weight: 400 !important; cursor: pointer; }
+            .custom-team-filter-option input { accent-color: #5865f2; }
             .custom-match-outcome-rule { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(110px, 1fr); gap: 6px; }
             .custom-match-outcome-rule label { grid-column: 1 / -1; }
             .custom-match-outcome-rule button { grid-column: 1 / -1; }
@@ -2356,13 +2366,22 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     <summary>Filter / expunge</summary>
                                     <div class="custom-match-section-controls">
                                         <p style="margin:0;color:#b9bbbe;line-height:1.45;">Combine every field below to include or expunge matching team results. “All” leaves that field unrestricted.</p>
-                                        <span class="custom-match-rule">
-                                            <label for="<?php echo $controlId; ?>-result-filter-team">Team</label>
-                                            <select id="<?php echo $controlId; ?>-result-filter-team" data-result-filter-team>
-                                                <option value="all">All teams</option>
-                                                <?php foreach ($customRuleTeams as $customRuleTeam): ?><option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
-                                            </select>
-                                        </span>
+                                        <div class="custom-match-rule custom-team-filter">
+                                            <span id="<?php echo $controlId; ?>-result-filter-team-label">Teams</span>
+                                            <details class="custom-team-filter-menu" data-result-filter-team>
+                                                <summary data-team-filter-summary aria-labelledby="<?php echo $controlId; ?>-result-filter-team-label">All teams</summary>
+                                                <div class="custom-team-filter-options">
+                                                    <div class="custom-team-filter-presets">
+                                                        <button type="button" data-team-filter-preset="all">All teams</button>
+                                                        <button type="button" data-team-filter-preset="big-six">Big Six</button>
+                                                        <button type="button" data-team-filter-preset="none">Clear</button>
+                                                    </div>
+                                                    <?php foreach ($customRuleTeams as $customRuleTeam): ?>
+                                                        <label class="custom-team-filter-option"><input type="checkbox" value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>" data-team-filter-option> <?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></label>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </details>
+                                        </div>
                                         <span class="custom-match-rule">
                                             <label for="<?php echo $controlId; ?>-result-filter-opponent">Opponent</label>
                                             <select id="<?php echo $controlId; ?>-result-filter-opponent" data-result-filter-opponent>
@@ -2576,7 +2595,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     (function () {
                         var panel = document.querySelector('[data-custom-match-panel]');
                         if (!panel) return;
-                        var boxes = Array.prototype.slice.call(panel.querySelectorAll('input[type="checkbox"]'));
+                        var boxes = Array.prototype.slice.call(panel.querySelectorAll('.custom-match-option input[type="checkbox"]'));
+                        var teamFilterBoxes = Array.prototype.slice.call(panel.querySelectorAll('[data-team-filter-option]'));
+                        var teamFilterSummary = panel.querySelector('[data-team-filter-summary]');
                         var outcomeSelects = Array.prototype.slice.call(panel.querySelectorAll('[data-outcome-match]'));
                         var deductionInputs = Array.prototype.slice.call(panel.querySelectorAll('[data-points-deduction]'));
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
@@ -2631,6 +2652,29 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             selectionStatus.textContent = selected + ' of ' + boxes.length + ' team results selected; ' + altered + ' outcomes altered';
                             updatePendingRules();
                         }
+                        function updateTeamFilterSummary() {
+                            var selectedTeams = teamFilterBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
+                            if (!selectedTeams.length || selectedTeams.length === teamFilterBoxes.length) {
+                                teamFilterSummary.textContent = 'All teams';
+                            } else if (selectedTeams.length <= 2) {
+                                teamFilterSummary.textContent = selectedTeams.join(', ');
+                            } else {
+                                teamFilterSummary.textContent = selectedTeams.length + ' teams selected';
+                            }
+                        }
+                        teamFilterBoxes.forEach(function (box) {
+                            box.addEventListener('change', updateTeamFilterSummary);
+                        });
+                        Array.prototype.forEach.call(panel.querySelectorAll('[data-team-filter-preset]'), function (button) {
+                            button.addEventListener('click', function () {
+                                var preset = this.dataset.teamFilterPreset;
+                                var bigSix = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Tottenham'];
+                                teamFilterBoxes.forEach(function (box) {
+                                    box.checked = preset === 'all' || (preset === 'big-six' && bigSix.indexOf(box.value) !== -1);
+                                });
+                                updateTeamFilterSummary();
+                            });
+                        });
                         panel.querySelector('[data-match-select-all]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
                             updateSelectionStatus();
@@ -2717,14 +2761,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         });
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-action]'), function (button) {
                             button.addEventListener('click', function () {
-                                var team = panel.querySelector('[data-result-filter-team]').value;
+                                var selectedTeams = teamFilterBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
                                 var opponent = panel.querySelector('[data-result-filter-opponent]').value;
                                 var matchweek = panel.querySelector('[data-result-filter-matchweek]').value;
                                 var venue = panel.querySelector('[data-result-filter-venue]').value;
                                 var outcome = panel.querySelector('[data-result-filter-outcome]').value;
                                 var include = this.dataset.resultFilterAction === 'include';
                                 boxes.forEach(function (box) {
-                                    if (team !== 'all' && box.dataset.team !== team) return;
+                                    if (selectedTeams.length && selectedTeams.indexOf(box.dataset.team) === -1) return;
                                     if (opponent !== 'all' && box.dataset.opponent !== opponent) return;
                                     if (matchweek !== 'all' && box.dataset.matchweek !== matchweek) return;
                                     if (venue !== 'all' && box.dataset.resultSide !== venue) return;
@@ -2806,6 +2850,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 updateSelectionStatus();
                             });
                         });
+                        updateTeamFilterSummary();
                         updateSelectionStatus();
                         panel.querySelector('[data-match-apply]').addEventListener('click', function () {
                             var excluded = boxes.filter(function (box) { return !box.checked; }).map(function (box) { return box.value; });
