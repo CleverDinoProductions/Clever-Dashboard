@@ -17,11 +17,5 @@ foreach (['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester Unit
 }
 team_filter_assert_contains("selectedTeams.indexOf(box.dataset.team) === -1", $source, 'Combined filtering should accept every checked team.');
 team_filter_assert_contains(".custom-match-option input[type=\"checkbox\"]", $source, 'Result selection must not include the team-filter checkboxes.');
-team_filter_assert_contains("panel.querySelectorAll('[data-team-checkbox-select]')", $source, 'Every team-based select should be upgraded to the checkbox dropdown.');
-foreach (['data-team-rule data-team-checkbox-select', 'data-result-filter-opponent data-team-checkbox-select', 'data-bulk-outcome-team data-team-checkbox-select', 'data-bulk-team-opponent data-team-checkbox-select'] as $selector) {
-    team_filter_assert_contains($selector, $source, 'Team-based filter is missing its checkbox-dropdown enhancement: ' . $selector);
-}
-team_filter_assert_contains("teams.indexOf(select.dataset.homeTeam)", $source, 'Bulk outcome changes should accept multiple selected teams.');
-team_filter_assert_contains("teamOpponents.indexOf(opponent)", $source, 'Bulk outcome changes should accept multiple selected opponents.');
 
 echo "Custom-rules team filter tests passed.\n";

@@ -2103,9 +2103,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-toolbar .custom-team-filter-presets button { padding: 5px 7px; font-size: 11px; }
             .custom-team-filter-option { display: flex; gap: 7px; align-items: center; padding: 3px; font-weight: 400 !important; cursor: pointer; }
             .custom-team-filter-option input { accent-color: #5865f2; }
-            .custom-team-checkbox-select { min-width: 0; flex: 1; }
-            .custom-team-checkbox-select > summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .custom-team-source-select { display: none !important; }
             .custom-match-outcome-rule { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(110px, 1fr); gap: 6px; }
             .custom-match-outcome-rule label { grid-column: 1 / -1; }
             .custom-match-outcome-rule button { grid-column: 1 / -1; }
@@ -2737,8 +2734,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-team-filter-preset]'), function (button) {
                             button.addEventListener('click', function () {
                                 var preset = this.dataset.teamFilterPreset;
+                                var bigSix = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Tottenham'];
                                 teamFilterBoxes.forEach(function (box) {
-                                    box.checked = preset === 'all' || (preset === 'big-six' && bigSixTeams.indexOf(box.value) !== -1);
+                                    box.checked = preset === 'all' || (preset === 'big-six' && bigSix.indexOf(box.value) !== -1);
                                 });
                                 updateTeamFilterSummary();
                             });
@@ -2828,14 +2826,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-action]'), function (button) {
                             button.addEventListener('click', function () {
                                 var selectedTeams = teamFilterBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
-                                var opponents = selectedTeamValues(panel.querySelector('[data-result-filter-opponent]'));
+                                var opponent = panel.querySelector('[data-result-filter-opponent]').value;
                                 var matchweek = panel.querySelector('[data-result-filter-matchweek]').value;
                                 var venue = panel.querySelector('[data-result-filter-venue]').value;
                                 var outcome = panel.querySelector('[data-result-filter-outcome]').value;
                                 var include = this.dataset.resultFilterAction === 'include';
                                 boxes.forEach(function (box) {
                                     if (selectedTeams.length && selectedTeams.indexOf(box.dataset.team) === -1) return;
-                                    if (opponents.length && opponents.indexOf(box.dataset.opponent) === -1) return;
+                                    if (opponent !== 'all' && box.dataset.opponent !== opponent) return;
                                     if (matchweek !== 'all' && box.dataset.matchweek !== matchweek) return;
                                     if (venue !== 'all' && box.dataset.resultSide !== venue) return;
                                     if (outcome !== 'all' && box.dataset.result !== outcome) return;
