@@ -6,10 +6,16 @@ function clever_football_db(): PDO
 {
     static $db;
     if ($db instanceof PDO) return $db;
-    $path = getenv('CLEVER_FOOTBALL_DB') ?: dirname(__DIR__) . '/football-stats/football-stats.sqlite3';
+    $configuredPath = getenv('CLEVER_FOOTBALL_DB');
+    $canonicalPath = dirname(__DIR__) . '/football-stats/football-stats.sqlite3';
+    $legacyPath = dirname(__DIR__) . '/football-stats/football-stats.db';
+    $path = is_string($configuredPath) && trim($configuredPath) !== ''
+        ? $configuredPath
+        : (is_file($canonicalPath) ? $canonicalPath : $legacyPath);
     $db = new PDO('sqlite:' . $path);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $db->exec('PRAGMA busy_timeout = 5000');
     clever_migrate_football_settings($db);
     return $db;
 }

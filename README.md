@@ -78,6 +78,7 @@ php football-stats/tests/table-view-movement-test.php
 php football-stats/tests/table-view-team-crests-test.php
 php football-stats/tests/database-config-test.php
 php tests/account-system-test.php
+php tests/admin-page-test.php
 ```
 
 Python importers contact third-party services and may require credentials and network access. Review their configuration before running them.
