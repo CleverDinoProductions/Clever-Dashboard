@@ -14,10 +14,20 @@ function account_assert(bool $condition, string $message): void
 $db = clever_accounts_db();
 account_assert((int)$db->query('SELECT COUNT(*) FROM user_groups')->fetchColumn() === 2, 'Default groups should be created.');
 account_assert(clever_validate_registration('ab', 'invalid', 'short') !== [], 'Invalid registration details should be rejected.');
+account_assert(!clever_login('', ''), 'Blank credentials should be rejected.');
+
+$invalidRejected = false;
+try {
+    clever_create_user('x', 'invalid', 'short');
+} catch (InvalidArgumentException $exception) {
+    $invalidRejected = true;
+}
+account_assert($invalidRejected, 'The account API should reject invalid users even when called outside the registration form.');
 
 $userId = clever_create_user('test_user', 'test@example.com', 'a-secure-password');
 account_assert($userId > 0, 'A user should be created.');
 account_assert(clever_login('TEST_USER', 'a-secure-password'), 'Username login should be case insensitive.');
+account_assert(session_get_cookie_params()['path'] === '/', 'The account cookie should be valid across the whole site.');
 account_assert(!clever_is_admin(), 'Members should not be administrators.');
 
 $adminGroup = (int)$db->query("SELECT id FROM user_groups WHERE is_admin=1")->fetchColumn();
