@@ -2362,14 +2362,20 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             ?>
                                     </div>
                                 </details>
-                                <details class="custom-match-section">
-                                    <summary>Filter / expunge</summary>
+                                <?php foreach ([
+                                    'only' => ['title' => 'Include only matching results', 'help' => 'Include only team results matching every field below. “All” leaves that field unrestricted.', 'button' => 'Include only matching results'],
+                                    'exclude' => ['title' => 'Include everything but matching results', 'help' => 'Include every team result except those matching every field below. “All” leaves that field unrestricted.', 'button' => 'Exclude matching results'],
+                                ] as $filterAction => $filterSection):
+                                    $filterIdPrefix = $controlId . '-result-filter-' . $filterAction;
+                                ?>
+                                <details class="custom-match-section" data-result-filter-section>
+                                    <summary><?php echo htmlspecialchars($filterSection['title'], ENT_QUOTES, 'UTF-8'); ?></summary>
                                     <div class="custom-match-section-controls">
-                                        <p style="margin:0;color:#b9bbbe;line-height:1.45;">Combine every field below to include or expunge matching team results. “All” leaves that field unrestricted.</p>
+                                        <p style="margin:0;color:#b9bbbe;line-height:1.45;"><?php echo htmlspecialchars($filterSection['help'], ENT_QUOTES, 'UTF-8'); ?></p>
                                         <div class="custom-match-rule custom-team-filter">
-                                            <span id="<?php echo $controlId; ?>-result-filter-team-label">Teams</span>
+                                            <span id="<?php echo $filterIdPrefix; ?>-team-label">Teams</span>
                                             <details class="custom-team-filter-menu" data-result-filter-team>
-                                                <summary data-team-filter-summary aria-labelledby="<?php echo $controlId; ?>-result-filter-team-label">All teams</summary>
+                                                <summary data-team-filter-summary aria-labelledby="<?php echo $filterIdPrefix; ?>-team-label">All teams</summary>
                                                 <div class="custom-team-filter-options">
                                                     <div class="custom-team-filter-presets">
                                                         <button type="button" data-team-filter-preset="all">All teams</button>
@@ -2383,38 +2389,35 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                             </details>
                                         </div>
                                         <span class="custom-match-rule">
-                                            <label for="<?php echo $controlId; ?>-result-filter-opponent">Opponent</label>
-                                            <select id="<?php echo $controlId; ?>-result-filter-opponent" data-result-filter-opponent data-team-checkbox-select>
+                                            <label for="<?php echo $filterIdPrefix; ?>-opponent">Opponent</label>
+                                            <select id="<?php echo $filterIdPrefix; ?>-opponent" data-result-filter-opponent data-team-checkbox-select>
                                                 <option value="all">All opponents</option>
                                                 <?php foreach ($customRuleTeams as $customRuleTeam): ?><option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
                                             </select>
                                         </span>
                                         <span class="custom-match-rule">
-                                            <label for="<?php echo $controlId; ?>-result-filter-matchweek">Matchweek</label>
-                                            <select id="<?php echo $controlId; ?>-result-filter-matchweek" data-result-filter-matchweek>
+                                            <label for="<?php echo $filterIdPrefix; ?>-matchweek">Matchweek</label>
+                                            <select id="<?php echo $filterIdPrefix; ?>-matchweek" data-result-filter-matchweek>
                                                 <option value="all">All matchweeks</option>
                                                 <?php foreach ($completedMatchweeks as $completedMatchweek): ?><option value="<?php echo $completedMatchweek; ?>">MW<?php echo $completedMatchweek; ?></option><?php endforeach; ?>
                                             </select>
                                         </span>
                                         <span class="custom-match-rule">
-                                            <label for="<?php echo $controlId; ?>-result-filter-venue">Venue</label>
-                                            <select id="<?php echo $controlId; ?>-result-filter-venue" data-result-filter-venue>
+                                            <label for="<?php echo $filterIdPrefix; ?>-venue">Venue</label>
+                                            <select id="<?php echo $filterIdPrefix; ?>-venue" data-result-filter-venue>
                                                 <option value="all">Home or away</option><option value="home">Home only</option><option value="away">Away only</option>
                                             </select>
                                         </span>
                                         <span class="custom-match-rule">
-                                            <label for="<?php echo $controlId; ?>-result-filter-outcome">Result</label>
-                                            <select id="<?php echo $controlId; ?>-result-filter-outcome" data-result-filter-outcome>
+                                            <label for="<?php echo $filterIdPrefix; ?>-outcome">Result</label>
+                                            <select id="<?php echo $filterIdPrefix; ?>-outcome" data-result-filter-outcome>
                                                 <option value="all">Every result</option><option value="win">Wins only</option><option value="draw">Draws only</option><option value="loss">Losses only</option>
                                             </select>
                                         </span>
-                                        <span class="custom-match-rule custom-match-outcome-rule">
-                                            <label>Apply combined filter</label>
-                                            <button type="button" data-result-filter-action="exclude">Expunge matching results</button>
-                                            <button type="button" data-result-filter-action="include">Restore matching results</button>
-                                        </span>
+                                        <button type="button" data-result-filter-action="<?php echo $filterAction; ?>"><?php echo htmlspecialchars($filterSection['button'], ENT_QUOTES, 'UTF-8'); ?></button>
                                     </div>
                                 </details>
+                                <?php endforeach; ?>
                                 <details class="custom-match-section">
                                     <summary>Alter outcomes</summary>
                                     <div class="custom-match-section-controls">
@@ -2596,8 +2599,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var panel = document.querySelector('[data-custom-match-panel]');
                         if (!panel) return;
                         var boxes = Array.prototype.slice.call(panel.querySelectorAll('.custom-match-option input[type="checkbox"]'));
-                        var teamFilterBoxes = Array.prototype.slice.call(panel.querySelectorAll('[data-team-filter-option]'));
-                        var teamFilterSummary = panel.querySelector('[data-team-filter-summary]');
                         var outcomeSelects = Array.prototype.slice.call(panel.querySelectorAll('[data-outcome-match]'));
                         var deductionInputs = Array.prototype.slice.call(panel.querySelectorAll('[data-points-deduction]'));
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
@@ -2718,28 +2719,32 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             selectionStatus.textContent = selected + ' of ' + boxes.length + ' team results selected; ' + altered + ' outcomes altered';
                             updatePendingRules();
                         }
-                        function updateTeamFilterSummary() {
-                            var selectedTeams = teamFilterBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
-                            if (!selectedTeams.length || selectedTeams.length === teamFilterBoxes.length) {
-                                teamFilterSummary.textContent = 'All teams';
-                            } else if (selectedTeams.length <= 2) {
-                                teamFilterSummary.textContent = selectedTeams.join(', ');
-                            } else {
-                                teamFilterSummary.textContent = selectedTeams.length + ' teams selected';
+                        Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-section]'), function (section) {
+                            var filterTeamBoxes = Array.prototype.slice.call(section.querySelectorAll('[data-team-filter-option]'));
+                            var filterTeamSummary = section.querySelector('[data-team-filter-summary]');
+                            function updateTeamFilterSummary() {
+                                var selectedTeams = filterTeamBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
+                                if (!selectedTeams.length || selectedTeams.length === filterTeamBoxes.length) {
+                                    filterTeamSummary.textContent = 'All teams';
+                                } else if (selectedTeams.length <= 2) {
+                                    filterTeamSummary.textContent = selectedTeams.join(', ');
+                                } else {
+                                    filterTeamSummary.textContent = selectedTeams.length + ' teams selected';
+                                }
                             }
-                        }
-                        teamFilterBoxes.forEach(function (box) {
-                            box.addEventListener('change', updateTeamFilterSummary);
-                        });
-                        Array.prototype.forEach.call(panel.querySelectorAll('[data-team-filter-preset]'), function (button) {
-                            button.addEventListener('click', function () {
-                                var preset = this.dataset.teamFilterPreset;
-                                var bigSix = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Tottenham'];
-                                teamFilterBoxes.forEach(function (box) {
-                                    box.checked = preset === 'all' || (preset === 'big-six' && bigSix.indexOf(box.value) !== -1);
-                                });
-                                updateTeamFilterSummary();
+                            filterTeamBoxes.forEach(function (box) {
+                                box.addEventListener('change', updateTeamFilterSummary);
                             });
+                            Array.prototype.forEach.call(section.querySelectorAll('[data-team-filter-preset]'), function (button) {
+                                button.addEventListener('click', function () {
+                                    var preset = this.dataset.teamFilterPreset;
+                                    filterTeamBoxes.forEach(function (box) {
+                                        box.checked = preset === 'all' || (preset === 'big-six' && bigSixTeams.indexOf(box.value) !== -1);
+                                    });
+                                    updateTeamFilterSummary();
+                                });
+                            });
+                            updateTeamFilterSummary();
                         });
                         panel.querySelector('[data-match-select-all]').addEventListener('click', function () {
                             boxes.forEach(function (box) { box.checked = true; });
@@ -2825,19 +2830,20 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         });
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-action]'), function (button) {
                             button.addEventListener('click', function () {
-                                var selectedTeams = teamFilterBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
-                                var opponent = panel.querySelector('[data-result-filter-opponent]').value;
-                                var matchweek = panel.querySelector('[data-result-filter-matchweek]').value;
-                                var venue = panel.querySelector('[data-result-filter-venue]').value;
-                                var outcome = panel.querySelector('[data-result-filter-outcome]').value;
-                                var include = this.dataset.resultFilterAction === 'include';
+                                var section = this.closest('[data-result-filter-section]');
+                                var selectedTeams = Array.prototype.filter.call(section.querySelectorAll('[data-team-filter-option]'), function (box) { return box.checked; }).map(function (box) { return box.value; });
+                                var opponent = section.querySelector('[data-result-filter-opponent]').value;
+                                var matchweek = section.querySelector('[data-result-filter-matchweek]').value;
+                                var venue = section.querySelector('[data-result-filter-venue]').value;
+                                var outcome = section.querySelector('[data-result-filter-outcome]').value;
+                                var includeOnly = this.dataset.resultFilterAction === 'only';
                                 boxes.forEach(function (box) {
-                                    if (selectedTeams.length && selectedTeams.indexOf(box.dataset.team) === -1) return;
-                                    if (opponent !== 'all' && box.dataset.opponent !== opponent) return;
-                                    if (matchweek !== 'all' && box.dataset.matchweek !== matchweek) return;
-                                    if (venue !== 'all' && box.dataset.resultSide !== venue) return;
-                                    if (outcome !== 'all' && box.dataset.result !== outcome) return;
-                                    box.checked = include;
+                                    var matches = (!selectedTeams.length || selectedTeams.indexOf(box.dataset.team) !== -1)
+                                        && (opponent === 'all' || box.dataset.opponent === opponent)
+                                        && (matchweek === 'all' || box.dataset.matchweek === matchweek)
+                                        && (venue === 'all' || box.dataset.resultSide === venue)
+                                        && (outcome === 'all' || box.dataset.result === outcome);
+                                    box.checked = includeOnly ? matches : !matches;
                                 });
                                 updateSelectionStatus();
                             });
