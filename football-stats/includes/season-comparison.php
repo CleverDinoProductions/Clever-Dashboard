@@ -26,7 +26,7 @@ $availableSeasons = $seasonStmt->fetchAll(PDO::FETCH_COLUMN);
 $defaultLeftSeason = $availableSeasons[1] ?? $availableSeasons[0] ?? ($currentMainTab ?? '2025-2026');
 $defaultRightSeason = $availableSeasons[0] ?? ($currentMainTab ?? '2025-2026');
 
-$validCalcModes = ['by_matchweek', 'by_date', 'by_match', 'by_match_before', 'custom_matches'];
+$validCalcModes = ['pre_season', 'by_matchweek', 'by_date', 'by_match', 'by_match_before', 'custom_matches'];
 $calcMode = in_array($_GET['compare_calc_mode'] ?? '', $validCalcModes, true)
     ? $_GET['compare_calc_mode']
     : 'by_matchweek';
@@ -123,14 +123,14 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
     $_GET = $savedGet;
     $standings = $view['standings'];
     $effectiveGames = $totalGames;
-    if ($tableFilter !== 'all') {
+    if ($calcMode !== 'pre_season' && $tableFilter !== 'all') {
         $limit = isset($view['active_matchweek']) ? min($totalGames, (int)$view['active_matchweek']) : $totalGames;
         $filtered = football_stats_compute_filtered_standings($db, $competitionCode, $season, $tableFilter, $halfwayGames, $liveTableName, $limit);
         if ($filtered) $standings = $filtered;
         $effectiveGames = $tableFilter === 'first_half' ? $halfwayGames
             : ($tableFilter === 'second_half' ? $totalGames - $halfwayGames : (int)($totalGames / 2));
     }
-    $deductions = football_stats_get_points_deductions($db, $competitionCode, $season);
+    $deductions = $calcMode === 'pre_season' ? [] : football_stats_get_points_deductions($db, $competitionCode, $season);
     if ($deductions) $standings = football_stats_apply_points_deductions($standings, $deductions);
     $view['standings'] = $standings;
     $view['effective_games'] = $effectiveGames;
@@ -180,6 +180,7 @@ $selectedPoint = static function (array $view) use ($pointField) {
         <input type="hidden" name="league" value="<?= htmlspecialchars($currentLeague ?? '', ENT_QUOTES, 'UTF-8') ?>">
         <input type="hidden" name="subtab" value="compare-seasons">
         <div><label for="compare-calc">Calculation mode</label><select id="compare-calc" name="compare_calc_mode">
+            <option value="pre_season" <?= $calcMode === 'pre_season' ? 'selected' : '' ?>>Pre-season</option>
             <option value="by_matchweek" <?= $calcMode === 'by_matchweek' ? 'selected' : '' ?>>By matchweek</option>
             <option value="by_date" <?= $calcMode === 'by_date' ? 'selected' : '' ?>>By date</option>
             <option value="by_match" <?= $calcMode === 'by_match' ? 'selected' : '' ?>>After a match</option>
