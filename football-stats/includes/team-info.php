@@ -188,6 +188,29 @@ $team_info_NL = [
 // ---------------------------------------------------------------------------
 // Shared helper
 // ---------------------------------------------------------------------------
+// The arrays above are migration defaults for existing installations. On the
+// first request they are copied to SQLite; all runtime reads then come from the
+// database so administrators can change metadata without editing PHP.
+try {
+    require_once dirname(__DIR__, 2) . '/lib/football-settings.php';
+    $metadataDb = isset($db) && $db instanceof PDO ? $db : clever_football_db();
+    clever_migrate_football_settings($metadataDb);
+    clever_seed_team_metadata($metadataDb, [
+        'PL' => $team_info_PL,
+        'ELC' => $team_info_ELC,
+        'L1' => $team_info_L1,
+        'L2' => $team_info_L2,
+        'NL' => $team_info_NL,
+    ]);
+    $team_info_PL = clever_team_metadata($metadataDb, 'PL');
+    $team_info_ELC = clever_team_metadata($metadataDb, 'ELC');
+    $team_info_L1 = clever_team_metadata($metadataDb, 'L1');
+    $team_info_L2 = clever_team_metadata($metadataDb, 'L2');
+    $team_info_NL = clever_team_metadata($metadataDb, 'NL');
+} catch (Throwable $exception) {
+    // Preserve the bundled defaults if a legacy deployment opens the DB read-only.
+}
+
 if (!function_exists('getTeamInfo')) {
     function getTeamInfo(string $team_name, array $team_info): array {
         if (isset($team_info[$team_name])) {

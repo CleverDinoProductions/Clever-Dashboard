@@ -99,10 +99,8 @@ if (!function_exists('football_stats_limit_matchweeks_to_regular_season')) {
 /**
  * Return the points deductions which apply to a competition season.
  *
- * Deployments may maintain a `points_deductions` table with the columns
- * competition_code, season_label, team_name, points and reason. The small
- * built-in list keeps the currently relevant deduction working on older
- * databases which have not added that table yet.
+ * Administrators maintain the `points_deductions` table through the control
+ * panel. Empty seasons intentionally return no deductions.
  */
 if (!function_exists('football_stats_get_points_deductions')) {
     function football_stats_get_points_deductions(PDO $db, $competitionCode, $seasonLabel)
@@ -121,24 +119,6 @@ if (!function_exists('football_stats_get_points_deductions')) {
             }
         } catch (Exception $exception) {
             // A read-only or older database can still use the bundled entries.
-        }
-
-        if (empty($deductions)) {
-            $bundled = [
-                'ELC|2025-2026' => [
-                    ['team_name' => 'Leicester City', 'points' => 6, 'reason' => 'Administration and EFL financial-rule breaches'],
-                ],
-                'ELC|2025-2026' => [
-                    ['team_name' => 'West Bromwich Albion', 'points' => 2, 'reason' => 'Administration and EFL financial-rule breaches'],
-                ],
-                'ELC|2025-2026' => [
-                    ['team_name' => 'Sheffield Wednesday', 'points' => 18, 'reason' => 'Administration and EFL financial-rule breaches'],
-                ],
-                'ELC|2026-2027' => [
-                    ['team_name' => 'Southampton', 'points' => 4, 'reason' => 'EFL rules breach (SpyGate)'],
-                ]
-            ];
-            $deductions = $bundled[$competitionCode . '|' . $seasonLabel] ?? [];
         }
 
         $normalised = [];

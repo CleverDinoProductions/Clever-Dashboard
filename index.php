@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/lib/auth.php';
+$siteUser = clever_current_user();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -170,10 +174,22 @@
         
         .btn-secondary { background: linear-gradient(135deg, #43b581, #3a9d6f) !important; }
         .admin-btn { background: linear-gradient(135deg, #4f545c, #2f3136) !important; border: 1px solid #4f545c; }
+        .account-bar { display:flex; justify-content:flex-end; align-items:center; gap:12px; color:#aaa; margin-bottom:24px; }
+        .account-bar a { color:white; text-decoration:none; padding:8px 13px; border-radius:6px; background:#40444b; }
     </style>
 </head>
 <body>
     <div class="container">
+        <nav class="account-bar" aria-label="Account">
+            <?php if ($siteUser): ?>
+                <span>Signed in as <strong><?= htmlspecialchars($siteUser['username']) ?></strong></span>
+                <a href="/account/">My account</a>
+                <?php if ($siteUser['is_admin']): ?><a href="/admin/admin.php">Admin</a><?php endif; ?>
+                <a href="/account/logout.php">Sign out</a>
+            <?php else: ?>
+                <a href="/account/login.php">Sign in</a><a href="/account/register.php">Create account</a>
+            <?php endif; ?>
+        </nav>
         <div class="header">
             <h1>🦖 Official Site for CleverDino 🦖</h1>
             <p>Home of many Dashboards and Analytics</p>
