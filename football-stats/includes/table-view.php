@@ -2329,7 +2329,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     ?>
                                         <span class="custom-match-rule">
                                             <label for="<?php echo $ruleControlId; ?>">Add <?php echo $ruleResultLabel; ?></label>
-                                            <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="add" data-rule-result="<?php echo $ruleResult; ?>">
+                                            <select id="<?php echo $ruleControlId; ?>" data-team-rule data-team-checkbox-select data-rule-action="add" data-rule-result="<?php echo $ruleResult; ?>">
                                                 <option value="">Choose&hellip;</option>
                                                 <option value="__all__">All teams</option>
                                                 <?php foreach ($customRuleTeams as $customRuleTeam): ?>
@@ -2349,7 +2349,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             ?>
                                 <span class="custom-match-rule">
                                     <label for="<?php echo $ruleControlId; ?>">Remove <?php echo $ruleResultLabel; ?></label>
-                                    <select id="<?php echo $ruleControlId; ?>" data-team-rule data-rule-action="remove" data-rule-result="<?php echo $ruleResult; ?>">
+                                    <select id="<?php echo $ruleControlId; ?>" data-team-rule data-team-checkbox-select data-rule-action="remove" data-rule-result="<?php echo $ruleResult; ?>">
                                         <option value="">Choose&hellip;</option>
                                         <option value="__all__">All teams</option>
                                         <?php foreach ($customRuleTeams as $customRuleTeam): ?>
@@ -2384,7 +2384,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                         </div>
                                         <span class="custom-match-rule">
                                             <label for="<?php echo $controlId; ?>-result-filter-opponent">Opponent</label>
-                                            <select id="<?php echo $controlId; ?>-result-filter-opponent" data-result-filter-opponent>
+                                            <select id="<?php echo $controlId; ?>-result-filter-opponent" data-result-filter-opponent data-team-checkbox-select>
                                                 <option value="all">All opponents</option>
                                                 <?php foreach ($customRuleTeams as $customRuleTeam): ?><option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option><?php endforeach; ?>
                                             </select>
@@ -2467,7 +2467,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                         </span>
                                         <span class="custom-match-rule custom-match-outcome-rule">
                                             <label for="<?php echo $controlId; ?>-bulk-outcome-team">By team</label>
-                                            <select id="<?php echo $controlId; ?>-bulk-outcome-team" data-bulk-outcome-team>
+                                            <select id="<?php echo $controlId; ?>-bulk-outcome-team" data-bulk-outcome-team data-team-checkbox-select>
                                                 <?php foreach ($customRuleTeams as $customRuleTeam): ?>
                                                     <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
                                                 <?php endforeach; ?>
@@ -2484,7 +2484,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="home">Home fixtures only</option>
                                                 <option value="away">Away fixtures only</option>
                                             </select>
-                                            <select data-bulk-team-opponent aria-label="Opponent for selected team">
+                                            <select data-bulk-team-opponent data-team-checkbox-select aria-label="Opponent for selected team">
                                                 <option value="all">All opponents</option>
                                                 <?php foreach ($customRuleTeams as $customRuleTeam): ?>
                                                     <option value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></option>
@@ -2603,6 +2603,72 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
                         var pendingSummary = panel.querySelector('[data-match-pending-summary]');
                         var pendingDetails = panel.querySelector('[data-match-pending-details]');
+                        var bigSixTeams = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Tottenham'];
+                        function selectedTeamValues(select) {
+                            return Array.prototype.filter.call(select.options, function (option) {
+                                return option.selected && option.value && option.value !== 'all' && option.value !== '__all__';
+                            }).map(function (option) { return option.value; });
+                        }
+                        function upgradeTeamSelect(select) {
+                            var emptyLabel = select.matches('[data-team-rule], [data-bulk-outcome-team]') ? 'Choose teams' : 'All teams';
+                            select.multiple = true;
+                            select.classList.add('custom-team-source-select');
+                            Array.prototype.forEach.call(select.options, function (option) { option.selected = false; });
+                            var menu = document.createElement('details');
+                            menu.className = 'custom-team-filter-menu custom-team-checkbox-select';
+                            var summary = document.createElement('summary');
+                            summary.textContent = emptyLabel;
+                            var options = document.createElement('div');
+                            options.className = 'custom-team-filter-options';
+                            var presets = document.createElement('div');
+                            presets.className = 'custom-team-filter-presets';
+                            [['all', 'All teams'], ['big-six', 'Big Six'], ['none', 'Clear']].forEach(function (preset) {
+                                var button = document.createElement('button');
+                                button.type = 'button';
+                                button.dataset.generatedTeamPreset = preset[0];
+                                button.textContent = preset[1];
+                                presets.appendChild(button);
+                            });
+                            options.appendChild(presets);
+                            Array.prototype.forEach.call(select.options, function (option) {
+                                if (!option.value || option.value === 'all' || option.value === '__all__') return;
+                                var label = document.createElement('label');
+                                label.className = 'custom-team-filter-option';
+                                var checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.value = option.value;
+                                checkbox.addEventListener('change', function () {
+                                    option.selected = checkbox.checked;
+                                    updateSummary();
+                                    select.dispatchEvent(new Event('change'));
+                                });
+                                label.appendChild(checkbox);
+                                label.appendChild(document.createTextNode(' ' + option.textContent.trim()));
+                                options.appendChild(label);
+                            });
+                            function updateSummary() {
+                                var values = selectedTeamValues(select);
+                                if (!values.length) summary.textContent = emptyLabel;
+                                else if (values.length <= 2) summary.textContent = values.join(', ');
+                                else summary.textContent = values.length + ' teams selected';
+                            }
+                            presets.addEventListener('click', function (event) {
+                                var preset = event.target.dataset.generatedTeamPreset;
+                                if (!preset) return;
+                                Array.prototype.forEach.call(options.querySelectorAll('input[type="checkbox"]'), function (checkbox) {
+                                    checkbox.checked = preset === 'all' || (preset === 'big-six' && bigSixTeams.indexOf(checkbox.value) !== -1);
+                                    Array.prototype.forEach.call(select.options, function (option) {
+                                        if (option.value === checkbox.value) option.selected = checkbox.checked;
+                                    });
+                                });
+                                updateSummary();
+                                select.dispatchEvent(new Event('change'));
+                            });
+                            menu.appendChild(summary);
+                            menu.appendChild(options);
+                            select.insertAdjacentElement('afterend', menu);
+                        }
+                        Array.prototype.forEach.call(panel.querySelectorAll('[data-team-checkbox-select]'), upgradeTeamSelect);
                         function addPendingGroup(label, items) {
                             var group = document.createElement('span');
                             group.className = 'custom-rules-applied-group';
@@ -2733,19 +2799,18 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         });
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-team-rule]'), function (select) {
                             select.addEventListener('change', function () {
-                                var team = this.value;
+                                var teams = selectedTeamValues(this);
                                 var result = this.dataset.ruleResult;
                                 var include = this.dataset.ruleAction === 'add';
-                                if (!team) return;
+                                if (!teams.length) return;
                                 boxes.forEach(function (box) {
-                                    var isAllTeams = team === '__all__';
-                                    var isSelectedTeam = box.dataset.team === team;
+                                    var isSelectedTeam = teams.indexOf(box.dataset.team) !== -1;
                                     var isHomeResult = box.dataset.resultSide === 'home';
                                     var isAwayResult = box.dataset.resultSide === 'away';
                                     var ruleParts = result.split('_');
                                     var ruleSide = ruleParts[0];
                                     var sideResult = ruleParts[1] || '';
-                                    var teamMatches = isAllTeams || isSelectedTeam;
+                                    var teamMatches = isSelectedTeam;
                                     var matchesRule = (result === 'team' && teamMatches)
                                         || (result === 'home' && teamMatches && isHomeResult)
                                         || (result === 'away' && teamMatches && isAwayResult)
@@ -2755,7 +2820,6 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                             && teamMatches && box.dataset.result === result);
                                     if (matchesRule) box.checked = include;
                                 });
-                                this.value = '';
                                 updateSelectionStatus();
                             });
                         });
@@ -2811,10 +2875,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             button.addEventListener('click', function () {
                                 var scope = this.dataset.bulkOutcomeApply;
                                 var matchweek = panel.querySelector('[data-bulk-outcome-matchweek]').value;
-                                var team = panel.querySelector('[data-bulk-outcome-team]').value;
+                                var teams = selectedTeamValues(panel.querySelector('[data-bulk-outcome-team]'));
                                 var currentTeamOutcome = panel.querySelector('[data-bulk-team-current-outcome]').value;
                                 var teamVenue = panel.querySelector('[data-bulk-team-venue]').value;
-                                var teamOpponent = panel.querySelector('[data-bulk-team-opponent]').value;
+                                var teamOpponents = selectedTeamValues(panel.querySelector('[data-bulk-team-opponent]'));
                                 var fixtureStatus = panel.querySelector('[data-bulk-fixture-status]').value;
                                 var currentFixtureOutcome = scope === 'all'
                                     ? panel.querySelector('[data-bulk-current-outcome]').value
@@ -2828,12 +2892,17 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     if (scope === 'all' && !hasCurrentFixtureOutcome(select, currentFixtureOutcome)) return;
                                     if (scope === 'matchweek' && (select.dataset.matchweek !== matchweek || !hasCurrentFixtureOutcome(select, currentFixtureOutcome))) return;
                                     if (scope === 'team') {
-                                        var isHomeTeam = select.dataset.homeTeam === team;
-                                        var isAwayTeam = select.dataset.awayTeam === team;
-                                        if (!isHomeTeam && !isAwayTeam) return;
-                                        if (teamVenue !== 'all' && (teamVenue === 'home') !== isHomeTeam) return;
+                                        if (!teams.length) return;
+                                        var homeSelected = teams.indexOf(select.dataset.homeTeam) !== -1;
+                                        var awaySelected = teams.indexOf(select.dataset.awayTeam) !== -1;
+                                        if (teamVenue === 'home' && !homeSelected) return;
+                                        if (teamVenue === 'away' && !awaySelected) return;
+                                        if (teamVenue === 'all' && !homeSelected && !awaySelected) return;
+                                        // When both clubs are selected, use the requested venue;
+                                        // otherwise the only selected participant is unambiguous.
+                                        var isHomeTeam = teamVenue === 'home' || (teamVenue === 'all' && homeSelected);
                                         var opponent = isHomeTeam ? select.dataset.awayTeam : select.dataset.homeTeam;
-                                        if (teamOpponent !== 'all' && opponent !== teamOpponent) return;
+                                        if (teamOpponents.length && teamOpponents.indexOf(opponent) === -1) return;
                                         var effectiveTeamOutcome = getCurrentTeamOutcome(select, isHomeTeam);
                                         if (currentTeamOutcome !== 'all' && effectiveTeamOutcome !== currentTeamOutcome) return;
                                         if (outcome === 'actual' || outcome === 'draw') {
