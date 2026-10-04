@@ -7,12 +7,17 @@ const CLEVER_SESSION_USER_ID = 'clever_user_id';
 function clever_start_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
+        $forwardedProtocol = strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+        $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $forwardedProtocol === 'https';
         session_set_cookie_params([
+            'path' => '/',
             'httponly' => true,
-            'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'secure' => $isSecure,
             'samesite' => 'Lax',
         ]);
-        session_start();
+        if (!session_start()) {
+            throw new RuntimeException('Unable to start the account session.');
+        }
     }
 }
 
@@ -37,6 +42,7 @@ function clever_accounts_db(): PDO
     $db = new PDO('sqlite:' . $path);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $db->exec('PRAGMA busy_timeout = 5000');
     $db->exec('PRAGMA foreign_keys = ON');
     clever_migrate_accounts($db);
     return $db;
@@ -110,8 +116,12 @@ function clever_is_admin(): bool
 
 function clever_login(string $identity, string $password): bool
 {
+    $identity = trim($identity);
+    if ($identity === '' || $password === '') {
+        return false;
+    }
     $stmt = clever_accounts_db()->prepare('SELECT id, password_hash, status FROM users WHERE username = ? COLLATE NOCASE OR email = ? COLLATE NOCASE LIMIT 1');
-    $stmt->execute([trim($identity), trim($identity)]);
+    $stmt->execute([$identity, $identity]);
     $user = $stmt->fetch();
     if (!$user || $user['status'] !== 'active' || !password_verify($password, $user['password_hash'])) {
         return false;
@@ -130,7 +140,14 @@ function clever_logout(): void
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        setcookie(session_name(), '', [
+            'expires' => time() - 42000,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ]);
     }
     session_destroy();
 }
@@ -197,20 +214,28 @@ function clever_validate_registration(string $username, string $email, string $p
 function clever_create_user(string $username, string $email, string $password, ?int $groupId = null): int
 {
     $db = clever_accounts_db();
+    $username = trim($username);
+    $email = trim($email);
+    $errors = clever_validate_registration($username, $email, $password);
+    if ($errors !== []) {
+        throw new InvalidArgumentException($errors[0]);
+    }
     if ($groupId === null) {
         $groupId = (int)$db->query("SELECT id FROM user_groups WHERE name = 'Members'")->fetchColumn();
     }
     $db->beginTransaction();
     try {
         $stmt = $db->prepare('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)');
-        $stmt->execute([trim($username), trim($email), password_hash($password, PASSWORD_DEFAULT)]);
+        $stmt->execute([$username, $email, password_hash($password, PASSWORD_DEFAULT)]);
         $userId = (int)$db->lastInsertId();
         $stmt = $db->prepare('INSERT INTO user_group_memberships (user_id, group_id) VALUES (?, ?)');
         $stmt->execute([$userId, $groupId]);
         $db->commit();
         return $userId;
     } catch (Throwable $exception) {
-        $db->rollBack();
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
         throw $exception;
     }
 }
