@@ -2615,7 +2615,16 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         function isBigSixTeam(teamName) {
                             return bigSixTeams.indexOf(normalizedTeamName(teamName)) !== -1;
                         }
+                        function checkedValues(inputs) {
+                            return Array.prototype.filter.call(inputs, function (input) {
+                                return input.checked;
+                            }).map(function (input) { return input.value; });
+                        }
                         function selectedTeamValues(select) {
+                            // Once a select has been upgraded, the visible checkboxes are the
+                            // source of truth. Reading select.value only returns one item, and
+                            // relying on the hidden options can get out of sync with the UI.
+                            if (select.teamCheckboxes) return checkedValues(select.teamCheckboxes);
                             return Array.prototype.filter.call(select.options, function (option) {
                                 return option.selected && option.value && option.value !== 'all' && option.value !== '__all__';
                             }).map(function (option) { return option.value; });
@@ -2648,8 +2657,11 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var checkbox = document.createElement('input');
                                 checkbox.type = 'checkbox';
                                 checkbox.value = option.value;
+                                checkbox.teamOption = option;
+                                if (!select.teamCheckboxes) select.teamCheckboxes = [];
+                                select.teamCheckboxes.push(checkbox);
                                 checkbox.addEventListener('change', function () {
-                                    option.selected = checkbox.checked;
+                                    checkbox.teamOption.selected = checkbox.checked;
                                     updateSummary();
                                     select.dispatchEvent(new Event('change'));
                                 });
@@ -2668,9 +2680,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 if (!preset) return;
                                 Array.prototype.forEach.call(options.querySelectorAll('input[type="checkbox"]'), function (checkbox) {
                                     checkbox.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(checkbox.value));
-                                    Array.prototype.forEach.call(select.options, function (option) {
-                                        if (option.value === checkbox.value) option.selected = checkbox.checked;
-                                    });
+                                    checkbox.teamOption.selected = checkbox.checked;
                                 });
                                 updateSummary();
                                 select.dispatchEvent(new Event('change'));
@@ -2733,7 +2743,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             var filterTeamBoxes = Array.prototype.slice.call(section.querySelectorAll('[data-team-filter-option]'));
                             var filterTeamSummary = section.querySelector('[data-team-filter-summary]');
                             function updateTeamFilterSummary() {
-                                var selectedTeams = filterTeamBoxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
+                                var selectedTeams = checkedValues(filterTeamBoxes);
                                 if (!selectedTeams.length || selectedTeams.length === filterTeamBoxes.length) {
                                     filterTeamSummary.textContent = 'All teams';
                                 } else if (selectedTeams.length <= 2) {
@@ -2841,15 +2851,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-action]'), function (button) {
                             button.addEventListener('click', function () {
                                 var section = this.closest('[data-result-filter-section]');
-                                var selectedTeams = Array.prototype.filter.call(section.querySelectorAll('[data-team-filter-option]'), function (box) { return box.checked; }).map(function (box) { return box.value; });
-                                var opponent = section.querySelector('[data-result-filter-opponent]').value;
+                                var selectedTeams = checkedValues(section.querySelectorAll('[data-team-filter-option]'));
+                                var selectedOpponents = selectedTeamValues(section.querySelector('[data-result-filter-opponent]'));
                                 var matchweek = section.querySelector('[data-result-filter-matchweek]').value;
                                 var venue = section.querySelector('[data-result-filter-venue]').value;
                                 var outcome = section.querySelector('[data-result-filter-outcome]').value;
                                 var includeOnly = this.dataset.resultFilterAction === 'only';
                                 boxes.forEach(function (box) {
                                     var matches = (!selectedTeams.length || selectedTeams.indexOf(box.dataset.team) !== -1)
-                                        && (opponent === 'all' || box.dataset.opponent === opponent)
+                                        && (!selectedOpponents.length || selectedOpponents.indexOf(box.dataset.opponent) !== -1)
                                         && (matchweek === 'all' || box.dataset.matchweek === matchweek)
                                         && (venue === 'all' || box.dataset.resultSide === venue)
                                         && (outcome === 'all' || box.dataset.result === outcome);

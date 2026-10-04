@@ -32,6 +32,12 @@ team_filter_assert_contains("'only' => ['title' => 'Include only matching result
 team_filter_assert_contains("'exclude' => ['title' => 'Include everything but matching results'", $source, 'The custom-rules filters should provide an exclude-matching section.');
 team_filter_assert_contains("box.checked = includeOnly ? matches : !matches", $source, 'Each filtering section should replace the selection with its matching or inverse result set.');
 team_filter_assert_contains("section.querySelectorAll('[data-team-filter-option]')", $source, 'Each filtering section should use its own selected teams.');
+team_filter_assert_contains('if (select.teamCheckboxes) return checkedValues(select.teamCheckboxes);', $source, 'Every upgraded team selector should use its visible checked boxes as the source of truth.');
+team_filter_assert_contains('checkbox.teamOption.selected = checkbox.checked;', $source, 'Checkbox changes should keep the underlying form option synchronized.');
+team_filter_assert_contains("checkedValues(section.querySelectorAll('[data-team-filter-option]'))", $source, 'Result filters should read all checked team values through the shared helper.');
+team_filter_assert_contains("selectedTeamValues(section.querySelector('[data-result-filter-opponent]'))", $source, 'Result filters should read every checked opponent.');
+team_filter_assert_contains("selectedOpponents.indexOf(box.dataset.opponent) !== -1", $source, 'Result filters should match any checked opponent.');
+team_filter_assert_not_contains("section.querySelector('[data-result-filter-opponent]').value", $source, 'Result filters must not collapse a multi-select opponent filter to one team.');
 team_filter_assert_contains(".custom-match-option input[type=\"checkbox\"]", $source, 'Result selection must not include the team-filter checkboxes.');
 team_filter_assert_not_contains("});\n                        updateTeamFilterSummary();\n                        updateSelectionStatus();", $source, 'The panel initializer must not call the section-scoped summary helper before wiring the recalculate button.');
 
