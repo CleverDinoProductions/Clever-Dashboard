@@ -4,3 +4,6 @@ kiwiirc/
 football-stats/football-stats.sqlite3
 football-stats.sqlite3
 football-stats/world-cup-stats.sqlite3
+data/*.sqlite3
+data/*.sqlite3-shm
+data/*.sqlite3-wal
