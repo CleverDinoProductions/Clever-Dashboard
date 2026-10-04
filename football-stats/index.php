@@ -235,7 +235,19 @@ include 'includes/header.php';
 <div class="content-wrapper">
     <?php
     if ($contentFile !== null) {
-        include $contentFile;
+        try {
+            include $contentFile;
+        } catch (Throwable $exception) {
+            // Keep the dashboard shell usable when a deployment is missing a
+            // newly introduced table instead of returning a blank HTTP 500.
+            error_log('Football dashboard view failed: ' . $exception->getMessage());
+            ?>
+            <section class="placeholder-panel" role="alert">
+                <h2>Football data is temporarily unavailable</h2>
+                <p>The dashboard could not read this view. Please try again later or ask an administrator to check the database configuration.</p>
+            </section>
+            <?php
+        }
     } else {
         ?>
         <div class="panel">
