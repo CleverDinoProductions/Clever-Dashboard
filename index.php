@@ -239,7 +239,7 @@ $siteUser = clever_current_user();
                     <h2>Admin Portal</h2>
                     <p>Access system tools, database management, and server logs.</p>
                 </div>
-                <a href="/admin/admin.php" class="admin-btn">Secure Login</a>
+                <a href="/control-panel.php" class="admin-btn">Secure Login</a>
                 <div><span class="status" style="background: #72767d;">RESTRICTED</span></div>
             </div>
         </div>
