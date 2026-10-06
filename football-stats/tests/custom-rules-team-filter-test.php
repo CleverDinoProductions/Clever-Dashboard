@@ -20,9 +20,9 @@ function team_filter_assert_not_contains($needle, $haystack, $message)
 
 team_filter_assert_contains('data-team-filter-option', $source, 'The custom-rules team filter should render team checkboxes.');
 team_filter_assert_contains('data-team-filter-preset="big-six"', $source, 'The custom-rules team filter should offer a Big Six preset.');
-foreach (['arsenal', 'chelsea', 'liverpool', 'manchester city', 'manchester united', 'tottenham hotspur'] as $team) {
-    team_filter_assert_contains("'" . $team . "'", $source, 'The Big Six preset should include ' . $team . '.');
-}
+team_filter_assert_contains('configuredTeamGroups.big_six.map(normalizedTeamName)', $source, 'Big Six membership should use admin settings.');
+team_filter_assert_contains('configuredTeamGroups.big_eight.map(normalizedTeamName)', $source, 'Big Eight membership should use admin settings.');
+team_filter_assert_contains('configuredTeamGroups.big_twelve.map(normalizedTeamName)', $source, 'Big Twelve membership should use admin settings.');
 team_filter_assert_contains('function isBigSixTeam(teamName)', $source, 'The Big Six preset should use one shared team matcher.');
 team_filter_assert_contains(".replace(/\\s+(?:football club|fc)$/i, '')", $source, 'The Big Six matcher should accept team names with an FC suffix.');
 team_filter_assert_contains(".replace(/^(?:tottenham|spurs)$/, 'tottenham hotspur')", $source, 'The Big Six matcher should accept Tottenham as an alias.');
