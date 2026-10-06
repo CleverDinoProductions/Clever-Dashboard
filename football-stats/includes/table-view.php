@@ -2382,6 +2382,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                         <button type="button" data-team-filter-preset="big-six">Big 6</button>
                                                         <button type="button" data-team-filter-preset="big-eight">Big 8</button>
                                                         <button type="button" data-team-filter-preset="big-twelve">Big 12</button>
+                                                        <button type="button" data-team-filter-preset="outside-big-twelve">Outside Big 12</button>
                                                         <button type="button" data-team-filter-preset="none">Clear</button>
                                                     </div>
                                                     <?php foreach ($customRuleTeams as $customRuleTeam): ?>
@@ -2657,7 +2658,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             options.className = 'custom-team-filter-options';
                             var presets = document.createElement('div');
                             presets.className = 'custom-team-filter-presets';
-                            [['all', 'All teams'], ['big-six', 'Big 6'], ['big-eight', 'Big 8'], ['big-twelve', 'Big 12'], ['none', 'Clear']].forEach(function (preset) {
+                            [['all', 'All teams'], ['big-six', 'Big 6'], ['big-eight', 'Big 8'], ['big-twelve', 'Big 12'], ['outside-big-twelve', 'Outside Big 12'], ['none', 'Clear']].forEach(function (preset) {
                                 var button = document.createElement('button');
                                 button.type = 'button';
                                 button.dataset.generatedTeamPreset = preset[0];
@@ -2694,7 +2695,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var preset = event.target.dataset.generatedTeamPreset;
                                 if (!preset) return;
                                 Array.prototype.forEach.call(options.querySelectorAll('input[type="checkbox"]'), function (checkbox) {
-                                    checkbox.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(checkbox.value)) || (preset === 'big-eight' && isBigEightTeam(checkbox.value)) || (preset === 'big-twelve' && isBigTwelveTeam(checkbox.value));
+                                    checkbox.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(checkbox.value)) || (preset === 'big-eight' && isBigEightTeam(checkbox.value)) || (preset === 'big-twelve' && isBigTwelveTeam(checkbox.value)) || (preset === 'outside-big-twelve' && !isBigTwelveTeam(checkbox.value));
                                     checkbox.teamOption.selected = checkbox.checked;
                                 });
                                 updateSummary();
@@ -2774,7 +2775,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 button.addEventListener('click', function () {
                                     var preset = this.dataset.teamFilterPreset;
                                     filterTeamBoxes.forEach(function (box) {
-                                        box.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(box.value)) || (preset === 'big-eight' && isBigEightTeam(box.value)) || (preset === 'big-twelve' && isBigTwelveTeam(box.value));
+                                        box.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(box.value)) || (preset === 'big-eight' && isBigEightTeam(box.value)) || (preset === 'big-twelve' && isBigTwelveTeam(box.value)) || (preset === 'outside-big-twelve' && !isBigTwelveTeam(box.value));
                                     });
                                     updateTeamFilterSummary();
                                 });
