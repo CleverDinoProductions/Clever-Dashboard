@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/lib/football-settings.php';
 
 if (!function_exists('football_stats_format_kickoff')) {
     /**
@@ -2609,9 +2610,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
                         var pendingSummary = panel.querySelector('[data-match-pending-summary]');
                         var pendingDetails = panel.querySelector('[data-match-pending-details]');
-                        var bigSixTeams = ['arsenal', 'chelsea', 'liverpool', 'manchester city', 'manchester united', 'tottenham hotspur'];
-                        var bigEightTeams = bigSixTeams.concat(['leeds united', 'aston villa']);
-                        var bigTwelveTeams = bigEightTeams.concat(['newcastle united', 'everton', 'fulham', 'crystal palace']);
+                        var configuredTeamGroups = <?php echo json_encode(clever_team_groups($GLOBALS['dashboardSettings'] ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR); ?>;
+                        var bigSixTeams = configuredTeamGroups.big_six.map(normalizedTeamName);
+                        var bigEightTeams = configuredTeamGroups.big_eight.map(normalizedTeamName);
+                        var bigTwelveTeams = configuredTeamGroups.big_twelve.map(normalizedTeamName);
                         function normalizedTeamName(teamName) {
                             return String(teamName || '')
                                 .trim()
