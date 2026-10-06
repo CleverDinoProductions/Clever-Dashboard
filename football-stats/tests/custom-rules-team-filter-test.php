@@ -25,7 +25,7 @@ foreach (['arsenal', 'chelsea', 'liverpool', 'manchester city', 'manchester unit
 }
 team_filter_assert_contains('function isBigSixTeam(teamName)', $source, 'The Big Six preset should use one shared team matcher.');
 team_filter_assert_contains(".replace(/\\s+(?:football club|fc)$/i, '')", $source, 'The Big Six matcher should accept team names with an FC suffix.');
-team_filter_assert_contains(".replace(/^tottenham$/, 'tottenham hotspur')", $source, 'The Big Six matcher should accept Tottenham as an alias.');
+team_filter_assert_contains(".replace(/^(?:tottenham|spurs)$/, 'tottenham hotspur')", $source, 'The Big Six matcher should accept Tottenham as an alias.');
 team_filter_assert_contains("preset === 'big-six' && isBigSixTeam(checkbox.value)", $source, 'Generated team selectors should match every Big Six club.');
 team_filter_assert_contains("preset === 'big-six' && isBigSixTeam(box.value)", $source, 'Result filters should match every Big Six club.');
 team_filter_assert_contains("'only' => ['title' => 'Include only matching results'", $source, 'The custom-rules filters should provide an include-only section.');
