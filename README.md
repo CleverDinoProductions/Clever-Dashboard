@@ -51,6 +51,13 @@ team, accent colour, and navigation density from **My account**. Preferences are
 stored per account and applied whenever the football dashboard is opened without
 an explicit destination in its URL.
 
+Signing in automatically keeps the account signed in on that browser for 30
+days, including after browser restarts or PHP session cleanup. The persistent
+cookie is HttpOnly, SameSite=Lax, and Secure on HTTPS; only a hash of its random
+token is stored in the account database. Signing out revokes that browser's
+token. Disabling or deleting an account, or changing its password, revokes its
+persistent sign-ins. Other browsers retain their own independent sign-ins.
+
 Account data is stored in `data/accounts.sqlite3` by default. Set
 `CLEVER_ACCOUNTS_DB` to place it outside the web root. Set `CLEVER_FOOTBALL_DB`
 to point the configuration editor at a non-default football database. Both
