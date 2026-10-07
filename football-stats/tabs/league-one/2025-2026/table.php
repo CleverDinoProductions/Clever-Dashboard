@@ -44,24 +44,7 @@ $team_info = $team_info_L1;
 
 ?>
 
-<style>
-.team-name { position: relative; cursor: help; display: inline-block; transition: color 0.2s ease; }
-.team-name:hover { color: #FFCD00; }
-.team-official { color: #dcddde; }
-.team-common { color: #888; font-size: 12px; margin-left: 6px; font-weight: normal; }
-.team-tooltip { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2e3136, #40444b); color: white; padding: 10px 15px; border-radius: 8px; white-space: nowrap; z-index: 1000; font-size: 13px; border: 2px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: opacity 0.3s ease, visibility 0.3s ease; }
-.team-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: inherit; }
-.team-name:hover .team-tooltip { visibility: visible; opacity: 1; }
-.tooltip-nickname { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-.tooltip-short { display: block; font-size: 11px; color: #dcddde; }
-
-th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 10px; }
-table { width: 100%; border-collapse: collapse; }
-td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
-.team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
-.team-cell { display: flex; align-items: center; text-align: left; }
-.update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
-</style>
+<?php require __DIR__ . '/../../../includes/table-styles.php'; ?>
 
 <div class="panel">
     <h2>League One Table <?= $tableView['active_season_label'] ?></h2>
@@ -72,7 +55,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>
     </p>
     
-    <table>
+    <table class="league-table">
         <thead>
             <tr>
                 <th class="movement-column" scope="col">Movement</th>
@@ -95,27 +78,12 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 $info = getTeamInfo($team['team_name'], $team_info);
                 $pos = (int)$team['position'];
                 
-                // FIXED ROW HIGHLIGHTING (Works regardless of row count)
-                $row_style = '';
-                $pos_color = '#dcddde'; // Default color for position number
-                
-                if ($pos <= 2) {
-                    $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-                    $pos_color = '#43b581';
-                } elseif ($pos <= 6) {
-                    $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-                    $pos_color = '#5865F2';
-                } elseif ($pos >= 21) {
-                    $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
-                    $pos_color = '#f04747';
-                }
-
                 $games_remaining = max(0, $total_games - $team['played']);
                 $show_common = ($team['team_name'] !== $info['common_name']);
             ?>
-            <tr style="<?= $row_style ?>">
+            <tr <?= football_stats_table_row_attributes('L1', $tableView['active_season_label'], (int)$team['position']) ?>>
                 <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
-                <td style="color: <?= $pos_color ?>; font-weight: bold;"><?= $pos ?></td>
+                <td><strong><?= $pos ?></strong></td>
                 <td>
                     <div class="team-cell">
                     <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
@@ -156,12 +124,8 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         </tbody>
     </table>
     <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
+    <?php football_stats_render_table_zone_legend('L1', $tableView['active_season_label']); ?>
     
-    <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; background: #1a1c1e; padding: 15px; border-radius: 8px;">
-        <div><span style="color: #43b581;">■</span> Automatic Promotion (1st-2nd)</div>
-        <div><span style="color: #5865F2;">■</span> Playoffs (3rd-6th)</div>
-        <div><span style="color: #f04747;">■</span> Relegation (22nd-24th)</div>
-        <div style="margin-left: auto; color: #888;">💡 Hover team names for details</div>
-    </div>
+
     <?php football_stats_render_home_away_split($homeStandings, $awayStandings, $team_info); ?>
 </div>

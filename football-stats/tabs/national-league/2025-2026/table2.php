@@ -48,24 +48,7 @@ $team_info = $team_info_NL;
 
 ?>
 
-<style>
-.team-name { position: relative; cursor: help; display: inline-block; transition: color 0.2s ease; }
-.team-name:hover { color: #FFCD00; }
-.team-official { color: #dcddde; }
-.team-common { color: #888; font-size: 11px; margin-left: 4px; font-weight: normal; }
-.team-tooltip { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2e3136, #40444b); color: white; padding: 10px 15px; border-radius: 8px; white-space: nowrap; z-index: 1000; font-size: 13px; border: 2px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: opacity 0.3s ease, visibility 0.3s ease; }
-.team-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: inherit; }
-.team-name:hover .team-tooltip { visibility: visible; opacity: 1; }
-.tooltip-nickname { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-.tooltip-short { display: block; font-size: 11px; color: #dcddde; }
-
-th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 12px 8px; font-size: 12px; }
-table { width: 100%; border-collapse: collapse; }
-td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-size: 13px; color: #dcddde; }
-.team-crest { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
-.team-cell { display: flex; align-items: center; text-align: left; }
-.update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
-</style>
+<?php require __DIR__ . '/../../../includes/table-styles.php'; ?>
 
 <div class="panel">
     <h2>National League Table <?= $tableView['active_season_label'] ?></h2>
@@ -76,7 +59,7 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>
     </p>
     
-    <table>
+    <table class="league-table">
         <thead>
             <tr>
                 <th class="movement-column" scope="col">Movement</th>
@@ -119,22 +102,12 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
                 $max_d = $team['points'] + ($games_remaining * 1);
                 $max_wd = round($team['points'] + ($games_remaining / 2 * (3 + 1)), 0);
 
-                // Row Highlighting Logic
-                $row_style = '';
-                if ($pos <= 2) {
-                    $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-                } elseif ($pos <= 6) {
-                    $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-                } elseif ($pos >= 22) {
-                    $row_style = 'background: rgba(244, 71, 71, 0.15); border-left: 4px solid #f04747;';
-                }
-
                 // Dynamic Coloring
                 $ppg_color = ($ppg >= 1.5) ? '#43b581' : (($ppg >= 1.0) ? '#faa61a' : '#f04747');
                 $buffer_color = ($buffer > 0) ? '#43b581' : (($buffer < 0) ? '#f04747' : '#888');
                 $show_common = ($team['team_name'] !== $info['common_name']);
             ?>
-            <tr style="<?= $row_style ?>">
+            <tr <?= football_stats_table_row_attributes('NL', $tableView['active_season_label'], (int)$team['position']) ?>>
                 <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
                 <td><strong><?= $pos ?></strong></td>
                 <td>
@@ -169,14 +142,9 @@ td { padding: 10px 8px; border-bottom: 1px solid #333; text-align: center; font-
         </tbody>
     </table>
     <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
+    <?php football_stats_render_table_zone_legend('NL', $tableView['active_season_label']); ?>
     
     <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-        <div style="background: #1a1c1e; padding: 15px; border-radius: 8px; font-size: 12px;">
-            <div style="margin-bottom: 5px;"><span style="color: #43b581;">■</span> Automatic Promotion (1st-2nd)</div>
-            <div style="margin-bottom: 5px;"><span style="color: #5865F2;">■</span> Playoffs (3rd-6th)</div>
-            <div><span style="color: #f04747;">■</span> Relegation Zone (22nd-24th)</div>
-        </div>
-        
         <div style="background: #40444b; padding: 15px; border-radius: 8px; border-left: 4px solid #faa61a; font-size: 13px;">
             <strong style="color: #FFCD00;">Safety Target:</strong><br>
             <span style="color: #dcddde;">

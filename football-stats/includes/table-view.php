@@ -77,6 +77,52 @@ if (!function_exists('football_stats_get_default_position_zone')) {
     }
 }
 
+
+/** Match the Premier League presentation while using each competition's rules. */
+function football_stats_table_zone_palette(): array
+{
+    return [
+        'champions-league' => ['#006400', 'rgba(0, 100, 0, 0.15)'],
+        'europa-league' => ['#5865F2', 'rgba(88, 101, 242, 0.15)'],
+        'conference-league' => ['#FFCD00', 'rgba(255, 205, 0, 0.15)'],
+        'automatic-promotion' => ['#43b581', 'rgba(67, 181, 129, 0.15)'],
+        'playoffs' => ['#5865F2', 'rgba(88, 101, 242, 0.15)'],
+        'relegation' => ['#f04747', 'rgba(240, 71, 71, 0.15)'],
+    ];
+}
+
+function football_stats_table_row_attributes(string $competitionCode, string $seasonLabel, int $position): string
+{
+    $palette = football_stats_table_zone_palette();
+    $defaultZone = football_stats_get_default_position_zone($competitionCode, $position);
+    $seasonZone = football_stats_get_position_zone($competitionCode, $seasonLabel, $position);
+    $defaultColor = $palette[$defaultZone['key'] ?? ''][0] ?? 'transparent';
+    [$seasonColor, $seasonFill] = $palette[$seasonZone['key'] ?? ''] ?? ['transparent', 'transparent'];
+    return 'class="row-zone" style="--default-zone-color: ' . $defaultColor
+        . '; --season-zone-color: ' . $seasonColor . '; --season-zone-fill: ' . $seasonFill . ';"';
+}
+
+function football_stats_render_table_zone_legend(string $competitionCode, string $seasonLabel): void
+{
+    if (empty(football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'])
+        && empty(football_stats_get_competition_rules($competitionCode)['zones'])) {
+        return;
+    }
+    $palette = football_stats_table_zone_palette();
+    echo '<div class="table-zone-legend"><p>Left edge: default league places. Fill and right edge: selected-season places.</p>';
+    foreach (['Default' => null, 'Selected season' => $seasonLabel] as $label => $season) {
+        echo '<div><strong>' . $label . '</strong>';
+        foreach (football_stats_get_competition_rules($competitionCode, $season)['zones'] as $zone) {
+            $color = $palette[$zone['key']][0] ?? '#dcddde';
+            $range = (int)$zone['from'] === (int)$zone['to'] ? (string)$zone['from'] : $zone['from'] . '–' . $zone['to'];
+            echo '<div><span style="color: ' . $color . ';">■</span> '
+                . htmlspecialchars($zone['label'], ENT_QUOTES, 'UTF-8') . ' (' . $range . ')</div>';
+        }
+        echo '</div>';
+    }
+    echo '</div>';
+}
+
 /** Return the final regular-season matchweek for a competition. */
 if (!function_exists('football_stats_get_final_matchweek')) {
     function football_stats_get_final_matchweek($competitionCode, $seasonLabel = null)

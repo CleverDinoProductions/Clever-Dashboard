@@ -59,24 +59,7 @@ $team_info = $team_info_ELC;
     It includes styles for team names with tooltips, color-coded performance metrics, and sticky headers.
     The color scheme is inspired by Discord's dark theme, with additional colors to highlight key statistics.
 -->
-<style>
-.team-name { position: relative; cursor: help; display: inline-block; transition: color 0.2s ease; }
-.team-name:hover { color: #FFCD00; }
-.team-official { color: #dcddde; }
-.team-common { color: #888; font-size: 12px; margin-left: 6px; font-weight: normal; }
-.team-tooltip { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2e3136, #40444b); color: white; padding: 10px 15px; border-radius: 8px; white-space: nowrap; z-index: 1000; font-size: 13px; border: 2px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: opacity 0.3s ease, visibility 0.3s ease; }
-.team-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: inherit; }
-.team-name:hover .team-tooltip { visibility: visible; opacity: 1; }
-.tooltip-nickname { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-.tooltip-short { display: block; font-size: 11px; color: #dcddde; }
-
-th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 10px; }
-table { width: 100%; border-collapse: collapse; }
-td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
-.team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
-.team-cell { display: flex; align-items: center; text-align: left; }
-.update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
-</style>*
+<?php require __DIR__ . '/../../../includes/table-styles.php'; ?>
 
 <div class="panel">
     <h2>Championship Table <?= $tableView['active_season_label']?></h2>
@@ -91,7 +74,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>
     </p>
     
-    <table>
+    <table class="league-table">
         <tr>
             <th class="movement-column" scope="col">Movement</th>
             <th title="Position">Pos</th>
@@ -334,38 +317,10 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 $ppg_required_color = '#8B4513'; // Brown for below 0.5 PPG needed
             }
             
-            if ($tableView['active_season_label'] === '2026-2027') {
-                $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
-                $row_style = '';
-                if ($is_leeds) {
-                    $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
-                } elseif ($team['position'] >= 22) {
-                    $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
-                } elseif ($team['position'] <= 2) {
-                    $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-                } elseif ($team['position'] <= 8) {
-                    $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-                }
-            }
-            else {
-                $is_leeds = stripos($team['team_name'], 'Leeds') !== false;
-                $row_style = '';
-                if ($is_leeds) {
-                    $row_style = 'background: rgba(29, 66, 138, 0.3); border-left: 4px solid #FFFFFF; border-right: 4px solid #FFCD00;'; // Blue and Yellow for Leeds United
-                } elseif ($team['position'] >= 22) {
-                    $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
-                } elseif ($team['position'] <= 2) {
-                    $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-                } elseif ($team['position'] <= 6) {
-                    $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-                } 
-            }
-            
-            
             // Check if official name differs from common name
             $show_common = ($team['team_name'] !== $info['common_name']);
         ?>
-        <tr style="<?= $row_style ?>">
+        <tr <?= football_stats_table_row_attributes('ELC', $tableView['active_season_label'], (int)$team['position']) ?>>
             <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
             <td><strong><?= $team['position'] ?></strong></td>
             <td>
@@ -412,13 +367,9 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?php endforeach; ?>
     </table>
     <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
+    <?php football_stats_render_table_zone_legend('ELC', $tableView['active_season_label']); ?>
     
     <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap;">
-        <div><span style="color: #43b581;">■</span> Champions League (1st-4th)</div>
-        <div><span style="color: #5865F2;">■</span> Europa League (5th-6th)</div>
-        <div><span style="color: #FFCD00;">■</span> Conference League (7th)</div>
-        <div><span style="color: #FFFFFF;">■</span> Leeds United 🤍💛💙</div>
-        <div><span style="color: #f04747;">■</span> Relegation to Championship (18th-20th)</div>
         <div style="margin-left: auto; color: #888;">
             💡 Hover over team names for nicknames
         </div>
