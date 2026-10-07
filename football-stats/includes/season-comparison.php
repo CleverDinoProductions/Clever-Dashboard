@@ -3,7 +3,7 @@
  * Shared, side-by-side season comparison used by every English league.
  *
  * The including tab must provide $comparisonLeague with code, name,
- * live_table, total_games and halfway_games keys.
+ * and live_table keys. Season lengths come from the competition rules.
  */
 require_once __DIR__ . '/table-view.php';
 
@@ -11,8 +11,6 @@ $comparisonLeague = $comparisonLeague ?? [];
 $competitionCode = (string)($comparisonLeague['code'] ?? '');
 $leagueName = (string)($comparisonLeague['name'] ?? $competitionCode);
 $liveTableName = (string)($comparisonLeague['live_table'] ?? '');
-$totalGames = (int)($comparisonLeague['total_games'] ?? football_stats_get_final_matchweek($competitionCode));
-$halfwayGames = (int)($comparisonLeague['halfway_games'] ?? (int)ceil($totalGames / 2));
 
 $seasonStmt = $db->prepare(
     'SELECT DISTINCT season_label FROM ('
@@ -36,8 +34,12 @@ $tableFilter = in_array($_GET['compare_table_filter'] ?? '', ['first_half', 'sec
     : 'all';
 
 /** Execute the normal table calculation engine with namespaced comparison inputs. */
-$buildComparisonSide = static function ($side, $defaultSeason) use ($db, $competitionCode, $liveTableName, $calcMode, $tableFilter, $halfwayGames, $totalGames) {
+$buildComparisonSide = static function ($side, $defaultSeason) use ($db, $competitionCode, $liveTableName, $calcMode, $tableFilter) {
     $season = preg_replace('/[^0-9\-]/', '', (string)($_GET['compare_season_' . $side] ?? $defaultSeason));
+    $seasonRules = football_stats_get_competition_rules($competitionCode, $season, $db);
+    $totalGames = (int)$seasonRules['total_games'];
+    $halfwayGames = (int)$seasonRules['halfway_games'];
+    $regularMatchweeks = (int)$seasonRules['regular_matchweeks'];
     $savedGet = $_GET;
     $_GET['calc_mode'] = $calcMode;
     $_GET['snapshot_season'] = $season;
@@ -75,7 +77,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
             . 'AND season_label = ? AND matchweek BETWEEN 1 AND ?'
             . (isset($_GET['matchweek']) ? ' AND matchweek = ?' : '')
         );
-        $pointParams = [$competitionCode, $season, $totalGames];
+        $pointParams = [$competitionCode, $season, $regularMatchweeks];
         if (isset($_GET['matchweek'])) $pointParams[] = (int)$_GET['matchweek'];
         $pointStmt->execute($pointParams);
         $point = $pointStmt->fetchColumn();
@@ -106,7 +108,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
             . (isset($_GET['match_id']) ? ' AND id = ?' : '')
             . " ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date) DESC, id DESC LIMIT 1"
         );
-        $pointParams = [$competitionCode, $season, $totalGames];
+        $pointParams = [$competitionCode, $season, $regularMatchweeks];
         if (isset($_GET['match_id'])) $pointParams[] = (int)$_GET['match_id'];
         $pointStmt->execute($pointParams);
         $point = $pointStmt->fetchColumn();
@@ -116,7 +118,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
                 . 'AND matchweek BETWEEN 1 AND ? '
                 . "ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date) DESC, id DESC LIMIT 1"
             );
-            $pointStmt->execute([$competitionCode, $season, $totalGames]);
+            $pointStmt->execute([$competitionCode, $season, $regularMatchweeks]);
             $point = $pointStmt->fetchColumn();
         }
         if ($point === false || $point === null) {
@@ -132,7 +134,7 @@ $buildComparisonSide = static function ($side, $defaultSeason) use ($db, $compet
     $standings = $view['standings'];
     $effectiveGames = $totalGames;
     if (!$isPreSeason && $tableFilter !== 'all') {
-        $limit = isset($view['active_matchweek']) ? min($totalGames, (int)$view['active_matchweek']) : $totalGames;
+        $limit = isset($view['active_matchweek']) ? min($regularMatchweeks, (int)$view['active_matchweek']) : $regularMatchweeks;
         $filtered = football_stats_compute_filtered_standings($db, $competitionCode, $season, $tableFilter, $halfwayGames, $liveTableName, $limit);
         if ($filtered) $standings = $filtered;
         $effectiveGames = $tableFilter === 'first_half' ? $halfwayGames
@@ -150,18 +152,19 @@ $leftView = $buildComparisonSide('left', $defaultLeftSeason);
 $rightView = $buildComparisonSide('right', $defaultRightSeason);
 
 /** Fetch choices for a side without coupling its selected point to the other side. */
-$getPointOptions = static function ($season) use ($db, $competitionCode, $calcMode, $totalGames) {
+$getPointOptions = static function ($season) use ($db, $competitionCode, $calcMode) {
+    $regularMatchweeks = football_stats_get_final_matchweek($competitionCode, $season, $db);
     if ($calcMode === 'by_date') {
         $stmt = $db->prepare('SELECT DISTINCT snapshot_date AS value, snapshot_date AS label FROM league_table_snapshots_by_date WHERE competition_code = ? AND season_label = ? ORDER BY snapshot_date DESC');
     } elseif (in_array($calcMode, ['by_match', 'by_match_before'], true)) {
         $stmt = $db->prepare("SELECT id AS value, ('MW' || matchweek || ': ' || home_team || ' v ' || away_team) AS label FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek BETWEEN 1 AND ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
-        $stmt->execute([$competitionCode, $season, $totalGames]);
+        $stmt->execute([$competitionCode, $season, $regularMatchweeks]);
         $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $options[] = ['value' => 'pre_season', 'label' => 'Pre-season'];
         return $options;
     } else {
         $stmt = $db->prepare("SELECT DISTINCT matchweek AS value, ('Matchweek ' || matchweek) AS label FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek BETWEEN 1 AND ? ORDER BY matchweek DESC");
-        $stmt->execute([$competitionCode, $season, $totalGames]);
+        $stmt->execute([$competitionCode, $season, $regularMatchweeks]);
         $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
         $options[] = ['value' => 'pre_season', 'label' => 'Pre-season'];
         return $options;

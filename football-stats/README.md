@@ -79,3 +79,35 @@ php football-stats/tests/table-view-team-crests-test.php
 ## Security
 
 Do not commit API credentials. Move provider tokens out of legacy scripts and into environment variables before deployment, restrict setup/debug scripts from public access, and back up SQLite files before schema or import operations.
+
+### Admin competition rules
+
+Open **Admin → Competition rules**, choose a league, enter a season such as
+`2026-2027`, and click **Load rules**. Leave the season blank to edit league
+defaults. Administrators and Football editors can save these settings; other
+members cannot. Saving and resetting use the existing CSRF protection.
+
+The editor supports Champions League, Europa League, Conference League,
+automatic promotion, promotion playoffs, relegation, and custom zones. Each zone
+has a label, inclusive position range, and colour. Add or remove rows as needed;
+removing every row saves an explicitly empty zone list. Position ranges cannot
+overlap or exceed the configured club count. The table's left border uses league
+defaults; its fill and right border use the selected season's rules. Legends use
+the same labels, ranges, and colours.
+
+Other editable settings include club count, regular-season matchweek cutoff,
+games per club, first-half boundary, halfway safety points, Table 2 comparison
+points targets, and quarter boundaries. The Championship's quarter filters use
+the configured boundaries. Matchweek controls, calculated tables, and season
+comparisons use the selected season's format. These are presentation/calculation
+rules; they do not rewrite imported standings or fixture data.
+
+Overrides are stored in `competition_rule_overrides` in the configured football
+SQLite database (`CLEVER_FOOTBALL_DB`). Existing installations create the table
+through the settings migration. Reads from older or read-only databases without
+the table keep using bundled rules. Resolution order is bundled league defaults,
+saved league defaults, bundled season exceptions, then saved season overrides.
+A saved override is a complete rule set: later changes to defaults do not change
+that saved season. **Reset override** deletes just that saved league/season entry
+and restores bundled season exceptions or inherited league defaults. The bundled
+Premier League 2025-2026 qualification exception remains available after reset.

@@ -6,18 +6,19 @@ $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
+$competitionRules = football_stats_get_competition_rules('ELC', $tableView['active_season_label'], $db);
 
 // Safety calculation
-$halfway_games = 23; // Halfway point in season (Championship = 46 games, half = 23)
-$safety_target_halfway = 20; // Points needed by game 23 to stay safe
-$total_games = 46; // Total games in season
-$max_regular_mw = 46; // Playoff matches have matchweek > 46
+$halfway_games = (int)$competitionRules['halfway_games'];
+$safety_target_halfway = (int)$competitionRules['safety_target_halfway'];
+$total_games = (int)$competitionRules['total_games'];
+$max_regular_mw = (int)$competitionRules['regular_matchweeks'];
 if (isset($tableView['active_matchweek'])) {
     $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
 }
 
-// Quarter boundaries: Q1 GW 1-12, Q2 GW 13-23, Q3 GW 24-35, Q4 GW 36-46
-$quarter_boundaries = [12, 23, 35];
+// Quarter boundaries come from the selected season rules.
+$quarter_boundaries = $competitionRules['quarter_boundaries'];
 
 // Table filter
 $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away', 'q1', 'q2', 'q3', 'q4'], true) ? $_GET['table_filter'] : 'all';
@@ -27,7 +28,7 @@ if ($table_filter !== 'all') {
     if (!empty($filteredStandings)) {
         $standings = $filteredStandings;
     }
-    $quarter_games = ['q1' => 12, 'q2' => 11, 'q3' => 12, 'q4' => 11];
+    $quarter_games = ['q1' => $quarter_boundaries[0], 'q2' => $quarter_boundaries[1] - $quarter_boundaries[0], 'q3' => $quarter_boundaries[2] - $quarter_boundaries[1], 'q4' => $total_games - $quarter_boundaries[2]];
     $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : ($quarter_games[$table_filter] ?? (int)($total_games / 2)));
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'ELC', $_split_season, 'home', $halfway_games, 'league_table_ELC', $max_regular_mw, $quarter_boundaries);
@@ -42,10 +43,6 @@ $tableView = football_stats_apply_movement_preference(
     $movementBaselineStandings,
     $table_filter !== 'all' && !empty($filteredStandings)
 );
-$safety_target_magic = 40; // Magic number for safety
-$safety_target_average = 36; // Average Points needed by end of season to stay safe
-$safety_target_low = 34; // Low safety target
-$safety_target_recent_low = 27; // Recent low safety target
 
 // Team nicknames, abbreviations, and COMMON NAMES
 require_once dirname(__DIR__, 3) . '/includes/team-info.php';
@@ -83,12 +80,12 @@ $team_info = $team_info_ELC;
             <th title="Games remaining">GR</th>
             <th title="Points">Pts</th>
             <th title="Points per Game">PPG</th>
-            <th title="Points needed to reach 38 points">Pts Needed (38)</th>
-            <th title="Points needed to reach 40 points">Pts Needed (40)</th>
+            <th title="Points needed to reach <?= $competitionRules['comparison_target_one'] ?> points">Pts Needed (<?= $competitionRules['comparison_target_one'] ?>)</th>
+            <th title="Points needed to reach <?= $competitionRules['comparison_target_two'] ?> points">Pts Needed (<?= $competitionRules['comparison_target_two'] ?>)</th>
             <th title="Required points needed to reach max points possible">Pts Required</th>
             <th title="Required points per game to reach max points possible">PPG Required</th>
-            <th title="PPG needed to reach 38 points">PPG Required (38)</th>
-            <th title="PPG needed to reach 40 points">PPG Required (40)</th>
+            <th title="PPG needed to reach <?= $competitionRules['comparison_target_one'] ?> points">PPG Required (<?= $competitionRules['comparison_target_one'] ?>)</th>
+            <th title="PPG needed to reach <?= $competitionRules['comparison_target_two'] ?> points">PPG Required (<?= $competitionRules['comparison_target_two'] ?>)</th>
             <th title="Performance points based on current PPG and games remaining">Performance</th>
             <th title="Points relative to games played (The 1:1 Ratio)">+/- Buffer</th>
             <th title="Max Points Possible weighted on current performance">Max Pts</th>
@@ -127,11 +124,11 @@ $team_info = $team_info_ELC;
                 $games_color = '#FF8C00'; // Dark Orange for 7-10 games remaining meaning the team is in the middle of the season and needs to start picking up points soon to ensure safety
             } elseif ($games_remaining <= 15) {
                 $games_color = '#FFA500'; // Orange for 11-15 games remaining meaning the team is in the early stages of the season and has time to recover but needs to be cautious
-            } elseif ($games_remaining <= 38 * 0.25) {
+            } elseif ($games_remaining <= $competitionRules['total_games'] * 0.25) {
                 $games_color = '#FFD700'; // Dark Yellow for when games remaining is more than 75% of the season meaning the team has plenty of time to improve and should focus on building momentum and confidence
-            } elseif ($games_remaining <= 38 * 0.5) {
+            } elseif ($games_remaining <= $competitionRules['total_games'] * 0.5) {
                 $games_color = '#FFFF00'; // Yellow for when games remaining is less than half the season
-            }elseif ($games_remaining <= 38 * 0.75) {
+            }elseif ($games_remaining <= $competitionRules['total_games'] * 0.75) {
                 $games_color = '#006400'; // Dark Green for when games remaining is more than 50% but less than 75% of the season 
             } else {
                 $games_color = '#00FF00'; // Green for more than 75% of games remaining
@@ -188,8 +185,8 @@ $team_info = $team_info_ELC;
                 $max_points_color = '#8B4513'; // Brown for below 20 max points possible
             }
 
-            // Calculate points required to reach 38 points
-            $points_needed_38 = max(0, 38 - $team['points']);
+            // Calculate the configured comparison target.
+            $points_needed_38 = max(0, $competitionRules['comparison_target_one'] - $team['points']);
             if ($points_needed_38 <= 0) {
                 $points_needed_38_color = '#43b581'; // Green if already at or above 38 points
             } elseif ($points_needed_38 <= 10) {
@@ -202,8 +199,8 @@ $team_info = $team_info_ELC;
                 $points_needed_38_color = '#8B4513'; // Brown for above 30 points needed
             }
 
-            // Calculate points required to reach 40 points
-            $points_needed_40 = max(0, 40 - $team['points']);
+            // Calculate the configured comparison target.
+            $points_needed_40 = max(0, $competitionRules['comparison_target_two'] - $team['points']);
             if ($points_needed_40 <= 0) {
                 $points_needed_40_color = '#43b581'; // Green if already at or above 40 points
             } elseif ($points_needed_40 <= 10) {
@@ -268,8 +265,8 @@ $team_info = $team_info_ELC;
                 $max_points_win_draw_color = '#8B4513'; // Brown for below 40 max points possible
             }
             
-            // Calculate PPG needed to reach 38 points based on current PPG, points and games remaining
-            $points_needed_38 = max(0, 38 - $team['points']);
+            // Calculate the configured comparison target.
+            $points_needed_38 = max(0, $competitionRules['comparison_target_one'] - $team['points']);
             $ppg_needed_38 = ($games_remaining > 0) ? round($points_needed_38 / $games_remaining, 2) : 0;
             if ($ppg_needed_38 <= 0.5) {
                 $ppg_needed_38_color = '#006400'; // Dark Green for 2+ PPG needed
@@ -285,8 +282,8 @@ $team_info = $team_info_ELC;
                 $ppg_needed_38_color = '#8B4513'; // Brown for 10+ PPG needed
             }
 
-            // Calculate PPG needed to reach 40 points based on current PPG, points and games remaining
-            $points_needed_40 = max(0, 40 - $team['points']);
+            // Calculate the configured comparison target.
+            $points_needed_40 = max(0, $competitionRules['comparison_target_two'] - $team['points']);
             $ppg_needed_40 = ($games_remaining > 0) ? round($points_needed_40 / $games_remaining, 2) : 0;
             if ($ppg_needed_40 <= 0.5) {
                 $ppg_needed_40_color = '#006400'; // Dark Green for 2+ PPG needed
@@ -382,7 +379,7 @@ $team_info = $team_info_ELC;
         </span>
         <br>
         <span style="color: #888; font-size: 12px;">
-            Based on 75% rule: Teams hitting this target have 85-90% survival rate
+            Reference target configured for this league and season.
         </span>
     </div>
     <?php football_stats_render_home_away_split($homeStandings, $awayStandings, $team_info); ?>

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+require_once __DIR__ . '/competition-settings.php';
 
 function clever_football_db(): PDO
 {
@@ -40,6 +41,12 @@ CREATE TABLE IF NOT EXISTS points_deductions (
     points INTEGER NOT NULL CHECK (points > 0),
     reason TEXT NOT NULL DEFAULT '',
     PRIMARY KEY (competition_code, season_label, team_name, reason)
+);
+CREATE TABLE IF NOT EXISTS competition_rule_overrides (
+    competition_code TEXT NOT NULL,
+    season_label TEXT NOT NULL DEFAULT '',
+    rules_json TEXT NOT NULL,
+    PRIMARY KEY (competition_code, season_label)
 );
 CREATE TABLE IF NOT EXISTS dashboard_settings (
     setting_key TEXT PRIMARY KEY,

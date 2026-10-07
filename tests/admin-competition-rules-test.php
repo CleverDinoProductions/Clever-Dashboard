@@ -1,0 +1,41 @@
+<?php
+require_once dirname(__DIR__) . '/lib/auth.php';
+require_once dirname(__DIR__) . '/lib/football-settings.php';
+function admin_rules_assert(bool $condition, string $message): void {
+    if (!$condition) throw new RuntimeException($message);
+}
+$directory = sys_get_temp_dir() . '/clever-admin-rules-' . bin2hex(random_bytes(5));
+mkdir($directory);
+putenv('CLEVER_ACCOUNTS_DB=' . $directory . '/accounts.sqlite3');
+putenv('CLEVER_FOOTBALL_DB=' . $directory . '/football.sqlite3');
+$accounts = clever_accounts_db();
+$groupId = (int)$accounts->query("SELECT id FROM user_groups WHERE can_manage_football=1 AND is_admin=0 LIMIT 1")->fetchColumn();
+$userId = clever_create_user('rules_editor', 'rules@example.com', 'secure-editor-password', $groupId);
+clever_start_session(); $_SESSION[CLEVER_SESSION_USER_ID] = $userId;
+$_SERVER['REQUEST_METHOD'] = 'GET';
+$_GET = ['section'=>'rules', 'competition_code'=>'ELC', 'season_label'=>'2026-2027'];
+ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
+admin_rules_assert(str_contains($html, 'Competition rules') && str_contains($html, 'Save rules'), 'Football editors can access the rules form.');
+admin_rules_assert(str_contains($html, 'name="zones[1][to]" value="6"'), 'The form loads inherited league defaults.');
+admin_rules_assert(!str_contains($html, 'href="?section=users"'), 'Football editors do not gain account-admin navigation.');
+$rules = clever_competition_rules($football, 'ELC', '2026-2027');
+$rules['quarter_boundaries'] = implode(',', $rules['quarter_boundaries']);
+foreach ($rules['zones'] as &$zone) $zone['color'] = '#123456'; unset($zone);
+$rules['zones'][1]['to'] = 8;
+$_POST = $rules + ['action'=>'save_competition_rules', 'competition_code'=>'ELC', 'season_label'=>'2026-2027', 'csrf_token'=>clever_csrf_token()];
+$_SERVER['REQUEST_METHOD'] = 'POST';
+ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
+admin_rules_assert(str_contains($html, 'Competition rules saved.'), 'The authenticated POST saves rules.');
+admin_rules_assert(clever_competition_rules($football, 'ELC', '2026-2027')['zones'][1]['to'] === 8, 'Admin values persist in SQLite.');
+admin_rules_assert(str_contains($html, 'name="zones[1][to]" value="8"'), 'The editor reloads persisted values.');
+$_POST['zones'][1]['from'] = 2;
+ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
+admin_rules_assert(str_contains($html, 'Position zones cannot overlap.'), 'The admin displays validation errors.');
+admin_rules_assert(clever_competition_rules($football, 'ELC', '2026-2027')['zones'][1]['from'] === 3, 'An invalid POST preserves stored rules.');
+$_POST = ['action'=>'reset_competition_rules', 'competition_code'=>'ELC', 'season_label'=>'2026-2027', 'csrf_token'=>clever_csrf_token()];
+ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
+admin_rules_assert(str_contains($html, 'Competition rule override reset.'), 'Reset succeeds through the admin POST.');
+admin_rules_assert(clever_competition_rules($football, 'ELC', '2026-2027')['zones'][1]['to'] === 6, 'Reset restores the inherited playoff range.');
+clever_logout();
+foreach (glob($directory . '/*') as $path) @unlink($path); @rmdir($directory);
+echo "Admin competition rule tests passed.\n";

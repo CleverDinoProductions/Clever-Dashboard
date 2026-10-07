@@ -6,12 +6,13 @@ $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
+$competitionRules = football_stats_get_competition_rules('PL', $tableView['active_season_label'], $db);
 
 // Safety calculation
-$halfway_games = 19; // Halfway point in season
-$safety_target_halfway = 20; // Points needed by game 19 to stay safe
-$total_games = 38; // Total games in season
-$max_regular_mw = 38; // Playoff matches have matchweek > 38
+$halfway_games = (int)$competitionRules['halfway_games'];
+$safety_target_halfway = (int)$competitionRules['safety_target_halfway'];
+$total_games = (int)$competitionRules['total_games'];
+$max_regular_mw = (int)$competitionRules['regular_matchweeks'];
 if (isset($tableView['active_matchweek'])) {
     $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
 }
@@ -38,10 +39,6 @@ $tableView = football_stats_apply_movement_preference(
     $movementBaselineStandings,
     $table_filter !== 'all' && !empty($filteredStandings)
 );
-$safety_target_magic = 40; // Magic number for safety
-$safety_target_average = 36; // Average Points needed by end of season to stay safe
-$safety_target_low = 34; // Low safety target
-$safety_target_recent_low = 27; // Recent low safety target
 
 // Team nicknames, abbreviations, and COMMON NAMES
 require_once __DIR__ . '/../../../includes/team-info.php';
@@ -156,7 +153,7 @@ $team_info = $team_info_PL;
         </span>
         <br>
         <span style="color: #888; font-size: 12px;">
-            Based on 75% rule: Teams hitting this target have 85-90% survival rate
+            Reference target configured for this league and season.
         </span>
     </div>
     <?php football_stats_render_home_away_split($homeStandings, $awayStandings, $team_info); ?>
