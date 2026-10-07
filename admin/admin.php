@@ -62,6 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $accounts->prepare('UPDATE users SET password_hash=? WHERE id=?');
                 $stmt->execute([password_hash((string)$_POST['password'], PASSWORD_DEFAULT), $userId]);
             }
+            if (($_POST['status'] ?? '') !== 'active' || (string)($_POST['password'] ?? '') !== '') {
+                $accounts->prepare('DELETE FROM login_tokens WHERE user_id=?')->execute([$userId]);
+            }
             $accounts->prepare('DELETE FROM user_group_memberships WHERE user_id=?')->execute([$userId]);
             $membership = $accounts->prepare('INSERT INTO user_group_memberships (user_id, group_id) VALUES (?, ?)');
             foreach ((array)($_POST['groups'] ?? []) as $groupId) $membership->execute([$userId, (int)$groupId]);

@@ -3,10 +3,55 @@
 declare(strict_types=1);
 
 const CLEVER_SESSION_USER_ID = 'clever_user_id';
+const CLEVER_LOGIN_COOKIE = 'clever_login';
+const CLEVER_LOGIN_LIFETIME = 30 * 24 * 60 * 60;
+
+function clever_login_cookie(string $value, int $expires): void
+{
+    $params = session_get_cookie_params();
+    setcookie(CLEVER_LOGIN_COOKIE, $value, [
+        'expires' => $expires, 'path' => '/',
+        'secure' => $params['secure'], 'httponly' => true, 'samesite' => 'Lax',
+    ]);
+    if ($value === '') unset($_COOKIE[CLEVER_LOGIN_COOKIE]);
+    else $_COOKIE[CLEVER_LOGIN_COOKIE] = $value;
+}
+
+function clever_revoke_login_cookie(): void
+{
+    $token = $_COOKIE[CLEVER_LOGIN_COOKIE] ?? '';
+    if (is_string($token) && preg_match('/^[a-f0-9]{64}$/D', $token)) {
+        clever_accounts_db()->prepare('DELETE FROM login_tokens WHERE token_hash = ?')
+            ->execute([hash('sha256', $token)]);
+    }
+    clever_login_cookie('', time() - 42000);
+}
+
+function clever_restore_login(): ?int
+{
+    $token = $_COOKIE[CLEVER_LOGIN_COOKIE] ?? null;
+    if ($token === null) return null;
+    if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/D', $token)) {
+        clever_login_cookie('', time() - 42000);
+        return null;
+    }
+    $stmt = clever_accounts_db()->prepare('SELECT t.user_id FROM login_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = ? AND t.expires_at > ? AND u.status = ? AND t.password_hash = u.password_hash');
+    $stmt->execute([hash('sha256', $token), time(), 'active']);
+    $id = $stmt->fetchColumn();
+    if (!$id) {
+        clever_revoke_login_cookie();
+        return null;
+    }
+    session_regenerate_id(true);
+    $_SESSION[CLEVER_SESSION_USER_ID] = (int)$id;
+    return (int)$id;
+}
 
 function clever_start_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
+        ini_set('session.use_strict_mode', '1');
+        ini_set('session.use_only_cookies', '1');
         $forwardedProtocol = strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
         $isSecure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $forwardedProtocol === 'https';
         session_set_cookie_params([
@@ -86,6 +131,13 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_memberships_group ON user_group_memberships(group_id);
+CREATE TABLE IF NOT EXISTS login_tokens (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    password_hash TEXT NOT NULL,
+    expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_login_tokens_expiry ON login_tokens(expires_at);
 SQL);
 
     $groupColumns = array_column($db->query('PRAGMA table_info(user_groups)')->fetchAll(), 'name');
@@ -148,6 +200,7 @@ function clever_current_user(): ?array
 {
     clever_start_session();
     $id = filter_var($_SESSION[CLEVER_SESSION_USER_ID] ?? null, FILTER_VALIDATE_INT);
+    if (!$id) $id = clever_restore_login();
     if (!$id) {
         return null;
     }
@@ -168,6 +221,8 @@ SQL);
     $user = $stmt->fetch();
     if (!$user || $user['status'] !== 'active') {
         unset($_SESSION[CLEVER_SESSION_USER_ID]);
+        clever_accounts_db()->prepare('DELETE FROM login_tokens WHERE user_id = ?')->execute([$id]);
+        clever_revoke_login_cookie();
         return null;
     }
     $user['is_admin'] = (bool)$user['is_admin'];
@@ -195,6 +250,13 @@ function clever_login(string $identity, string $password): bool
         return false;
     }
     clever_start_session();
+    clever_revoke_login_cookie();
+    $token = bin2hex(random_bytes(32));
+    $expires = time() + CLEVER_LOGIN_LIFETIME;
+    clever_accounts_db()->prepare('DELETE FROM login_tokens WHERE expires_at <= ?')->execute([time()]);
+    clever_accounts_db()->prepare('INSERT INTO login_tokens (token_hash, user_id, password_hash, expires_at) VALUES (?, ?, ?, ?)')
+        ->execute([hash('sha256', $token), $user['id'], $user['password_hash'], $expires]);
+    clever_login_cookie($token, $expires);
     session_regenerate_id(true);
     $_SESSION[CLEVER_SESSION_USER_ID] = (int)$user['id'];
     $stmt = clever_accounts_db()->prepare('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?');
@@ -205,6 +267,7 @@ function clever_login(string $identity, string $password): bool
 function clever_logout(): void
 {
     clever_start_session();
+    clever_revoke_login_cookie();
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
