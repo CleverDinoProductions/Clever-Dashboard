@@ -6,11 +6,12 @@ $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
+$competitionRules = football_stats_get_competition_rules('L2', $tableView['active_season_label'], $db);
 
 // League Two Settings
-$halfway_games = 23;
-$total_games = 46;
-$max_regular_mw = 46; // Playoff matches have matchweek > 46
+$halfway_games = (int)$competitionRules['halfway_games'];
+$total_games = (int)$competitionRules['total_games'];
+$max_regular_mw = (int)$competitionRules['regular_matchweeks'];
 if (isset($tableView['active_matchweek'])) {
     $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
 }

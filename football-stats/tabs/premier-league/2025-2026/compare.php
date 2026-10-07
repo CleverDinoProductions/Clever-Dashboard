@@ -3,8 +3,7 @@
 require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';
 
-$db = new PDO('sqlite:' . __DIR__ . '/../../../football-stats.sqlite3');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
 $season = '2025-2026';
 $competition_code = 'PL';

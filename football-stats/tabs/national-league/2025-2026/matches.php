@@ -4,8 +4,7 @@
 require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';
 
-$db = new PDO('sqlite:' . __DIR__ . '/../../../football-stats.sqlite3');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
 // Get available seasons for this competition
 $seasons_stmt = $db->prepare("SELECT DISTINCT season_label FROM matches WHERE competition_code = ? ORDER BY season_label DESC");
@@ -22,8 +21,8 @@ if (!in_array($selectedSeason, $availableSeasons, true)) {
 }
 
 // Get matchweeks for the selected season
-$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= 46 ORDER BY matchweek ASC");
-$mw_stmt->execute(['NL', $selectedSeason]);
+$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? ORDER BY matchweek ASC");
+$mw_stmt->execute(['NL', $selectedSeason, football_stats_get_final_matchweek('NL', $selectedSeason, $db)]);
 $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 $selected_mw = isset($_GET['matchweek']) && $_GET['matchweek'] !== '' ? (int)$_GET['matchweek'] : '';

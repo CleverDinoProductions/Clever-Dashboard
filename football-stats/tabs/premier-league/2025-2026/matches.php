@@ -4,8 +4,7 @@
 require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';
 
-$db = new PDO('sqlite:' . __DIR__ . '/../../../football-stats.sqlite3');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
 // Get available seasons for this competition
 $seasons_stmt = $db->prepare("SELECT DISTINCT season_label FROM matches WHERE competition_code = ? ORDER BY season_label DESC");

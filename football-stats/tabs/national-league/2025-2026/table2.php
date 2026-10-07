@@ -1,16 +1,17 @@
 <?php
 require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 
-$tableView = football_stats_get_table_view($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');
+$tableView = football_stats_get_table_view_combined($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');
 $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
+$competitionRules = football_stats_get_competition_rules('NL', $tableView['active_season_label'], $db);
 
 // Safety calculation Constants
-$halfway_games = 23;
-$safety_target_halfway = 25;
-$total_games = 46;
-$max_regular_mw = 46; // Playoff matches have matchweek > 46
+$halfway_games = (int)$competitionRules['halfway_games'];
+$safety_target_halfway = (int)$competitionRules['safety_target_halfway'];
+$total_games = (int)$competitionRules['total_games'];
+$max_regular_mw = (int)$competitionRules['regular_matchweeks'];
 if (isset($tableView['active_matchweek'])) {
     $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
 }
@@ -37,10 +38,6 @@ $tableView = football_stats_apply_movement_preference(
     $movementBaselineStandings,
     $table_filter !== 'all' && !empty($filteredStandings)
 );
-$safety_target_magic = 40; 
-$safety_target_average = 36; 
-$safety_target_low = 34; 
-$safety_target_recent_low = 27;
 
 // Team metadata
 require_once dirname(__DIR__, 3) . '/includes/team-info.php';
@@ -70,7 +67,7 @@ $team_info = $team_info_NL;
                 <th>Pts</th>
                 <th>PPG</th>
                 <th title="Required points to reach current performance projection">Pts Req</th>
-                <th title="PPG needed to reach 46 points">PPG (46)</th>
+                <th title="PPG needed to reach <?= $competitionRules['comparison_target_one'] ?> points">PPG (<?= $competitionRules['comparison_target_one'] ?>)</th>
                 <th title="Points based on current PPG trend">Perf</th>
                 <th>+/- Buffer</th>
                 <th title="Max points based on performance">Max Pts</th>
@@ -93,7 +90,7 @@ $team_info = $team_info_NL;
                 $max_points_possible = (int)($team['points'] + $performance);
                 
                 // Points Needed Calculations
-                $points_needed_46 = max(0, 46 - $team['points']);
+                $points_needed_46 = max(0, $competitionRules['comparison_target_one'] - $team['points']);
                 $ppg_needed_46 = ($games_remaining > 0) ? round($points_needed_46 / $games_remaining, 2) : 0;
                 $points_needed_max = $max_points_possible - $team['points'];
 

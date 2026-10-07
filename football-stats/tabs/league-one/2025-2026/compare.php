@@ -3,16 +3,15 @@
 require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';
 
-$db = new PDO('sqlite:' . __DIR__ . '/../../../football-stats.sqlite3');
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+require_once __DIR__ . '/../../../includes/table-view.php';
 
 $season = '2025-2026';
 $competition_code = 'L1';
 $live_table = 'league_table_L1';
 
 // Get available matchweeks (include MW0 for pre-season, exclude playoff rounds MW>46)
-$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek <= 46 ORDER BY matchweek ASC");
-$mw_stmt->execute([$competition_code, $season]);
+$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek <= ? ORDER BY matchweek ASC");
+$mw_stmt->execute([$competition_code, $season, football_stats_get_final_matchweek($competition_code, $season, $db)]);
 $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 
 // Get selected matchweeks (or default to last and pre-season)
