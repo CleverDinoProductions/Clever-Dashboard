@@ -47,74 +47,9 @@ $safety_target_recent_low = 27; // Recent low safety target
 require_once __DIR__ . '/../../../includes/team-info.php';
 $team_info = $team_info_PL;
 
-/**
- * Builds separate default-rule and season-rule position highlights.
- */
-function get_table_row_style(array $team, string $seasonLabel): string {
-    $position = (int)$team['position'];
-    $classes = [];
-    $classSuffixes = [
-        'champions-league' => 'ucl',
-        'europa-league' => 'uel',
-        'conference-league' => 'uecl',
-        'relegation' => 'relegation',
-    ];
-
-    // The left edge is a stable reference for the competition's usual places.
-    $defaultZone = football_stats_get_default_position_zone('PL', $position);
-    $defaultKey = $defaultZone['key'] ?? '';
-    if (isset($classSuffixes[$defaultKey])) {
-        $classes[] = 'row-default-' . $classSuffixes[$defaultKey];
-    }
-
-    // The fill and right edge show the rules which actually apply that season.
-    $seasonZone = football_stats_get_position_zone('PL', $seasonLabel, $position);
-    $seasonKey = $seasonZone['key'] ?? '';
-    if (isset($classSuffixes[$seasonKey])) {
-        $classes[] = 'row-season-' . $classSuffixes[$seasonKey];
-    }
-
-    return !empty($classes) ? 'class="' . implode(' ', $classes) . '"' : '';
-}
 ?>
 
-<style>
-.team-name { position: relative; cursor: help; display: inline-block; transition: color 0.2s ease; }
-.team-name:hover { color: #FFCD00; }
-.team-official { color: #dcddde; }
-.team-common { color: #888; font-size: 12px; margin-left: 6px; font-weight: normal; }
-.team-tooltip { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2e3136, #40444b); color: white; padding: 10px 15px; border-radius: 8px; white-space: nowrap; z-index: 1000; font-size: 13px; border: 2px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.5); transition: opacity 0.3s ease, visibility 0.3s ease; }
-.team-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: inherit; }
-.team-name:hover .team-tooltip { visibility: visible; opacity: 1; }
-.tooltip-nickname { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
-.tooltip-short { display: block; font-size: 11px; color: #dcddde; }
-
-th { position: sticky; top: 0; z-index: 10; background-color: #222; color: white; white-space: nowrap; border-bottom: 2px solid #444; padding: 10px; }
-table { width: 100%; border-collapse: collapse; }
-td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
-.team-crest { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; margin-right: 10px; }
-.team-cell { display: flex; align-items: center; text-align: left; }
-.update-info { font-size: 12px; color: #888; margin-bottom: 10px; }
-
-:root {
-  --color-ucl: #006400;       /* Champions League: Dark Green */
-  --color-uel: #5865F2;       /* Europa League: Blurple / Soft Blue */
-  --color-uecl: #FFCD00;      /* Conference League: Gold / Yellow */
-  --color-relegation: #f04747;/* Relegation: Red */
-}
-
-/* Left edge: the Premier League's default placing rules. */
-.row-default-ucl { border-left: 4px solid var(--color-ucl); }
-.row-default-uel { border-left: 4px solid var(--color-uel); }
-.row-default-uecl { border-left: 4px solid var(--color-uecl); }
-.row-default-relegation { border-left: 4px solid var(--color-relegation); }
-
-/* Row fill and right edge: the rules which apply to the selected season. */
-.row-season-ucl { background: rgba(0, 100, 0, 0.15); border-right: 4px solid var(--color-ucl); }
-.row-season-uel { background: rgba(88, 101, 242, 0.15); border-right: 4px solid var(--color-uel); }
-.row-season-uecl { background: rgba(255, 205, 0, 0.15); border-right: 4px solid var(--color-uecl); }
-.row-season-relegation { background: rgba(240, 71, 71, 0.15); border-right: 4px solid var(--color-relegation); }
-</style>
+<?php require __DIR__ . '/../../../includes/table-styles.php'; ?>
 
 <div class="panel">
     <h2>Premier League Table <?= $tableView['active_season_label']?></h2>
@@ -125,7 +60,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'No data available yet' ?>
     </p>
     
-    <table>
+    <table class="league-table">
         <tr>
             <th class="movement-column" scope="col">Movement</th>
             <th title="Position">Pos</th>
@@ -143,10 +78,7 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?php foreach ($standings as $team): ?>
         <?php
             // Get team info
-            $info = getTeamInfo($team['team_name'], $team_info);    
-            
-            // Apply the qualification and relegation zones configured for this season.
-            $row_attribute = get_table_row_style($team, $_split_season);
+            $info = getTeamInfo($team['team_name'], $team_info);
 
             //remaining games
             $games_remaining = max(0, $total_games - $team['played']);
@@ -166,22 +98,10 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
                 $points_color = '#f04747'; // Red if points are less than games remaining
             }
             
-            // Highlight rows
-            $row_style = '';
-            if ($team['position'] >= 18) {
-                $row_style = 'background: rgba(244, 71, 71, 0.2); border-left: 4px solid #f04747;';
-            } elseif ($team['position'] <= 5) {
-                $row_style = 'background: rgba(67, 181, 129, 0.1); border-left: 4px solid #43b581;';
-            } elseif ($team['position'] == 6) {
-                $row_style = 'background: rgba(88, 101, 242, 0.1); border-left: 4px solid #5865F2;';
-            } elseif ($team['position'] == 7) {
-                $row_style = 'background: rgba(255, 205, 0, 0.1); border-left: 4px solid #FFCD00;';
-            }
-            
             // Check if official name differs from common name
             $show_common = ($team['team_name'] !== $info['common_name']);
         ?>
-        <tr <?= $row_attribute ?>>
+        <tr <?= football_stats_table_row_attributes('PL', $tableView['active_season_label'], (int)$team['position']) ?>>
             <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
             <td><strong><?= $team['position'] ?></strong></td>
             <td>
@@ -221,13 +141,9 @@ td { padding: 10px; border-bottom: 1px solid #333; text-align: center; }
         <?php endforeach; ?>
     </table>
     <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
+    <?php football_stats_render_table_zone_legend('PL', $tableView['active_season_label']); ?>
     
     <div style="margin-top: 20px; display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap;">
-        <div><span style="color: #43b581;">■</span> Champions League (1st-4th)</div>
-        <div><span style="color: #5865F2;">■</span> Europa League (5th-6th)</div>
-        <div><span style="color: #FFCD00;">■</span> Conference League (7th)</div>
-        <div><span style="color: #ffffff;">■</span> Leeds United 🤍💛💙</div>
-        <div><span style="color: #f04747;">■</span> Relegation to Championship (18th-20th)</div>
         <div style="margin-left: auto; color: #888;">
             💡 Hover over team names for nicknames
         </div>
