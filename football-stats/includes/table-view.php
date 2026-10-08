@@ -2466,6 +2466,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                             <label for="<?php echo $filterIdPrefix; ?>-outcome">Result</label>
                                             <select id="<?php echo $filterIdPrefix; ?>-outcome" data-result-filter-outcome>
                                                 <option value="all">Every result</option><option value="win">Wins only</option><option value="draw">Draws only</option><option value="loss">Losses only</option>
+                                                <option value="win,draw">Wins and draws</option><option value="win,loss">Wins and losses</option><option value="draw,loss">Draws and losses</option>
                                             </select>
                                         </span>
                                         <button type="button" data-result-filter-action="<?php echo $filterAction; ?>"><?php echo htmlspecialchars($filterSection['button'], ENT_QUOTES, 'UTF-8'); ?></button>
@@ -2924,13 +2925,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var matchweek = section.querySelector('[data-result-filter-matchweek]').value;
                                 var venue = section.querySelector('[data-result-filter-venue]').value;
                                 var outcome = section.querySelector('[data-result-filter-outcome]').value;
+                                var outcomes = outcome.split(',');
                                 var includeOnly = this.dataset.resultFilterAction === 'only';
                                 boxes.forEach(function (box) {
                                     var matches = (!selectedTeams.length || selectedTeams.indexOf(box.dataset.team) !== -1)
                                         && (!selectedOpponents.length || selectedOpponents.indexOf(box.dataset.opponent) !== -1)
                                         && (matchweek === 'all' || box.dataset.matchweek === matchweek)
                                         && (venue === 'all' || box.dataset.resultSide === venue)
-                                        && (outcome === 'all' || box.dataset.result === outcome);
+                                        && (outcome === 'all' || outcomes.indexOf(box.dataset.result) !== -1);
                                     box.checked = includeOnly ? matches : !matches;
                                 });
                                 updateSelectionStatus();
