@@ -48,7 +48,7 @@ $renderZoneRow = static function ($index, $zone) use ($h, $palette) {
             <label><?= $h($label) ?><input type="number" name="<?= $h($key) ?>" value="<?= $h($ruleForm[$key] ?? '') ?>" min="<?= $min ?>" max="<?= $max ?>" required></label>
         <?php endforeach; ?></div>
         <label>Quarter split boundaries<input name="quarter_boundaries" value="<?= $h(is_array($ruleForm['quarter_boundaries'] ?? null) ? implode(', ', $ruleForm['quarter_boundaries']) : ($ruleForm['quarter_boundaries'] ?? '')) ?>" required placeholder="12, 23, 35"></label>
-        <p class="muted">The three last-game numbers split quarter filters where available. Matchweeks exclude playoff fixtures from regular-season tables. Comparison points targets control the Table 2 points-needed and PPG columns.</p>
+        <p class="muted">Win, draw and loss points set the scoring system for this league or season (normally 3, 1, 0). Custom rules can override these for a what-if table. The three last-game numbers split quarter filters where available. Matchweeks exclude playoff fixtures from regular-season tables. Comparison points targets control the Table 2 points-needed and PPG columns.</p>
         <div class="table-wrap"><table><thead><tr><th>Type</th><th>Label</th><th>From</th><th>To</th><th>Colour</th><th></th></tr></thead><tbody id="rule-zones"><?php foreach ($zoneRows as $index => $zone) $renderZoneRow($index, $zone); ?></tbody></table></div>
         <button type="button" class="secondary" id="add-rule-zone">Add position zone</button>
         <button <?= !$football instanceof PDO ? 'disabled' : '' ?>>Save rules</button>

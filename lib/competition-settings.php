@@ -17,6 +17,8 @@ function clever_competition_zone_types(): array
 function clever_competition_numeric_fields(): array
 {
     return ['team_count' => ['Clubs', 2, 100], 'regular_matchweeks' => ['Regular-season matchweeks', 4, 200],
+        'win_points' => ['Points for a win', 0, 100], 'draw_points' => ['Points for a draw', 0, 100],
+        'loss_points' => ['Points for a loss', 0, 100],
         'total_games' => ['Games per club', 4, 200], 'halfway_games' => ['First-half games', 1, 199],
         'safety_target_halfway' => ['Safety points at halfway', 0, 600],
         'comparison_target_one' => ['First comparison points target', 0, 600],
@@ -30,7 +32,8 @@ function clever_bundled_competition_rules(string $code, ?string $season = null):
     $bundled ??= require dirname(__DIR__) . '/football-stats/config/competition-rules.php';
     $rules = array_replace($bundled['default'], $bundled[$code]['default'] ?? []);
     $shortSeason = in_array($code, ['PL', 'D1'], true);
-    $rules += ['total_games' => $rules['regular_matchweeks'], 'halfway_games' => (int)floor($rules['regular_matchweeks'] / 2),
+    $rules += ['win_points' => 3, 'draw_points' => 1, 'loss_points' => 0,
+        'total_games' => $rules['regular_matchweeks'], 'halfway_games' => (int)floor($rules['regular_matchweeks'] / 2),
         'safety_target_halfway' => in_array($code, ['L1', 'L2', 'NL'], true) ? 25 : 20,
         'comparison_target_one' => $shortSeason || $code === 'ELC' ? 38 : 46, 'comparison_target_two' => 40,
         'quarter_boundaries' => $shortSeason ? [10, 19, 29] : [12, 23, 35]];
@@ -73,9 +76,10 @@ function clever_validate_competition_rules(array $input): array
         $rules[$key] = $value;
     }
     if ($rules['halfway_games'] >= min($rules['total_games'], $rules['regular_matchweeks'])) throw new InvalidArgumentException('First-half games must fall inside the regular season and be less than games per club.');
-    if ($rules['safety_target_halfway'] > 3 * $rules['halfway_games']) throw new InvalidArgumentException('Halfway safety points cannot exceed three points per first-half game.');
+    $maximumPoints = max($rules['win_points'], $rules['draw_points'], $rules['loss_points']);
+    if ($rules['safety_target_halfway'] > $maximumPoints * $rules['halfway_games']) throw new InvalidArgumentException('Halfway safety points cannot exceed the maximum first-half points.');
     foreach (['comparison_target_one', 'comparison_target_two'] as $key) {
-        if ($rules[$key] > 3 * $rules['total_games']) throw new InvalidArgumentException('Comparison targets cannot exceed the maximum season points.');
+        if ($rules[$key] > $maximumPoints * $rules['total_games']) throw new InvalidArgumentException('Comparison targets cannot exceed the maximum season points.');
     }
     $quarters = array_map('trim', explode(',', (string)($input['quarter_boundaries'] ?? '')));
     if (count($quarters) !== 3) throw new InvalidArgumentException('Enter three quarter boundaries separated by commas.');
