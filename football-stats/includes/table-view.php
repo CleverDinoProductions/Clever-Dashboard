@@ -2322,20 +2322,29 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 'win' => 'Wins',
                                 'draw' => 'Draws',
                                 'loss' => 'Losses',
+                                'win,draw' => 'Wins and Draws',
+                                'win,loss' => 'Wins and Losses',
+                                'draw,loss' => 'Draws and Losses',
                                 'team' => 'Team',
                                 'home' => 'Home (Team A)',
                                 'home_win' => 'Home Wins (Team A)',
                                 'home_draw' => 'Home Draws (Team A)',
                                 'home_loss' => 'Home Losses (Team A)',
+                                'home_win,draw' => 'Home Wins and Draws (Team A)',
+                                'home_win,loss' => 'Home Wins and Losses (Team A)',
+                                'home_draw,loss' => 'Home Draws and Losses (Team A)',
                                 'away' => 'Away (Team B)',
                                 'away_win' => 'Away Wins (Team B)',
                                 'away_draw' => 'Away Draws (Team B)',
                                 'away_loss' => 'Away Losses (Team B)',
+                                'away_win,draw' => 'Away Wins and Draws (Team B)',
+                                'away_win,loss' => 'Away Wins and Losses (Team B)',
+                                'away_draw,loss' => 'Away Draws and Losses (Team B)',
                             ];
                             $customRuleSections = [
-                                'Team' => ['win', 'draw', 'loss', 'team'],
-                                'Home' => ['home', 'home_win', 'home_draw', 'home_loss'],
-                                'Away' => ['away', 'away_win', 'away_draw', 'away_loss'],
+                                'Team' => ['win', 'draw', 'loss', 'win,draw', 'win,loss', 'draw,loss', 'team'],
+                                'Home' => ['home', 'home_win', 'home_draw', 'home_loss', 'home_win,draw', 'home_win,loss', 'home_draw,loss'],
+                                'Away' => ['away', 'away_win', 'away_draw', 'away_loss', 'away_win,draw', 'away_win,loss', 'away_draw,loss'],
                             ];
                             ?>
                             <div class="custom-match-sections">
@@ -2491,6 +2500,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="home">Current Team A wins only</option>
                                                 <option value="draw">Current draws only</option>
                                                 <option value="away">Current Team B wins only</option>
+                                                <option value="home,draw">Current Team A wins and draws</option>
+                                                <option value="home,away">Current Team A and Team B wins</option>
+                                                <option value="draw,away">Current draws and Team B wins</option>
                                                 <option value="actual">Currently not simulated only</option>
                                             </select>
                                             <select id="<?php echo $controlId; ?>-bulk-outcome" data-bulk-outcome>
@@ -2513,6 +2525,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="home">Current Team A wins only</option>
                                                 <option value="draw">Current draws only</option>
                                                 <option value="away">Current Team B wins only</option>
+                                                <option value="home,draw">Current Team A wins and draws</option>
+                                                <option value="home,away">Current Team A and Team B wins</option>
+                                                <option value="draw,away">Current draws and Team B wins</option>
                                                 <option value="actual">Currently not simulated only</option>
                                             </select>
                                             <select data-bulk-matchweek-outcome aria-label="Outcome for selected matchweek">
@@ -2535,6 +2550,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <option value="win">Current wins only</option>
                                                 <option value="draw">Current draws only</option>
                                                 <option value="loss">Current losses only</option>
+                                                <option value="win,draw">Current wins and draws</option>
+                                                <option value="win,loss">Current wins and losses</option>
+                                                <option value="draw,loss">Current draws and losses</option>
                                                 <option value="unplayed">Currently not simulated only</option>
                                             </select>
                                             <select data-bulk-team-venue aria-label="Fixture venue for selected team">
@@ -2908,10 +2926,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     var matchesRule = (result === 'team' && teamMatches)
                                         || (result === 'home' && teamMatches && isHomeResult)
                                         || (result === 'away' && teamMatches && isAwayResult)
-                                        || (ruleSide === 'home' && sideResult !== '' && teamMatches && isHomeResult && box.dataset.result === sideResult)
-                                        || (ruleSide === 'away' && sideResult !== '' && teamMatches && isAwayResult && box.dataset.result === sideResult)
+                                        || (ruleSide === 'home' && sideResult !== '' && teamMatches && isHomeResult && sideResult.split(',').indexOf(box.dataset.result) !== -1)
+                                        || (ruleSide === 'away' && sideResult !== '' && teamMatches && isAwayResult && sideResult.split(',').indexOf(box.dataset.result) !== -1)
                                         || (ruleParts.length === 1 && result !== 'team' && result !== 'home' && result !== 'away'
-                                            && teamMatches && box.dataset.result === result);
+                                            && teamMatches && result.split(',').indexOf(box.dataset.result) !== -1);
                                     if (matchesRule) box.checked = include;
                                 });
                                 updateSelectionStatus();
@@ -2959,7 +2977,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         function hasCurrentFixtureOutcome(select, outcome) {
                             if (outcome === 'all') return true;
                             var current = select.value === 'actual' ? select.dataset.actualOutcome : select.value;
-                            return current === outcome;
+                            return outcome.split(',').indexOf(current) !== -1;
                         }
                         function getCurrentTeamOutcome(select, isHomeTeam) {
                             var fixtureOutcome = select.value === 'actual' ? select.dataset.actualOutcome : select.value;
@@ -3000,7 +3018,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                         var opponent = isHomeTeam ? select.dataset.awayTeam : select.dataset.homeTeam;
                                         if (teamOpponents.length && teamOpponents.indexOf(opponent) === -1) return;
                                         var effectiveTeamOutcome = getCurrentTeamOutcome(select, isHomeTeam);
-                                        if (currentTeamOutcome !== 'all' && effectiveTeamOutcome !== currentTeamOutcome) return;
+                                        if (currentTeamOutcome !== 'all' && currentTeamOutcome.split(',').indexOf(effectiveTeamOutcome) === -1) return;
                                         if (outcome === 'actual' || outcome === 'draw') {
                                             select.value = outcome;
                                         } else if (outcome === 'win') {
