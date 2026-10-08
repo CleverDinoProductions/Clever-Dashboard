@@ -6,6 +6,7 @@ $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
 $competitionRules = football_stats_get_competition_rules('NL', $tableView['active_season_label'], $db);
+$resultPoints = $tableView['custom_result_points'] ?? ['win' => $competitionRules['win_points'], 'draw' => $competitionRules['draw_points'], 'loss' => $competitionRules['loss_points']];
 
 // Safety calculation Constants
 $halfway_games = (int)$competitionRules['halfway_games'];
@@ -95,9 +96,9 @@ $team_info = $team_info_NL;
                 $points_needed_max = $max_points_possible - $team['points'];
 
                 // Max scenarios
-                $max_w = $team['points'] + ($games_remaining * 3);
-                $max_d = $team['points'] + ($games_remaining * 1);
-                $max_wd = round($team['points'] + ($games_remaining / 2 * (3 + 1)), 0);
+                $max_w = $team['points'] + ($games_remaining * $resultPoints['win']);
+                $max_d = $team['points'] + ($games_remaining * $resultPoints['draw']);
+                $max_wd = round($team['points'] + ($games_remaining / 2 * ($resultPoints['win'] + $resultPoints['draw'])), 0);
 
                 // Dynamic Coloring
                 $ppg_color = ($ppg >= 1.5) ? '#43b581' : (($ppg >= 1.0) ? '#faa61a' : '#f04747');

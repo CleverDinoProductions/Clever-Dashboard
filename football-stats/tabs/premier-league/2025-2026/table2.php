@@ -7,6 +7,7 @@ $standings = $tableView['standings'];
 $movementBaselineStandings = $standings;
 $last_update = $tableView['last_update'];
 $competitionRules = football_stats_get_competition_rules('PL', $tableView['active_season_label'], $db);
+$resultPoints = $tableView['custom_result_points'] ?? ['win' => $competitionRules['win_points'], 'draw' => $competitionRules['draw_points'], 'loss' => $competitionRules['loss_points']];
 
 // Safety calculation
 $halfway_games = (int)$competitionRules['halfway_games'];
@@ -225,7 +226,7 @@ $team_info = $team_info_PL;
             }
 
             // Calculate max points possible if all remaining games are wins, draws, or 50/50
-            $max_points_possible_win = round($team['points'] + ($games_remaining * 3), 0);
+            $max_points_possible_win = round($team['points'] + ($games_remaining * $resultPoints['win']), 0);
             if ($max_points_possible_win >= 60) {
                 $max_points_win_color = '#006400'; // Dark Green for 60+ max points possible
             } elseif ($max_points_possible_win >= 40) {
@@ -237,7 +238,7 @@ $team_info = $team_info_PL;
             } else {
                 $max_points_win_color = '#8B4513'; // Brown for below 40 max points possible
             }
-            $max_points_possible_draw = round($team['points'] + ($games_remaining * 1), 0);
+            $max_points_possible_draw = round($team['points'] + ($games_remaining * $resultPoints['draw']), 0);
             if ($max_points_possible_draw >= 60) {
                 $max_points_draw_color = '#006400'; // Dark Green for 60+ max points possible
             } elseif ($max_points_possible_draw >= 40) {
@@ -249,7 +250,7 @@ $team_info = $team_info_PL;
             } else {
                 $max_points_draw_color = '#8B4513'; // Brown for below 40 max points possible
             }   
-            $max_points_possible_win_draw = round($team['points'] + ($games_remaining / 2 * (3 + 1)), 0);
+            $max_points_possible_win_draw = round($team['points'] + ($games_remaining / 2 * ($resultPoints['win'] + $resultPoints['draw'])), 0);
             if ($max_points_possible_win_draw >= 60) {
                 $max_points_win_draw_color = '#006400'; // Dark Green for 100+ max points possible
             } elseif ($max_points_possible_win_draw >= 40) {
