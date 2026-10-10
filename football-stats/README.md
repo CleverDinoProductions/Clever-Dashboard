@@ -72,6 +72,7 @@ Run the standalone regression scripts from the repository root:
 
 ```sh
 php football-stats/tests/competition-rules-test.php
+php football-stats/tests/simulation-config-test.php
 php football-stats/tests/table-view-movement-test.php
 php football-stats/tests/table-view-team-crests-test.php
 ```

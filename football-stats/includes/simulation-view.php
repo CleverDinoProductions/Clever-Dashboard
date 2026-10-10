@@ -11,6 +11,7 @@
  */
 
 require_once __DIR__ . '/simulation-engine.php';
+require_once __DIR__ . '/simulation-config.php';
 require_once __DIR__ . '/table-view.php';
 require_once __DIR__ . '/match-projection-widget.php';
 
@@ -30,6 +31,10 @@ $sim_season_label = $season_label;
 if (!empty($tableView['requested_season_label']) && $tableView['requested_season_label'] !== '') {
     $sim_season_label = $tableView['requested_season_label'];
 }
+
+// Resolve cut lines and format for the season chosen in the simulation selector.
+$league_config = football_stats_simulation_config($db, $comp_code, $sim_season_label, $league_config['league_name']);
+$halfway_games = $league_config['halfway_games'];
 
 // ── Read URL parameters ──────────────────────────────────────────────────────
 
