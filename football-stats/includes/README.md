@@ -11,6 +11,6 @@ These files provide layout, table rendering, team details, and simulation compon
 - `team-tracker-helpers.php` — shared team-tracking calculations and output helpers.
 - `match-projection-widget.php` — reusable match projection UI.
 - `season-comparison.php` — cross-season comparison component.
-- `simulation-engine.php` and `simulation-view.php` — shared season simulation logic and presentation.
+- `simulation-engine.php` and `simulation-view.php` — shared season simulation logic and presentation. `simulation-config.php` loads Admin competition rules for the selected season; probabilities, distribution colours and outlook targets use those typed position zones. The outlook shows projected points for every league, with qualification, automatic promotion, playoff and safety targets where configured.
 
 Tab files should configure and call these components instead of copying shared logic. Include them through paths based on `__DIR__` where possible so commands and web requests behave consistently from different working directories.

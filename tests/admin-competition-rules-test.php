@@ -16,6 +16,7 @@ $_SERVER['REQUEST_METHOD'] = 'GET';
 $_GET = ['section'=>'rules', 'competition_code'=>'ELC', 'season_label'=>'2026-2027'];
 ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
 admin_rules_assert(str_contains($html, 'Competition rules') && str_contains($html, 'Save rules'), 'Football editors can access the rules form.');
+admin_rules_assert(str_contains($html, 'Qualification, Playoff, Promotion and Relegation simulation zones'), 'Admin explains the simulation zone configuration.');
 admin_rules_assert(str_contains($html, 'name="zones[1][to]" value="6"'), 'The form loads inherited league defaults.');
 admin_rules_assert(!str_contains($html, 'href="?section=users"'), 'Football editors do not gain account-admin navigation.');
 $rules = clever_competition_rules($football, 'ELC', '2026-2027');
