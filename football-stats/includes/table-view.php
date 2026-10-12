@@ -312,6 +312,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'match_id', 
             'table_filter',
             'tracker_team',
+            'matches_team_group', 'matches_team_side',
             'table_view',
             'excluded_matches',
             'excluded_results',
@@ -343,7 +344,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
  * Render the season and matchweek selectors used by league match lists.
  */
 if (!function_exists('football_stats_render_matches_controls')) {
-    function football_stats_render_matches_controls(array $availableSeasons, array $availableMatchweeks, $selectedSeason, $selectedMatchweek, $tab, $league, $subtab)
+    function football_stats_render_matches_controls(array $availableSeasons, array $availableMatchweeks, $selectedSeason, $selectedMatchweek, $tab, $league, $subtab, ?array $teamFilters = null)
     {
         $leagueMap = [
             'premier-league' => 'PL', 'championship' => 'ELC',
@@ -398,6 +399,7 @@ if (!function_exists('football_stats_render_matches_controls')) {
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <?php if ($teamFilters !== null) football_stats_render_match_team_filters($teamFilters, $tab, $league, $subtab); ?>
             </div>
         </div>
         <?php
