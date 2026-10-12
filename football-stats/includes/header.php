@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/table-view.php';
+require_once __DIR__ . '/grouped-navigation.php';
 
 if (!function_exists('build_tab_url')) {
     function build_tab_url($tab, $league = null, $subtab = null, array $extraParams = [])
@@ -190,7 +191,7 @@ $hideUpdateControls = ($dashboardSettings['show_update_controls'] ?? '1') !== '1
         <!-- Main Navigation Pills -->
         <nav class="pill-nav main-pills">
             <a href="<?php echo htmlspecialchars(build_tab_url('2025-2026', 'premier-league', 'table'), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab <?php echo ($currentMainTab === '2025-2026') ? 'active' : ''; ?>">
+               class="pill-tab <?php echo ($currentMainTab !== 'world-cup') ? 'active' : ''; ?>">
                 <span class="nav-icon">🏴</span> English Leagues
             </a>
             <a href="<?php echo htmlspecialchars(build_tab_url('world-cup', null, 'groups'), ENT_QUOTES, 'UTF-8'); ?>"
@@ -199,83 +200,12 @@ $hideUpdateControls = ($dashboardSettings['show_update_controls'] ?? '1') !== '1
             </a>
         </nav>
         
-        <!-- Sub Navigation Pills -->
-        <nav class="pill-nav sub-pills">
-            <?php if ($currentMainTab === 'world-cup'): ?>
-                <?php foreach ($worldCupTabs as $tabKey => $tabConfig): ?>
-                    <a href="<?php echo htmlspecialchars(build_tab_url('world-cup', null, $tabKey), ENT_QUOTES, 'UTF-8'); ?>"
-                       class="pill-tab <?php echo ($currentSubTab === $tabKey) ? 'active' : ''; ?>">
-                        <span class="nav-icon"><?php echo $tabConfig['icon']; ?></span> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <?php foreach ($seasonLeagueConfigs[$currentMainTab] as $leagueKey => $leagueConfig): ?>
-                    <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $leagueKey, $leagueConfig['defaultSubTab']), ENT_QUOTES, 'UTF-8'); ?>"
-                       class="pill-tab <?php echo ($currentLeague === $leagueKey) ? 'active' : ''; ?>">
-                        <span class="nav-icon">🏆</span> <?php echo htmlspecialchars($leagueConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </nav>
+        <?php
+        $tableViewParams = football_stats_get_current_table_view_params();
+        $trackerTeamParam = isset($_GET['tracker_team']) && is_string($_GET['tracker_team']) && $_GET['tracker_team'] !== '' ? ['tracker_team'=>$_GET['tracker_team']] : [];
+        football_stats_render_grouped_navigation($seasonLeagueConfigs,$worldCupTabs,$currentMainTab,$currentLeague,$currentSubTab,$tableViewParams,$trackerTeamParam,(string)($dashboardUser['id']??'guest'));
+        ?>
 
-        <?php if ($currentMainTab !== 'world-cup'): ?>
-        <?php $tableViewParams = football_stats_get_current_table_view_params(); ?>
-        <nav class="pill-nav tertiary-pills">
-            <?php
-            $trackerTabKeys = ['leeds', 'leeds-2', 'leeds-3', 'team-tracker', 'team-tracker-2', 'team-tracker-3'];
-            $trackerTeamParam = (isset($_GET['tracker_team']) && $_GET['tracker_team'] !== '')
-                ? ['tracker_team' => $_GET['tracker_team']]
-                : [];
-            ?>
-            <?php foreach ($seasonLeagueConfigs[$currentMainTab][$currentLeague]['tabs'] as $tabKey => $tabConfig): ?>
-                <?php
-                $extraParams = football_stats_tab_supports_table_view($tabKey) ? $tableViewParams : [];
-                if (in_array($tabKey, $trackerTabKeys, true)) {
-                    $extraParams = array_merge($extraParams, $trackerTeamParam);
-                }
-                ?>
-                <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, $tabKey, $extraParams), ENT_QUOTES, 'UTF-8'); ?>"
-                   class="pill-tab <?php echo ($currentSubTab === $tabKey) ? 'active' : ''; ?>">
-                    <span class="nav-icon"><?php echo $tabConfig['icon']; ?></span> <?php echo htmlspecialchars($tabConfig['label'], ENT_QUOTES, 'UTF-8'); ?>
-                </a>
-            <?php endforeach; ?>
-        </nav>
-        <?php endif; ?>
-
-        <?php if ($isBlocksSection): ?>
-        <!-- Blocks Sub-Navigation (only shows when in blocks section) -->
-        <nav class="pill-nav tertiary-pills">
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-overview', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-overview') ? 'active' : ''; ?>">
-                🎯 Overview
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-dynamic', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-dynamic') ? 'active' : ''; ?>">
-                🔥 Live Data
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-1', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-1') ? 'active' : ''; ?>">
-                🏆 Block 1
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-2', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-2') ? 'active' : ''; ?>">
-                🌟 Block 2
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-3', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-3') ? 'active' : ''; ?>">
-                ✅ Block 3
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-4', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-4') ? 'active' : ''; ?>">
-                ⚠️ Block 4
-            </a>
-            <a href="<?php echo htmlspecialchars(build_tab_url($currentMainTab, $currentLeague, 'blocks-5', $tableViewParams), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab-small <?php echo ($currentSubTab == 'blocks-5') ? 'active' : ''; ?>">
-                🔻 Block 5
-            </a>
-        </nav>
-        <?php endif; ?>
-        
         <!-- Main Content Area -->
         <main class="main-content">
             <?php
