@@ -312,7 +312,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'match_id', 
             'table_filter',
             'tracker_team',
-            'matches_team_group', 'matches_team_side',
+            'matches_team_group', 'matches_team_side', 'matches_standings_basis',
             'table_view',
             'excluded_matches',
             'excluded_results',
@@ -1284,10 +1284,11 @@ if (!function_exists('football_stats_apply_outcome_override')) {
 
 /** Calculate a table from completed results plus selected unplayed what-if fixtures. */
 if (!function_exists('football_stats_compute_custom_match_standings')) {
-    function football_stats_compute_custom_match_standings(PDO $db, $competitionCode, $seasonLabel, $liveTableName, array $excludedResults, array $outcomeOverrides = [], ?array $resultPoints = null)
+    function football_stats_compute_custom_match_standings(PDO $db, $competitionCode, $seasonLabel, $liveTableName, array $excludedResults, array $outcomeOverrides = [], ?array $resultPoints = null, ?int $throughMatchweek = null)
     {
         $resultPoints ??= football_stats_get_result_points($competitionCode, $seasonLabel, $db);
         $finalMatchweek = football_stats_get_final_matchweek($competitionCode, $seasonLabel, $db);
+        if ($throughMatchweek !== null) $finalMatchweek = min($finalMatchweek, max(0, $throughMatchweek));
         $stmt = $db->prepare(
             'SELECT id, home_team, away_team, home_goals, away_goals FROM matches '
             . 'WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? '

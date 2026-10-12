@@ -27,14 +27,37 @@ function football_stats_normalize_group_team(string $name): string
     ][$name] ?? $name;
 }
 
-/** Standings always describe the entire selected season, independent of matchweek and custom rules. */
+/** Resolve full-season or selected-matchweek standings independently of custom rules. */
 function football_stats_match_group_context(PDO $db, string $competition, string $season, array $settings): array
 {
     $groups = clever_team_groups($settings);
+    $basis = ($_GET['matches_standings_basis'] ?? null) === 'matchweek' ? 'matchweek' : 'season';
+    $week = isset($_GET['matchweek']) && is_scalar($_GET['matchweek']) ? filter_var($_GET['matchweek'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : false;
+    $week = $week === false ? null : $week;
+    $throughWeek = $basis === 'matchweek' ? $week : null;
+    $snapshotSource = 'computed';
     $standings = football_stats_apply_points_deductions(
-        football_stats_compute_custom_match_standings($db, $competition, $season, 'league_table_' . $competition, [], [], ['win' => 3, 'draw' => 1, 'loss' => 0]),
+        football_stats_compute_custom_match_standings($db, $competition, $season, 'league_table_' . $competition, [], [], ['win' => 3, 'draw' => 1, 'loss' => 0], $throughWeek),
         football_stats_get_points_deductions($db, $competition, $season)
     );
+    if ($basis === 'matchweek') {
+        if ($week === null) {
+            $standings = [];
+        } else {
+            // An archived snapshot preserves the standings and deductions known at that time.
+            try {
+                $snapshot = $db->prepare('SELECT * FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY position ASC');
+                $snapshot->execute([$competition, $season, $week]);
+                $archived = $snapshot->fetchAll(PDO::FETCH_ASSOC);
+                if ($archived && count($archived) === count($standings) && isset($archived[0]['played'])) {
+                    $standings = $archived;
+                    $snapshotSource = 'archive';
+                }
+            } catch (PDOException $exception) {
+                // Older databases may not have archived snapshots; reconstruct from results.
+            }
+        }
+    }
     $hasStandings = array_sum(array_column($standings, 'played')) > 0;
     $half = (int)floor(count($standings) / 2);
     $groups['current_top_half'] = $hasStandings ? array_column(array_slice($standings, 0, $half), 'team_name') : [];
@@ -43,7 +66,7 @@ function football_stats_match_group_context(PDO $db, string $competition, string
     if (!array_key_exists($group, football_stats_match_group_labels())) $group = 'all';
     $side = isset($_GET['matches_team_side']) && is_string($_GET['matches_team_side']) ? $_GET['matches_team_side'] : 'either';
     if (!in_array($side, ['either', 'home', 'away', 'both'], true)) $side = 'either';
-    return ['groups' => $groups, 'group' => $group, 'side' => $side, 'has_standings' => $hasStandings];
+    return ['groups' => $groups, 'group' => $group, 'side' => $side, 'has_standings' => $hasStandings, 'basis' => $basis, 'matchweek' => $week, 'snapshot_source' => $snapshotSource];
 }
 
 function football_stats_filter_matches_by_team_group(array $matches, array $context): array
@@ -87,6 +110,22 @@ function football_stats_render_match_team_filters(array $context, $tab, $league,
             <?php endforeach; ?>
         </select>
     </div>
-    <p style="flex-basis:100%;color:#b9bbbe;font-size:12px;margin:4px 0;">Club groups and typical top half use Admin team lists. Current half uses this season’s actual current or final standings, across all matchweeks.<?= !$context['has_standings'] ? ' Current halves are unavailable until matches have been played.' : '' ?></p>
+    <div class="table-view-group">
+        <label class="table-view-label" for="matches-standings-basis">Current-half standings</label>
+        <select id="matches-standings-basis" class="table-view-select" onchange="window.location.href=this.value;">
+            <?php foreach (['season' => 'Current / final season table', 'matchweek' => 'After selected matchweek'] as $key => $label): ?>
+            <option value="<?= $h(football_stats_build_table_view_url($tab, $league, $subtab, ['matches_standings_basis' => $key === 'season' ? null : $key])) ?>" <?= $context['basis'] === $key ? 'selected' : '' ?>><?= $h($label) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <p style="flex-basis:100%;color:#b9bbbe;font-size:12px;margin:4px 0;">Club groups and typical top half use Admin team lists.
+        <?php if ($context['basis'] === 'matchweek'): ?>
+            <?php if ($context['matchweek'] === null): ?>Choose a matchweek to use a current-half snapshot.
+            <?php elseif ($context['snapshot_source'] === 'archive'): ?>Current halves use the archived standings after MW<?= (int)$context['matchweek'] ?>.
+            <?php else: ?>Current halves are reconstructed from completed results in MW1–<?= (int)$context['matchweek'] ?>, using standard points and recorded season deductions. Rearranged fixtures are grouped by matchweek, not their actual play date.
+            <?php endif; ?>
+        <?php else: ?>Current halves use this season’s actual current or final standings, across all matchweeks.<?php endif; ?>
+        <?= !$context['has_standings'] && $context['matchweek'] !== null ? ' Current halves are unavailable until this period has completed matches.' : '' ?>
+    </p>
     <?php
 }
