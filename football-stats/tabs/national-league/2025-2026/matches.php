@@ -26,7 +26,7 @@ $mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competitio
 $mw_stmt->execute(['NL', $selectedSeason, football_stats_get_final_matchweek('NL', $selectedSeason, $db)]);
 $matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
 
-$selected_mw = isset($_GET['matchweek']) && $_GET['matchweek'] !== '' ? (int)$_GET['matchweek'] : '';
+$selected_mw = !football_stats_matches_result_filter_request($_GET)['mode'] && isset($_GET['matchweek']) && $_GET['matchweek'] !== '' ? (int)$_GET['matchweek'] : '';
 
 if ($selected_mw !== '') {
     $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");

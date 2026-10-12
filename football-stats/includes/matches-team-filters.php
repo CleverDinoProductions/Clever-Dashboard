@@ -1,6 +1,7 @@
 <?php
 /** Team-group filtering for league match lists. */
 require_once __DIR__ . '/table-view.php';
+require_once __DIR__ . '/matches-result-filters.php';
 
 function football_stats_match_group_labels(): array
 {
@@ -68,11 +69,18 @@ function football_stats_match_group_context(PDO $db, string $competition, string
     if (!array_key_exists($opponent, football_stats_match_group_labels())) $opponent = 'all';
     $side = isset($_GET['matches_team_side']) && is_string($_GET['matches_team_side']) ? $_GET['matches_team_side'] : 'either';
     if (!in_array($side, ['either', 'home', 'away', 'both'], true)) $side = 'either';
-    return ['groups' => $groups, 'group' => $group, 'opponent_group' => $opponent, 'side' => $side, 'has_standings' => $hasStandings, 'basis' => $basis, 'matchweek' => $week, 'snapshot_source' => $snapshotSource];
+    $roster = football_stats_get_match_roster($db, $competition, $season);
+    $weeksQuery = $db->prepare('SELECT DISTINCT matchweek FROM matches WHERE competition_code=? AND season_label=? AND matchweek>=1 ORDER BY matchweek');
+    $weeksQuery->execute([$competition,$season]);
+    $weeks = $weeksQuery->fetchAll(PDO::FETCH_COLUMN);
+    return ['roster'=>$roster, 'weeks'=>$weeks, 'season'=>$season, 'groups' => $groups, 'group' => $group, 'opponent_group' => $opponent, 'side' => $side, 'has_standings' => $hasStandings, 'basis' => $basis, 'matchweek' => $week, 'snapshot_source' => $snapshotSource];
 }
 
 function football_stats_filter_matches_by_team_group(array $matches, array $context): array
 {
+    $resultFilter = football_stats_matches_result_filter_request($_GET);
+    if (isset($_GET['mf_refresh'])) return $matches;
+    if ($resultFilter['mode']) return football_stats_filter_match_results($matches, $resultFilter);
     $matcher = static function (string $preset) use ($context): callable {
         if ($preset === 'all') return static fn(string $team): bool => true;
         $outside = str_starts_with($preset, 'outside-');
@@ -100,6 +108,7 @@ function football_stats_filter_matches_by_team_group(array $matches, array $cont
 
 function football_stats_render_match_team_filters(array $context, $tab, $league, $subtab): void
 {
+    if (isset($context['roster'])) { football_stats_render_matches_result_filters($context, $tab, $league, $subtab); return; }
     $h = static fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     ?>
     <div class="table-view-group">

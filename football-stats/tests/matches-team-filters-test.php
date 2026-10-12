@@ -46,7 +46,7 @@ parse_str(ltrim(football_stats_build_table_view_url('2025-2026', 'premier-league
 match_filter_assert('big-nine', $url['matches_team_group'], 'Season navigation must preserve group.');
 match_filter_assert('both', $url['matches_team_side'], 'Season navigation must preserve side.');
 ob_start(); football_stats_render_matches_controls(['2025-2026'], [1,2], '2025-2026', '', '2025-2026', 'premier-league', 'matches', $c); $html = ob_get_clean();
-match_filter_assert(true, str_contains($html, 'matches-team-group'), 'Shared controls must render team groups.');
+match_filter_assert(true, str_contains($html, 'mf_teams[]'), 'Shared controls must render team groups.');
 match_filter_assert(true, str_contains($html, 'Outside Big 12'), 'Shared controls must offer outside group presets.');
 $_GET = ['matches_standings_basis'=>'matchweek', 'matches_team_group'=>'current-top-half', 'matchweek'=>1];
 $c = football_stats_match_group_context($db, 'PL', '2025-2026', []);
@@ -86,5 +86,5 @@ match_filter_assert([2,4], array_column(football_stats_filter_matches_by_team_gr
 parse_str(ltrim(football_stats_build_table_view_url('2025-2026', 'premier-league', 'matches', ['matchweek'=>2, 'snapshot_season'=>'2024-2025']), '?'), $url);
 match_filter_assert('current-bottom-half', $url['matches_opponent_group'], 'Navigation must preserve opponent group.');
 ob_start(); football_stats_render_match_team_filters($c, '2025-2026', 'premier-league', 'matches'); $html = ob_get_clean();
-match_filter_assert(true, str_contains($html, 'matches-opponent-group'), 'Controls must render opponent group.');
+match_filter_assert(true, str_contains($html, 'mf_opponents[]'), 'Controls must render opponent group.');
 echo "Matches team filter tests passed.\n";
