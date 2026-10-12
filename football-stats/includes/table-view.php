@@ -313,6 +313,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'table_filter',
             'tracker_team',
             'matches_team_group', 'matches_opponent_group', 'matches_team_side', 'matches_standings_basis',
+            'mf_mode', 'mf_teams', 'mf_opponents', 'mf_week', 'mf_venue', 'mf_result',
             'table_view',
             'excluded_matches',
             'excluded_results',
