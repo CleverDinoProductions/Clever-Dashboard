@@ -98,12 +98,16 @@ function clever_team_metadata(PDO $db, string $competitionCode): array
 
 function clever_team_group_defaults(): array
 {
-    $six = ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur'];
-    $eight = array_merge($six, ['Leeds United', 'Aston Villa']);
+    // Transfermarkt Premier League all-time points table, consulted 12 October 2026.
+    // https://www.transfermarkt.co.uk/premier-league/ewigeTabelle/wettbewerb/GB1
+    $ranked = ['Manchester United', 'Arsenal', 'Liverpool', 'Chelsea', 'Tottenham Hotspur', 'Manchester City', 'Everton', 'Newcastle United', 'Aston Villa', 'West Ham United', 'Southampton', 'Blackburn Rovers'];
     return [
-        'big_six' => $six,
-        'big_eight' => $eight,
-        'big_twelve' => array_merge($eight, ['Newcastle United', 'Everton', 'Fulham', 'Crystal Palace']),
+        'big_three' => array_slice($ranked, 0, 3),
+        'big_six' => array_slice($ranked, 0, 6),
+        'big_nine' => array_slice($ranked, 0, 9),
+        'big_twelve' => $ranked,
+        // Curated recent top-half regulars; administrators can adjust this independently.
+        'typical_top_half' => ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Newcastle United', 'Aston Villa', 'Brighton & Hove Albion', 'West Ham United'],
     ];
 }
 

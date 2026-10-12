@@ -21,13 +21,13 @@ function team_filter_assert_not_contains($needle, $haystack, $message)
 team_filter_assert_contains('data-team-filter-option', $source, 'The custom-rules team filter should render team checkboxes.');
 team_filter_assert_contains('data-team-filter-preset="big-six"', $source, 'The custom-rules team filter should offer a Big Six preset.');
 team_filter_assert_contains('configuredTeamGroups.big_six.map(normalizedTeamName)', $source, 'Big Six membership should use admin settings.');
-team_filter_assert_contains('configuredTeamGroups.big_eight.map(normalizedTeamName)', $source, 'Big Eight membership should use admin settings.');
+team_filter_assert_contains('configuredTeamGroups.big_nine.map(normalizedTeamName)', $source, 'Big Nine membership should use admin settings.');
 team_filter_assert_contains('configuredTeamGroups.big_twelve.map(normalizedTeamName)', $source, 'Big Twelve membership should use admin settings.');
-team_filter_assert_contains('function isBigSixTeam(teamName)', $source, 'The Big Six preset should use one shared team matcher.');
+team_filter_assert_contains('function matchesTeamPreset(preset, teamName)', $source, 'The Big Six preset should use one shared team matcher.');
 team_filter_assert_contains(".replace(/\\s+(?:football club|fc)$/i, '')", $source, 'The Big Six matcher should accept team names with an FC suffix.');
 team_filter_assert_contains(".replace(/^(?:tottenham|spurs)$/, 'tottenham hotspur')", $source, 'The Big Six matcher should accept Tottenham as an alias.');
-team_filter_assert_contains("preset === 'big-six' && isBigSixTeam(checkbox.value)", $source, 'Generated team selectors should match every Big Six club.');
-team_filter_assert_contains("preset === 'big-six' && isBigSixTeam(box.value)", $source, 'Result filters should match every Big Six club.');
+team_filter_assert_contains("matchesTeamPreset(preset, checkbox.value)", $source, 'Generated team selectors should match every Big Six club.');
+team_filter_assert_contains("matchesTeamPreset(preset, box.value)", $source, 'Result filters should match every Big Six club.');
 team_filter_assert_contains("'only' => ['title' => 'Include only matching results'", $source, 'The custom-rules filters should provide an include-only section.');
 team_filter_assert_contains("'exclude' => ['title' => 'Include everything but matching results'", $source, 'The custom-rules filters should provide an exclude-matching section.');
 team_filter_assert_contains("box.checked = includeOnly ? matches : !matches", $source, 'Each filtering section should replace the selection with its matching or inverse result set.');

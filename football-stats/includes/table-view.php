@@ -1459,6 +1459,12 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $liveTableName,
             []
         );
+        if ($calcMode === 'custom_matches') {
+            $tableView['custom_rules_actual_standings'] = football_stats_apply_points_deductions(
+                football_stats_compute_custom_match_standings($db, $competitionCode, $seasonLabel, $liveTableName, [], [], ['win' => 3, 'draw' => 1, 'loss' => 0]),
+                football_stats_get_points_deductions($db, $competitionCode, $seasonLabel)
+            );
+        }
         $isHistoricTable = !$isPreSeason && (in_array($calcMode, ['by_date', 'custom_matches'], true)
             || (in_array($calcMode, ['by_match', 'by_match_before'], true) && !empty($tableView['target_match']))
             || ($calcMode === 'by_matchweek' && !empty($tableView['is_snapshot_view'])));
@@ -2194,11 +2200,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-match-toolbar button { padding: 7px 10px; border: 0; border-radius: 6px; background: #4f545c; color: #fff; cursor: pointer; }
             .custom-match-toolbar label { font-weight: 700; color: #dcddde; }
             .custom-match-toolbar select { padding: 7px 28px 7px 9px; border: 1px solid #4f545c; border-radius: 6px; background: #1e1f22; color: #fff; cursor: pointer; }
-            .custom-match-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+            .custom-match-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+            .custom-rule-help { line-height: 1.6; padding: 10px 12px; background: rgba(88,101,242,.08); border-radius: 7px; }
+            .custom-match-section[data-result-filter-section] { grid-column: 1 / -1; }
+            .custom-match-toolbar button:focus-visible, .custom-match-panel summary:focus-visible, .custom-team-search:focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
+            .custom-team-search { width: 100%; box-sizing: border-box; padding: 8px; background: #1e1f22; color: #fff; border: 1px solid #4f545c; border-radius: 6px; }
             .custom-match-section { min-width: 0; border: 1px solid rgba(255,255,255,.09); border-radius: 7px; background: rgba(255,255,255,.025); }
             .custom-match-section[open] { border-color: rgba(88,101,242,.4); background: rgba(88,101,242,.06); }
-            .custom-match-section summary { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; color: #dcddde; font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; }
-            .custom-match-section summary::after { content: '+'; color: #8e9297; font-size: 17px; line-height: 1; }
+            .custom-match-section > summary { display: flex; align-items: center; justify-content: space-between; padding: 9px 10px; color: #dcddde; font-size: 12px; font-weight: 700; cursor: pointer; user-select: none; }
+            .custom-match-section > summary::after { content: '+'; color: #8e9297; font-size: 17px; line-height: 1; }
             .custom-match-section[open] summary::after { content: '\2212'; }
             .custom-match-section-controls { display: flex; flex-direction: column; gap: 7px; padding: 0 9px 9px; }
             .custom-match-rule { display: inline-flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.035); }
@@ -2213,6 +2223,9 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             .custom-team-filter-presets { display: flex; flex-wrap: wrap; gap: 5px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1); }
             .custom-match-toolbar .custom-team-filter-presets button { padding: 5px 7px; font-size: 11px; }
             .custom-team-filter-option { display: flex; gap: 7px; align-items: center; padding: 3px; font-weight: 400 !important; cursor: pointer; }
+            .custom-team-preset-heading { flex-basis: 100%; color: #a5b4fc; font-size: 11px; font-weight: 700; margin-top: 5px; }
+            .custom-team-filter-option[hidden] { display: none; }
+            .custom-match-toolbar button:disabled { opacity: .45; cursor: not-allowed; }
             .custom-team-filter-option input { accent-color: #5865f2; }
             .custom-match-outcome-rule { display: grid; grid-template-columns: minmax(110px, 1fr) minmax(110px, 1fr); gap: 6px; }
             .custom-match-outcome-rule label { grid-column: 1 / -1; }
@@ -2373,7 +2386,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     natcasesort($customRuleTeams);
                     ?>
                     <details class="custom-match-panel" data-custom-match-panel>
-                        <summary>Show / hide match selection</summary>
+                        <summary>Custom rules · choose results, simulate outcomes and adjust points</summary>
                         <div class="custom-match-toolbar">
                             <div class="custom-match-toolbar-actions">
                                 <span>Choose which team results count, then optionally change a fixture's outcome for a what-if table.</span>
@@ -2410,9 +2423,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 'Away' => ['away', 'away_win', 'away_draw', 'away_loss', 'away_win,draw', 'away_win,loss', 'away_draw,loss'],
                             ];
                             ?>
+                            <p class="custom-rule-help">1. Choose results below. 2. Adjust outcomes or points. 3. Review your changes and recalculate. Team presets select clubs present in this season. Typical top half is an editable list of regulars; current half uses this season’s unmodified current or final table.</p>
                             <div class="custom-match-sections">
                                 <details class="custom-match-section">
-                                    <summary>Matchweek</summary>
+                                    <summary>Filter by matchweek</summary>
                                     <div class="custom-match-section-controls">
                                         <?php foreach (['add' => 'Add Matchweek', 'remove' => 'Remove Matchweek', 'only' => 'Only Matchweek'] as $matchweekAction => $matchweekLabel): ?>
                                             <span class="custom-match-rule">
@@ -2442,7 +2456,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 </details>
                                 <?php foreach ($customRuleSections as $sectionLabel => $sectionRules): ?>
                                 <details class="custom-match-section">
-                                    <summary><?php echo $sectionLabel; ?></summary>
+                                    <summary>Add results · <?php echo $sectionLabel; ?></summary>
                                     <div class="custom-match-section-controls">
                                     <?php foreach ($sectionRules as $ruleResult):
                                         $ruleResultLabel = $customResultRules[$ruleResult];
@@ -2463,7 +2477,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 </details>
                                 <?php endforeach; ?>
                                 <details class="custom-match-section">
-                                    <summary>Remove</summary>
+                                    <summary>Remove results</summary>
                                     <div class="custom-match-section-controls">
                             <?php foreach ($customResultRules as $ruleResult => $ruleResultLabel):
                                     $ruleControlId = $controlId . '-custom-remove-' . $ruleResult;
@@ -2500,13 +2514,19 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                                 <div class="custom-team-filter-options">
                                                     <div class="custom-team-filter-presets">
                                                         <button type="button" data-team-filter-preset="all">All teams</button>
-                                                        <button type="button" data-team-filter-preset="big-six">Big 6</button>
-                                                        <button type="button" data-team-filter-preset="big-eight">Big 8</button>
-                                                        <button type="button" data-team-filter-preset="big-twelve">Big 12</button>
-                                                        <button type="button" data-team-filter-preset="outside-big-six">Outside Big 6</button>
-                                                        <button type="button" data-team-filter-preset="outside-big-eight">Outside Big 8</button>
-                                                        <button type="button" data-team-filter-preset="outside-big-twelve">Outside Big 12</button>
                                                         <button type="button" data-team-filter-preset="none">Clear</button>
+                                                        <button type="button" data-team-filter-preset="big-three">Big 3</button>
+                                                        <button type="button" data-team-filter-preset="big-six">Big 6</button>
+                                                        <button type="button" data-team-filter-preset="big-nine">Big 9</button>
+                                                        <button type="button" data-team-filter-preset="big-twelve">Big 12</button>
+                                                        <button type="button" data-team-filter-preset="outside-big-three">Outside Big 3</button>
+                                                        <button type="button" data-team-filter-preset="outside-big-six">Outside Big 6</button>
+                                                        <button type="button" data-team-filter-preset="outside-big-nine">Outside Big 9</button>
+                                                        <button type="button" data-team-filter-preset="outside-big-twelve">Outside Big 12</button>
+                                                        <button type="button" data-team-filter-preset="typical-top-half">Typical top half</button>
+                                                        <button type="button" data-team-filter-preset="outside-typical-top-half">Outside typical top half</button>
+                                                        <button type="button" data-team-filter-preset="current-top-half">Current top half</button>
+                                                        <button type="button" data-team-filter-preset="current-bottom-half">Current bottom half</button>
                                                     </div>
                                                     <?php foreach ($customRuleTeams as $customRuleTeam): ?>
                                                         <label class="custom-team-filter-option"><input type="checkbox" value="<?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?>" data-team-filter-option> <?php echo htmlspecialchars($customRuleTeam, ENT_QUOTES, 'UTF-8'); ?></label>
@@ -2755,7 +2775,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var pendingDetails = panel.querySelector('[data-match-pending-details]');
                         var configuredTeamGroups = <?php echo json_encode(clever_team_groups($GLOBALS['dashboardSettings'] ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR); ?>;
                         var bigSixTeams = configuredTeamGroups.big_six.map(normalizedTeamName);
-                        var bigEightTeams = configuredTeamGroups.big_eight.map(normalizedTeamName);
+                        var bigThreeTeams = configuredTeamGroups.big_three.map(normalizedTeamName);
+                        var bigNineTeams = configuredTeamGroups.big_nine.map(normalizedTeamName);
+                        var typicalTopHalfTeams = configuredTeamGroups.typical_top_half.map(normalizedTeamName);
+                        var actualStandings = <?php echo json_encode(array_values($tableView['custom_rules_actual_standings'] ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+                        var rankedTeams = actualStandings.slice().sort(function (a, b) { return Number(a.position) - Number(b.position); });
+                        var hasStandings = rankedTeams.some(function (team) { return Number(team.played) > 0; });
+                        var currentTopHalfTeams = hasStandings ? rankedTeams.slice(0, Math.floor(rankedTeams.length / 2)).map(function (team) { return normalizedTeamName(team.team_name); }) : [];
+                        var currentBottomHalfTeams = hasStandings ? rankedTeams.slice(Math.floor(rankedTeams.length / 2)).map(function (team) { return normalizedTeamName(team.team_name); }) : [];
                         var bigTwelveTeams = configuredTeamGroups.big_twelve.map(normalizedTeamName);
                         function normalizedTeamName(teamName) {
                             return String(teamName || '')
@@ -2767,16 +2794,42 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 .replace(/^man city$/, 'manchester city')
                                 .replace(/^leeds$/, 'leeds united')
                                 .replace(/^newcastle$/, 'newcastle united')
-                                .replace(/^palace$/, 'crystal palace');
+                                .replace(/^palace$/, 'crystal palace')
+                                .replace(/^(?:brighton|brighton and hove albion)$/, 'brighton & hove albion')
+                                .replace(/^west ham$/, 'west ham united');
                         }
-                        function isBigSixTeam(teamName) {
-                            return bigSixTeams.indexOf(normalizedTeamName(teamName)) !== -1;
+                        function matchesTeamPreset(preset, teamName) {
+                            var name = normalizedTeamName(teamName);
+                            var groups = {'big-three': bigThreeTeams, 'big-six': bigSixTeams, 'big-nine': bigNineTeams, 'big-twelve': bigTwelveTeams, 'typical-top-half': typicalTopHalfTeams, 'current-top-half': currentTopHalfTeams, 'current-bottom-half': currentBottomHalfTeams};
+                            if (preset === 'all') return true;
+                            var outside = preset.indexOf('outside-') === 0;
+                            var key = outside ? preset.slice(8) : preset;
+                            if (!groups[key]) return false;
+                            return outside ? groups[key].indexOf(name) === -1 : groups[key].indexOf(name) !== -1;
                         }
-                        function isBigEightTeam(teamName) {
-                            return bigEightTeams.indexOf(normalizedTeamName(teamName)) !== -1;
-                        }
-                        function isBigTwelveTeam(teamName) {
-                            return bigTwelveTeams.indexOf(normalizedTeamName(teamName)) !== -1;
+                        var teamPresets = [['all', 'All teams'], ['none', 'Clear'], ['big-three', 'Big 3'], ['big-six', 'Big 6'], ['big-nine', 'Big 9'], ['big-twelve', 'Big 12'], ['outside-big-three', 'Outside Big 3'], ['outside-big-six', 'Outside Big 6'], ['outside-big-nine', 'Outside Big 9'], ['outside-big-twelve', 'Outside Big 12'], ['typical-top-half', 'Typical top half'], ['outside-typical-top-half', 'Outside typical top half'], ['current-top-half', 'Current top half'], ['current-bottom-half', 'Current bottom half']];
+                        function addTeamSearch(menu) {
+                            var options = menu.querySelector('.custom-team-filter-options');
+                            var search = document.createElement('input');
+                            search.type = 'search'; search.className = 'custom-team-search';
+                            search.placeholder = 'Search teams'; search.setAttribute('aria-label', 'Search teams');
+                            options.insertBefore(search, options.firstChild);
+                            [['big-three', 'Club groups'], ['outside-big-three', 'Outside club groups'], ['typical-top-half', 'League halves']].forEach(function (group) {
+                                var first = options.querySelector('[data-team-filter-preset="' + group[0] + '"], [data-generated-team-preset="' + group[0] + '"]');
+                                if (!first) return;
+                                var heading = document.createElement('span');
+                                heading.className = 'custom-team-preset-heading'; heading.textContent = group[1];
+                                first.parentNode.insertBefore(heading, first);
+                            });
+                            search.addEventListener('input', function () {
+                                Array.prototype.forEach.call(options.querySelectorAll('.custom-team-filter-option'), function (label) {
+                                    label.hidden = normalizedTeamName(label.textContent).indexOf(normalizedTeamName(search.value)) === -1;
+                                });
+                            });
+                            Array.prototype.forEach.call(options.querySelectorAll('[data-team-filter-preset], [data-generated-team-preset]'), function (button) {
+                                var preset = button.dataset.teamFilterPreset || button.dataset.generatedTeamPreset;
+                                if (preset.indexOf('current-') === 0 && !hasStandings) { button.disabled = true; button.title = 'Available after this season has completed matches'; }
+                            });
                         }
                         function checkedValues(inputs) {
                             return Array.prototype.filter.call(inputs, function (input) {
@@ -2805,7 +2858,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             options.className = 'custom-team-filter-options';
                             var presets = document.createElement('div');
                             presets.className = 'custom-team-filter-presets';
-                            [['all', 'All teams'], ['big-six', 'Big 6'], ['big-eight', 'Big 8'], ['big-twelve', 'Big 12'], ['outside-big-six', 'Outside Big 6'], ['outside-big-eight', 'Outside Big 8'], ['outside-big-twelve', 'Outside Big 12'], ['none', 'Clear']].forEach(function (preset) {
+                            teamPresets.forEach(function (preset) {
                                 var button = document.createElement('button');
                                 button.type = 'button';
                                 button.dataset.generatedTeamPreset = preset[0];
@@ -2842,7 +2895,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var preset = event.target.dataset.generatedTeamPreset;
                                 if (!preset) return;
                                 Array.prototype.forEach.call(options.querySelectorAll('input[type="checkbox"]'), function (checkbox) {
-                                    checkbox.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(checkbox.value)) || (preset === 'big-eight' && isBigEightTeam(checkbox.value)) || (preset === 'big-twelve' && isBigTwelveTeam(checkbox.value)) || (preset === 'outside-big-six' && !isBigSixTeam(checkbox.value)) || (preset === 'outside-big-eight' && !isBigEightTeam(checkbox.value)) || (preset === 'outside-big-twelve' && !isBigTwelveTeam(checkbox.value));
+                                    checkbox.checked = matchesTeamPreset(preset, checkbox.value);
                                     checkbox.teamOption.selected = checkbox.checked;
                                 });
                                 updateSummary();
@@ -2923,7 +2976,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 button.addEventListener('click', function () {
                                     var preset = this.dataset.teamFilterPreset;
                                     filterTeamBoxes.forEach(function (box) {
-                                        box.checked = preset === 'all' || (preset === 'big-six' && isBigSixTeam(box.value)) || (preset === 'big-eight' && isBigEightTeam(box.value)) || (preset === 'big-twelve' && isBigTwelveTeam(box.value)) || (preset === 'outside-big-six' && !isBigSixTeam(box.value)) || (preset === 'outside-big-eight' && !isBigEightTeam(box.value)) || (preset === 'outside-big-twelve' && !isBigTwelveTeam(box.value));
+                                        box.checked = matchesTeamPreset(preset, box.value);
                                     });
                                     updateTeamFilterSummary();
                                 });
@@ -3113,6 +3166,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 updateSelectionStatus();
                             });
                         });
+                        Array.prototype.forEach.call(panel.querySelectorAll('.custom-team-filter-menu'), addTeamSearch);
                         updateSelectionStatus();
                         panel.querySelector('[data-match-apply]').addEventListener('click', function () {
                             if (scoringInputs.some(function (input) { return !input.reportValidity(); })) return;
