@@ -79,7 +79,6 @@ function football_stats_match_group_context(PDO $db, string $competition, string
 function football_stats_filter_matches_by_team_group(array $matches, array $context): array
 {
     $resultFilter = football_stats_matches_result_filter_request($_GET);
-    if (isset($_GET['mf_refresh'])) return $matches;
     if ($resultFilter['mode']) return football_stats_filter_match_results($matches, $resultFilter);
     $matcher = static function (string $preset) use ($context): callable {
         if ($preset === 'all') return static fn(string $team): bool => true;
