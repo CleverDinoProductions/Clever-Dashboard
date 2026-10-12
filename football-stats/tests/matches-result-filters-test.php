@@ -37,4 +37,15 @@ ob_start();football_stats_render_matches_result_filters($context,'2025-2026','pr
 check_result_filter(false,str_contains($html,'name="mf_refresh"'),'No bypass submit button should be rendered.');
 check_result_filter(2,substr_count($html,'type="submit"'),'Each panel should have exactly one submit action.');
 check_result_filter(1,substr_count($html,'class="matches-filter-panel" open'),'Only the applied panel should reopen.');
+check_result_filter(2,football_stats_matches_list_week(['matches_list_week'=>'2','mf_mode'=>'only','mf_week'=>1,'matchweek'=>3]),'List week must apply independently of active filters and snapshot week.');
+check_result_filter('',football_stats_matches_list_week(['matches_list_week'=>'0','matchweek'=>3]),'All weeks must override old week parameters.');
+check_result_filter(3,football_stats_matches_list_week(['matchweek'=>3]),'Legacy list-week URLs remain valid.');
+check_result_filter('',football_stats_matches_list_week(['mf_mode'=>'only','matchweek'=>3]),'Snapshot week must not scope fixtures in active panel mode.');
+$_GET=['mf_mode'=>'exclude','mf_week'=>1,'matches_list_week'=>2,'matchweek'=>3];
+ob_start();football_stats_render_matches_controls(['2025-2026'],[1,2,3],'2025-2026',2,'2025-2026','premier-league','matches');$controls=ob_get_clean();
+check_result_filter(true,str_contains($controls,'matches_list_week=3'),'Top selector must write the list week.');
+check_result_filter(true,str_contains($controls,'mf_mode=exclude'),'Top selector must preserve result filter mode.');
+check_result_filter(true,str_contains($controls,'matchweek=3'),'Top selector must preserve snapshot week.');
+ob_start();football_stats_render_matches_result_filters($context,'2025-2026','premier-league','matches');$html=ob_get_clean();
+check_result_filter(true,str_contains($html,'name="matches_list_week" value="2"'),'Submitting either panel preserves list-week scope.');
 echo "Matches result filters tests passed.\n";
