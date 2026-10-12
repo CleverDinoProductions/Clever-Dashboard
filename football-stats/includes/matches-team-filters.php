@@ -64,28 +64,36 @@ function football_stats_match_group_context(PDO $db, string $competition, string
     $groups['current_bottom_half'] = $hasStandings ? array_column(array_slice($standings, $half), 'team_name') : [];
     $group = isset($_GET['matches_team_group']) && is_string($_GET['matches_team_group']) ? $_GET['matches_team_group'] : 'all';
     if (!array_key_exists($group, football_stats_match_group_labels())) $group = 'all';
+    $opponent = isset($_GET['matches_opponent_group']) && is_string($_GET['matches_opponent_group']) ? $_GET['matches_opponent_group'] : 'all';
+    if (!array_key_exists($opponent, football_stats_match_group_labels())) $opponent = 'all';
     $side = isset($_GET['matches_team_side']) && is_string($_GET['matches_team_side']) ? $_GET['matches_team_side'] : 'either';
     if (!in_array($side, ['either', 'home', 'away', 'both'], true)) $side = 'either';
-    return ['groups' => $groups, 'group' => $group, 'side' => $side, 'has_standings' => $hasStandings, 'basis' => $basis, 'matchweek' => $week, 'snapshot_source' => $snapshotSource];
+    return ['groups' => $groups, 'group' => $group, 'opponent_group' => $opponent, 'side' => $side, 'has_standings' => $hasStandings, 'basis' => $basis, 'matchweek' => $week, 'snapshot_source' => $snapshotSource];
 }
 
 function football_stats_filter_matches_by_team_group(array $matches, array $context): array
 {
-    $preset = $context['group'];
-    if ($preset === 'all') return $matches;
-    $outside = str_starts_with($preset, 'outside-');
-    $key = str_replace('-', '_', $outside ? substr($preset, 8) : $preset);
-    if (!array_key_exists($key, $context['groups'])) return [];
-    $names = array_fill_keys(array_map('football_stats_normalize_group_team', $context['groups'][$key]), true);
-    $isMember = static function (string $team) use ($names, $outside): bool {
-        $member = isset($names[football_stats_normalize_group_team($team)]);
-        return $outside ? !$member : $member;
+    $matcher = static function (string $preset) use ($context): callable {
+        if ($preset === 'all') return static fn(string $team): bool => true;
+        $outside = str_starts_with($preset, 'outside-');
+        $key = str_replace('-', '_', $outside ? substr($preset, 8) : $preset);
+        if (!array_key_exists($key, $context['groups'])) return static fn(string $team): bool => false;
+        $names = array_fill_keys(array_map('football_stats_normalize_group_team', $context['groups'][$key]), true);
+        return static function (string $team) use ($names, $outside): bool {
+            $member = isset($names[football_stats_normalize_group_team($team)]);
+            return $outside ? !$member : $member;
+        };
     };
-    return array_values(array_filter($matches, static function (array $match) use ($isMember, $context): bool {
-        $home = $isMember($match['home_team']);
-        $away = $isMember($match['away_team']);
+    $teamMatches = $matcher($context['group']);
+    $opponentMatches = $matcher($context['opponent_group'] ?? 'all');
+    return array_values(array_filter($matches, static function (array $match) use ($teamMatches, $opponentMatches, $context): bool {
+        // Keep each team's opponent on the other side of the same fixture.
+        $homeOrientation = $teamMatches($match['home_team']) && $opponentMatches($match['away_team']);
+        $awayOrientation = $teamMatches($match['away_team']) && $opponentMatches($match['home_team']);
         return match ($context['side']) {
-            'home' => $home, 'away' => $away, 'both' => $home && $away, default => $home || $away,
+            'home' => $homeOrientation, 'away' => $awayOrientation,
+            'both' => $homeOrientation && $awayOrientation,
+            default => $homeOrientation || $awayOrientation,
         };
     }));
 }
@@ -99,6 +107,14 @@ function football_stats_render_match_team_filters(array $context, $tab, $league,
         <select id="matches-team-group" class="table-view-select" onchange="window.location.href=this.value;">
             <?php foreach (football_stats_match_group_labels() as $key => $label): ?>
             <option value="<?= $h(football_stats_build_table_view_url($tab, $league, $subtab, ['matches_team_group' => $key === 'all' ? null : $key])) ?>" <?= $context['group'] === $key ? 'selected' : '' ?> <?= str_starts_with($key, 'current-') && !$context['has_standings'] ? 'disabled' : '' ?>><?= $h($label) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="table-view-group">
+        <label class="table-view-label" for="matches-opponent-group">Opponent team group</label>
+        <select id="matches-opponent-group" class="table-view-select" onchange="window.location.href=this.value;">
+            <?php foreach (football_stats_match_group_labels() as $key => $label): ?>
+            <option value="<?= $h(football_stats_build_table_view_url($tab, $league, $subtab, ['matches_opponent_group' => $key === 'all' ? null : $key])) ?>" <?= ($context['opponent_group'] ?? 'all') === $key ? 'selected' : '' ?> <?= str_starts_with($key, 'current-') && !$context['has_standings'] ? 'disabled' : '' ?>><?= $h($key === 'all' ? 'All opponents' : $label) ?></option>
             <?php endforeach; ?>
         </select>
     </div>
@@ -118,7 +134,7 @@ function football_stats_render_match_team_filters(array $context, $tab, $league,
             <?php endforeach; ?>
         </select>
     </div>
-    <p style="flex-basis:100%;color:#b9bbbe;font-size:12px;margin:4px 0;">Club groups and typical top half use Admin team lists.
+    <p style="flex-basis:100%;color:#b9bbbe;font-size:12px;margin:4px 0;">Team group matches one club and opponent group matches the other. Either team accepts either home/away orientation; Home or Away fixes the team group’s side; Both teams requires both orientations to match. Club groups and typical top half use Admin team lists.
         <?php if ($context['basis'] === 'matchweek'): ?>
             <?php if ($context['matchweek'] === null): ?>Choose a matchweek to use a current-half snapshot.
             <?php elseif ($context['snapshot_source'] === 'archive'): ?>Current halves use the archived standings after MW<?= (int)$context['matchweek'] ?>.
