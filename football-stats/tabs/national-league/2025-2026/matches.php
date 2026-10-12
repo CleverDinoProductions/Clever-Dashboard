@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';
 
 require_once __DIR__ . '/../../../includes/table-view.php';
+require_once __DIR__ . '/../../../includes/matches-team-filters.php';
 
 // Get available seasons for this competition
 $seasons_stmt = $db->prepare("SELECT DISTINCT season_label FROM matches WHERE competition_code = ? ORDER BY season_label DESC");
@@ -35,12 +36,14 @@ if ($selected_mw !== '') {
     $stmt->execute(['NL', $selectedSeason]);
 }
 $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$matchTeamFilters = football_stats_match_group_context($db, 'NL', $selectedSeason, $GLOBALS['dashboardSettings'] ?? []);
+$matches = football_stats_filter_matches_by_team_group($matches, $matchTeamFilters);
 
 $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
 ?>
 <div class="panel">
     <h2>National League <?= htmlspecialchars($seasonDisplay) ?> – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?></h2>
-    <?php football_stats_render_matches_controls($availableSeasons, $matchweeks, $selectedSeason, $selected_mw, $currentMainTab, $currentLeague, $currentSubTab); ?>
+    <?php football_stats_render_matches_controls($availableSeasons, $matchweeks, $selectedSeason, $selected_mw, $currentMainTab, $currentLeague, $currentSubTab, $matchTeamFilters); ?>
     <table class="matches-table" style="width:100%; font-size:13px;">
         <thead>
             <tr style="background:#222; color:#00ff88;">
@@ -53,6 +56,7 @@ $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
             </tr>
         </thead>
         <tbody>
+        <?php if (!$matches): ?><tr><td colspan="6" style="text-align:center;padding:20px;">No matches match these filters.</td></tr><?php endif; ?>
         <?php foreach ($matches as $m): ?>
             <tr>
                 <td><?= htmlspecialchars($m['matchweek']) ?></td>
