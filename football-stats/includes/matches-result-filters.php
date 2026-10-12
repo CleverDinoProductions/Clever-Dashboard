@@ -1,5 +1,13 @@
 <?php
 /** Custom-rules style selectors for fixture lists. */
+/** The list's week scopes fixtures; panel weeks and snapshot weeks are independent. */
+function football_stats_matches_list_week(array $query)
+{
+    $raw = $query['matches_list_week'] ?? (empty($query['mf_mode']) ? ($query['matchweek'] ?? null) : null);
+    $week = is_scalar($raw) ? filter_var($raw, FILTER_VALIDATE_INT, ['options'=>['min_range'=>1]]) : false;
+    return $week === false ? '' : $week;
+}
+
 function football_stats_matches_result_filter_request(array $query): array
 {
     $list = static fn($key) => isset($query[$key]) && is_array($query[$key]) ? array_values(array_filter($query[$key], 'is_string')) : [];
@@ -51,6 +59,7 @@ function football_stats_render_matches_result_filters(array $context, $tab, $lea
     <?php foreach (['only'=>'Include only matching results','exclude'=>'Include everything but matching results'] as $mode=>$title): $active=$filter['mode']===$mode; ?>
     <details class="matches-filter-panel" <?= $active?'open':'' ?>><summary><?= $title ?><?= $active?' · Applied':'' ?></summary>
     <form method="get">
+    <input type="hidden" name="matches_list_week" value="<?= football_stats_matches_list_week($_GET) ?: 0 ?>">
     <input type="hidden" name="tab" value="<?= $h($tab) ?>"><input type="hidden" name="league" value="<?= $h($league) ?>"><input type="hidden" name="subtab" value="<?= $h($subtab) ?>"><input type="hidden" name="snapshot_season" value="<?= $h($context['season']) ?>"><input type="hidden" name="mf_mode" value="<?= $mode ?>">
     <p><?= $mode==='only'?'Include fixtures with a team result matching every field below.':'Exclude fixtures with a team result matching every field below.' ?> “All” leaves that field unrestricted.</p>
     <?php foreach(['teams'=>'Teams','opponents'=>'Opponent'] as $field=>$label): $values=$active?$filter[$field]:[]; ?>
@@ -71,7 +80,7 @@ function football_stats_render_matches_result_filters(array $context, $tab, $lea
     <button class="matches-filter-apply" type="submit"><?= $mode==='only'?'Include only matching results':'Exclude matching results' ?></button>
     </form></details>
     <?php endforeach; ?>
-    <a href="<?= $h(football_stats_build_table_view_url($tab,$league,$subtab,['mf_mode'=>null,'mf_teams'=>null,'mf_opponents'=>null,'mf_week'=>null,'mf_venue'=>null,'mf_result'=>null,'mf_refresh'=>null,'matches_team_group'=>null,'matches_opponent_group'=>null,'matches_team_side'=>null,'matchweek'=>null])) ?>">Clear match filters</a>
+    <a href="<?= $h(football_stats_build_table_view_url($tab,$league,$subtab,['mf_mode'=>null,'mf_teams'=>null,'mf_opponents'=>null,'mf_week'=>null,'mf_venue'=>null,'mf_result'=>null,'mf_refresh'=>null,'matches_team_group'=>null,'matches_opponent_group'=>null,'matches_team_side'=>null,'matchweek'=>null,'matches_list_week'=>null])) ?>">Clear match filters</a>
     </div>
     <style>.matches-result-filters{width:100%;font-size:13px;color:#b9bbbe}.matches-filter-panel{border:1px solid #454976;border-radius:9px;background:#272a33;margin:12px 0;padding:12px}.matches-filter-panel>summary{cursor:pointer;font-weight:700;color:#eee;padding:4px}.matches-filter-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#30333d;padding:10px;border-radius:8px;margin:8px 0;color:#ddd;font-weight:700}.matches-filter-teams{flex-direction:column;align-items:stretch}.matches-team-menu{width:100%}.matches-team-menu>summary{cursor:pointer;padding:10px;background:#1e1f22;border:1px solid #555;border-radius:7px;font-weight:400}.matches-team-options{display:grid;gap:6px;padding:10px;max-height:320px;overflow:auto;background:#1e1f22}.matches-team-presets{display:flex;flex-wrap:wrap;gap:5px}.matches-team-choice{display:flex;align-items:center;gap:6px;font-weight:400}.matches-team-choice[hidden]{display:none}.matches-result-filters select,.matches-result-filters input[type=search]{padding:8px;background:#1e1f22;color:#eee;border:1px solid #555;border-radius:6px;max-width:100%}.matches-result-filters button{padding:7px 10px;background:#4f545c;color:#fff;border:0;border-radius:6px;cursor:pointer}.matches-result-filters button:disabled{opacity:.4;cursor:not-allowed}.matches-filter-apply{width:100%;margin-top:8px}.matches-result-filters :focus-visible{outline:2px solid #a5b4fc;outline-offset:2px}@media(max-width:500px){.matches-filter-row{flex-wrap:wrap}.matches-filter-row select{width:100%}}</style>
     <script>

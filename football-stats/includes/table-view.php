@@ -313,6 +313,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'table_filter',
             'tracker_team',
             'matches_team_group', 'matches_opponent_group', 'matches_team_side', 'matches_standings_basis',
+            'matches_list_week',
             'mf_mode', 'mf_teams', 'mf_opponents', 'mf_week', 'mf_venue', 'mf_result',
             'table_view',
             'excluded_matches',
@@ -385,13 +386,13 @@ if (!function_exists('football_stats_render_matches_controls')) {
                 <div class="table-view-group">
                     <label class="table-view-label" for="<?php echo $controlId; ?>-mw">Select Matchweek</label>
                     <select id="<?php echo $controlId; ?>-mw" class="table-view-select" onchange="window.location.href=this.value;">
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $selectedSeason, 'matchweek' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($selectedMatchweek === '') ? 'selected' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $selectedSeason, 'matches_list_week' => 0]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($selectedMatchweek === '') ? 'selected' : ''; ?>>
                             All Matchweeks
                         </option>
                         <?php foreach ($availableMatchweeks as $matchweek):
                             $matchweekUrl = football_stats_build_table_view_url($tab, $league, $subtab, [
                                 'snapshot_season' => $selectedSeason,
-                                'matchweek' => $matchweek,
+                                'matches_list_week' => $matchweek,
                             ]);
                         ?>
                             <option value="<?php echo htmlspecialchars($matchweekUrl, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ($selectedMatchweek !== '' && (int)$selectedMatchweek === (int)$matchweek) ? 'selected' : ''; ?>>
