@@ -36,6 +36,7 @@ if ($selected_mw !== '') {
     $stmt->execute(['PL', $selectedSeason]);
 }
 $matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$totalMatchesBeforeFilters = count($matches);
 $matchTeamFilters = football_stats_match_group_context($db, 'D1', $selectedSeason, $GLOBALS['dashboardSettings'] ?? []);
 $matches = football_stats_filter_matches_by_team_group($matches, $matchTeamFilters);
 
@@ -44,6 +45,7 @@ $seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
 <div class="panel">
     <h2>Premier League <?= htmlspecialchars($seasonDisplay) ?> – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?></h2>
     <?php football_stats_render_matches_controls($availableSeasons, $matchweeks, $selectedSeason, $selected_mw, $currentMainTab, $currentLeague, $currentSubTab, $matchTeamFilters); ?>
+    <p role="status">Showing <?= count($matches) ?> of <?= $totalMatchesBeforeFilters ?> fixtures.</p>
     <table class="matches-table" style="width:100%; font-size:13px;">
         <thead>
             <tr style="background:#222; color:#00ff88;">

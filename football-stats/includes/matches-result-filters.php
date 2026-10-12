@@ -49,7 +49,7 @@ function football_stats_render_matches_result_filters(array $context, $tab, $lea
     <?php if (!$filter['mode'] && (($context['group'] ?? 'all') !== 'all' || ($context['opponent_group'] ?? 'all') !== 'all')): ?><p>Existing preset filter: <?= $h(football_stats_match_group_labels()[$context['group']]) ?> vs <?= $h(football_stats_match_group_labels()[$context['opponent_group']]) ?> (<?= $h($context['side']) ?>). Apply a panel below to replace it, or clear match filters.</p><?php endif; ?>
     <p>Each fixture appears once. Teams, opponents, venue and result must match the same team’s perspective. Empty team selections mean all teams. Applying either panel replaces the active filter.</p>
     <?php foreach (['only'=>'Include only matching results','exclude'=>'Include everything but matching results'] as $mode=>$title): $active=$filter['mode']===$mode; ?>
-    <details class="matches-filter-panel" open><summary><?= $title ?><?= $active?(isset($_GET['mf_refresh'])?' · Draft':' · Applied'):'' ?></summary>
+    <details class="matches-filter-panel" <?= $active?'open':'' ?>><summary><?= $title ?><?= $active?' · Applied':'' ?></summary>
     <form method="get">
     <input type="hidden" name="tab" value="<?= $h($tab) ?>"><input type="hidden" name="league" value="<?= $h($league) ?>"><input type="hidden" name="subtab" value="<?= $h($subtab) ?>"><input type="hidden" name="snapshot_season" value="<?= $h($context['season']) ?>"><input type="hidden" name="mf_mode" value="<?= $mode ?>">
     <p><?= $mode==='only'?'Include fixtures with a team result matching every field below.':'Exclude fixtures with a team result matching every field below.' ?> “All” leaves that field unrestricted.</p>
@@ -67,8 +67,7 @@ function football_stats_render_matches_result_filters(array $context, $tab, $lea
     <label class="matches-filter-row">Result<select name="mf_result"><?php foreach(['all'=>'Every result','win'=>'Wins only','draw'=>'Draws only','loss'=>'Losses only'] as $key=>$name): ?><option value="<?= $key ?>" <?= $active&&$filter['result']===$key?'selected':'' ?>><?= $name ?></option><?php endforeach; ?></select></label>
     <label class="matches-filter-row">Group standings basis<select name="matches_standings_basis"><option value="season" <?= $context['basis']==='season'?'selected':'' ?>>Current / final season table</option><option value="matchweek" <?= $context['basis']==='matchweek'?'selected':'' ?>>After selected matchweek</option></select></label>
     <label class="matches-filter-row">Snapshot matchweek<select name="matchweek"><option value="">Choose snapshot week</option><?php foreach($context['weeks'] as $week): ?><option value="<?= (int)$week ?>" <?= $context['matchweek']===(int)$week?'selected':'' ?>>MW<?= (int)$week ?></option><?php endforeach; ?></select></label>
-    <p>Snapshot controls set group preset membership. Change the basis or snapshot week and use “Refresh group presets” before choosing a current-half preset. Checked teams remain explicit selections until you choose a preset again.</p>
-    <button type="submit" name="mf_refresh" value="1">Refresh group presets</button>
+    <p>Snapshot controls set group preset membership. After changing the basis or snapshot week, apply filters to update preset membership, then choose a current-half preset. Checked teams remain explicit selections until you choose a preset again.</p>
     <button class="matches-filter-apply" type="submit"><?= $mode==='only'?'Include only matching results':'Exclude matching results' ?></button>
     </form></details>
     <?php endforeach; ?>

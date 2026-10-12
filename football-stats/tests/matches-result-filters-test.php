@@ -28,4 +28,13 @@ $context=['groups'=>clever_team_groups([]),'roster'=>['Leeds','Arsenal','Chelsea
 ob_start();football_stats_render_matches_result_filters($context,'2025-2026','premier-league','matches');$html=ob_get_clean();
 check_result_filter(true,str_contains($html,'Include only matching results')&&str_contains($html,'Include everything but matching results'),'Render both screenshot panels.');
 check_result_filter(true,str_contains($html,'data-matches-team-search')&&str_contains($html,'Outside Big 9'),'Render search and group presets.');
+// Previously the first submit button sent mf_refresh and bypassed all filtering.
+$_GET=['mf_mode'=>'only','mf_teams'=>['Leeds'],'mf_result'=>'win','mf_refresh'=>'1'];
+check_result_filter([1],array_column(football_stats_filter_matches_by_team_group($matches,$context),'id'),'Old refresh URLs must still apply submitted filter fields.');
+$_GET=['mf_mode'=>'exclude','mf_teams'=>['Leeds'],'mf_result'=>'win','mf_refresh'=>'1'];
+check_result_filter([2,3,4],array_column(football_stats_filter_matches_by_team_group($matches,$context),'id'),'Exclude must also work for old refresh submissions.');
+ob_start();football_stats_render_matches_result_filters($context,'2025-2026','premier-league','matches');$html=ob_get_clean();
+check_result_filter(false,str_contains($html,'name="mf_refresh"'),'No bypass submit button should be rendered.');
+check_result_filter(2,substr_count($html,'type="submit"'),'Each panel should have exactly one submit action.');
+check_result_filter(1,substr_count($html,'class="matches-filter-panel" open'),'Only the applied panel should reopen.');
 echo "Matches result filters tests passed.\n";
