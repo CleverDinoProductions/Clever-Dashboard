@@ -1708,16 +1708,36 @@ if (!function_exists('football_stats_add_filtered_position_movements')) {
     }
 }
 
+function football_stats_movement_settings(array $tableView = []): array {
+    $mode = $tableView['calc_mode'] ?? $_GET['calc_mode'] ?? 'by_matchweek';
+    $saved = $GLOBALS['dashboardMovementPreferences'][$mode] ?? [];
+    return [
+        'compare'=>$_GET['movement_compare'] ?? $saved['compare'] ?? 'relevant',
+        'style'=>$_GET['movement_style'] ?? $saved['style'] ?? 'detailed',
+        'direction'=>($_GET['movement_direction'] ?? $saved['direction'] ?? 'forward') === 'reverse' ? 'reverse' : 'forward',
+    ];
+}
+function football_stats_apply_movement_preference(array $tableView, array $displayedStandings, array $relevantBaseline, $hasActiveFilter = false) {
+    $settings = football_stats_movement_settings($tableView);
+    $view = football_stats_apply_movement_preference_base($tableView,$displayedStandings,$relevantBaseline,$hasActiveFilter);
+    $view['movement_direction']=$settings['direction'];
+    if ($settings['direction']==='reverse') {
+        foreach ($view['position_movements'] ?? [] as $team=>$movement) $view['position_movements'][$team]=-$movement;
+        if (!empty($view['movement_comparison_label'])) $view['movement_comparison_label'] .= ' (comparison table relative to displayed table)';
+    }
+    return $view;
+}
+
 /** Apply the user's movement-arrow comparison choice to the displayed table. */
-if (!function_exists('football_stats_apply_movement_preference')) {
-    function football_stats_apply_movement_preference(array $tableView, array $displayedStandings, array $relevantBaseline, $hasActiveFilter = false)
+if (!function_exists('football_stats_apply_movement_preference_base')) {
+    function football_stats_apply_movement_preference_base(array $tableView, array $displayedStandings, array $relevantBaseline, $hasActiveFilter = false)
     {
-        $preference = $_GET['movement_compare'] ?? 'relevant';
+        $preference = football_stats_movement_settings($tableView)['compare'];
         if (!in_array($preference, ['relevant', 'completed', 'custom_outcomes', 'custom_selection', 'off'], true)) {
             $preference = 'relevant';
         }
         $tableView['movement_compare'] = $preference;
-        $style = $_GET['movement_style'] ?? 'detailed';
+        $style = football_stats_movement_settings($tableView)['style'];
         $tableView['movement_style'] = in_array($style, ['detailed', 'compact', 'badge'], true) ? $style : 'detailed';
 
         if ($preference === 'off') {
@@ -3539,11 +3559,12 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
                 $filterLabels[$key] = 'Standings for games ' . $from . '–' . $to;
             }
         }
-        $movementPreference = $_GET['movement_compare'] ?? 'relevant';
+        $movementSettings = football_stats_movement_settings();
+        $movementPreference = $movementSettings['compare'];
         if (!in_array($movementPreference, ['relevant', 'completed', 'custom_outcomes', 'custom_selection', 'off'], true)) {
             $movementPreference = 'relevant';
         }
-        $movementStyle = $_GET['movement_style'] ?? 'detailed';
+        $movementStyle = $movementSettings['style'];
         $movementStyles = football_stats_get_movement_style_options();
         if (!isset($movementStyles[$movementStyle])) {
             $movementStyle = 'detailed';
@@ -3585,14 +3606,20 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
         ?>
         <?php
         $preferenceParams = $_GET;
-        unset($preferenceParams['movement_compare'], $preferenceParams['movement_style']);
+        unset($preferenceParams['movement_compare'], $preferenceParams['movement_style'], $preferenceParams['movement_direction']);
         ?>
         <details class="movement-comparison-panel">
             <summary>
                 <span>Show / hide movement arrow preferences</span>
                 <small><?= htmlspecialchars($movementOptions[$movementPreference]['label'], ENT_QUOTES, 'UTF-8') ?></small>
             </summary>
-            <form class="movement-preferences-form" method="get">
+            <form class="movement-preferences-form" method="<?= !empty($GLOBALS['dashboardUser']) ? 'post' : 'get' ?>">
+            <?php if (!empty($GLOBALS['dashboardUser'])): ?>
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(clever_csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="save_movement_preferences" value="1">
+            <input type="hidden" name="movement_mode" value="<?= htmlspecialchars($calcMode, ENT_QUOTES, 'UTF-8') ?>">
+            <p>Saved to your account for this calculation mode. Other modes keep their own settings.</p>
+            <?php endif; ?>
             <?php foreach ($preferenceParams as $key => $value): ?>
                 <?php if (is_scalar($value)): ?>
                     <input type="hidden" name="<?= htmlspecialchars((string)$key, ENT_QUOTES, 'UTF-8') ?>" value="<?= htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') ?>">
@@ -3620,6 +3647,10 @@ if (!function_exists('football_stats_render_table_filter_buttons')) {
                     </label>
                 <?php endforeach; ?>
                 </div>
+            </fieldset>
+            <fieldset class="movement-preference-group"><legend>Comparison direction for <?= htmlspecialchars($calcMode, ENT_QUOTES, 'UTF-8') ?></legend>
+            <label><input type="radio" name="movement_direction" value="forward" <?= $movementSettings['direction']==='forward'?'checked':'' ?>> Displayed table relative to comparison table</label>
+            <label><input type="radio" name="movement_direction" value="reverse" <?= $movementSettings['direction']==='reverse'?'checked':'' ?>> Comparison table relative to displayed table</label>
             </fieldset>
             <button class="movement-preferences-submit" type="submit">Apply movement preferences</button>
             </form>

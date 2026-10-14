@@ -371,3 +371,20 @@ function clever_create_user(string $username, string $email, string $password, ?
         throw $exception;
     }
 }
+
+/** Movement preferences are independent for each calculation mode. */
+function clever_movement_modes(): array {
+    return ['by_matchweek','by_date','by_match','by_match_before','custom_matches'];
+}
+function clever_movement_preferences(int $userId): array {
+    $db=clever_accounts_db();
+    $db->exec('CREATE TABLE IF NOT EXISTS user_movement_preferences (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, mode TEXT NOT NULL, comparison TEXT NOT NULL, style TEXT NOT NULL, direction TEXT NOT NULL, PRIMARY KEY(user_id,mode))');
+    $stmt=$db->prepare('SELECT mode,comparison,style,direction FROM user_movement_preferences WHERE user_id=?');$stmt->execute([$userId]);
+    $result=[];foreach($stmt->fetchAll() as $row)$result[$row['mode']]=['compare'=>$row['comparison'],'style'=>$row['style'],'direction'=>$row['direction']];return $result;
+}
+function clever_save_movement_preferences(int $userId,array $values): void {
+    $mode=$values['movement_mode']??'';$compare=$values['movement_compare']??'';$style=$values['movement_style']??'';$direction=$values['movement_direction']??'';
+    if(!in_array($mode,clever_movement_modes(),true)||!in_array($compare,['relevant','completed','custom_outcomes','custom_selection','off'],true)||!in_array($style,['detailed','compact','badge'],true)||!in_array($direction,['forward','reverse'],true))throw new InvalidArgumentException('Invalid movement preferences.');
+    clever_movement_preferences($userId);
+    $stmt=clever_accounts_db()->prepare('INSERT INTO user_movement_preferences(user_id,mode,comparison,style,direction) VALUES(?,?,?,?,?) ON CONFLICT(user_id,mode) DO UPDATE SET comparison=excluded.comparison,style=excluded.style,direction=excluded.direction');$stmt->execute([$userId,$mode,$compare,$style,$direction]);
+}
