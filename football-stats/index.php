@@ -4,6 +4,17 @@ require_once 'config.php';
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once dirname(__DIR__) . '/lib/football-settings.php';
 $dashboardUser = clever_current_user();
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_movement_preferences'])) {
+    $movementUser = clever_require_login();
+    clever_verify_csrf();
+    clever_save_movement_preferences((int)$movementUser['id'], $_POST);
+    $returnParams = array_filter($_POST, 'is_scalar');
+    foreach (['save_movement_preferences','csrf_token','movement_mode','movement_compare','movement_style','movement_direction'] as $key) unset($returnParams[$key]);
+    header('Location: ?' . http_build_query($returnParams));
+    exit;
+}
+$dashboardMovementPreferences = $dashboardUser ? clever_movement_preferences((int)$dashboardUser['id']) : [];
+
 $dashboardPreferences = $dashboardUser ? clever_user_preferences((int)$dashboardUser['id']) : [
     'default_season'=>'2025-2026', 'default_league'=>'premier-league', 'default_view'=>'table',
     'favourite_team'=>'', 'accent_color'=>'#FFD700', 'compact_navigation'=>0,
