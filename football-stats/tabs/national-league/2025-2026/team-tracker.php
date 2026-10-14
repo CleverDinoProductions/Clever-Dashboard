@@ -1,8 +1,19 @@
 <?php
 // TEAM SURVIVAL TRACKER (National League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
-
-$tableView = football_stats_get_table_view_combined($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');
+$trackerCode = $regionalCode ?? 'NL';
+$trackerTable = $regionalTable ?? 'league_table_NL';
+$trackerLeague = $currentLeague ?? 'national-league';
+$trackerName = $regionalName ?? 'National League';
+$tableView = football_stats_get_table_view_combined($db, $trackerCode, $trackerTable, $currentMainTab ?? '2025-2026');
+$trackerRules = football_stats_get_competition_rules($trackerCode, $tableView['active_season_label'], $db);
+$trackerRelegationStart = 18; // Retain the original tracker cutoff outside regional leagues.
+if (isset($regionalCode)) {
+    $trackerRelegationStart = (int)$trackerRules['team_count'] + 1;
+    foreach ($trackerRules['zones'] as $zone) {
+        if ($zone['key'] === 'relegation') $trackerRelegationStart = min($trackerRelegationStart, (int)$zone['from']);
+    }
+}
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 
@@ -11,7 +22,7 @@ $team = football_stats_get_tracker_team($standings);
 if (!$team) {
     echo "<div class='panel' style='border: 2px solid #f04747;'>";
     echo "<h2 style='color: #f04747;'>⚠️ No Team Data Found</h2>";
-    echo "<p>Please check that National League data has been loaded.</p>";
+    echo "<p>Please check that " . htmlspecialchars($trackerName) . " data has been loaded.</p>";
     $teams = array_column($standings, 'team_name');
     echo "<pre>" . implode("\n", $teams) . "</pre>";
     echo "</div>";
@@ -25,9 +36,9 @@ $teamSecondary = $teamColors['secondary'];
 $teamTextColor = football_stats_get_best_text_color($teamPrimary, $teamSecondary);
 
 // === HALFWAY POINT SAFETY CALCULATIONS ===
-$halfway_point = 23; // Halfway through 46-game season
+$halfway_point = (int)$trackerRules['halfway_games']; // Halfway through 46-game season
 $games_played = $team['played'];
-$games_remaining = 46 - $games_played;
+$games_remaining = (int)$trackerRules['total_games'] - $games_played;
 $games_to_halfway = max(0, $halfway_point - $games_played);
 
 // Check if we're before or after halfway
@@ -35,23 +46,23 @@ $is_first_half = $games_played <= $halfway_point;
 
 if ($is_first_half) {
     // FIRST HALF: Target is 23 points by game 23
-    $safety_target = 23;
+    $safety_target = (int)$trackerRules['halfway_games'];
     $points_to_safety = max(0, $safety_target - $team['points']);
     $ppg_needed = $games_to_halfway > 0 ? round($points_to_safety / $games_to_halfway, 2) : 0;
-    $target_label = "23 pts by Halfway (Game 23)";
+    $target_label = preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], "23 pts by Halfway (Game 23)");
     $games_label = $games_to_halfway . " games to halfway";
 } else {
     // SECOND HALF: Target is 46 points for full season safety based on 46 points over games played so far hence minimum of 1.0 ppg
-    $safety_target = 46;
+    $safety_target = (int)$trackerRules['total_games'];
     $points_to_safety = max(0, $safety_target - $team['points']);
     $ppg_needed = $games_remaining > 0 ? round($points_to_safety / $games_remaining, 2) : 0;
-    $target_label = "46 pts for Full Season Safety";
+    $target_label = preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], "46 pts for Full Season Safety");
     $games_label = $games_remaining . " games remaining";
 }
 
 // === SEASON POINT SAFETY CALCULATIONS ===
 
-$half_way_safety_target = 23;
+$half_way_safety_target = (int)$trackerRules['halfway_games'];
 $half_way_points_to_safety = max(0, $half_way_safety_target - $team['points']);
 if ($games_remaining > 0) {
     $half_way_ppg_needed = round($half_way_points_to_safety / $games_remaining, 2);
@@ -67,7 +78,7 @@ if ($games_remaining > 0) {
     $half_season_ppg_needed = 0;
 }
 
-$full_season_safety_target = 46;
+$full_season_safety_target = (int)$trackerRules['total_games'];
 $full_season_points_to_safety = max(0, $full_season_safety_target - $team['points']);
 if ($games_remaining > 0) {
     $full_season_ppg_needed = round($full_season_points_to_safety / $games_remaining, 2);
@@ -124,20 +135,20 @@ if ($games_remaining > 0) {
 }
 
 // Calculate 75% rule metrics
-$halfway_progress_pct = ($team['points'] / 23) * 100;
-$target_75pct = 17.25; // 75% of 23
-$target_100pct = 23; // 100% of 23
+$halfway_progress_pct = ($team['points'] / (int)$trackerRules['halfway_games']) * 100;
+$target_75pct = 0.75 * (int)$trackerRules['halfway_games']; // 75% of 23
+$target_100pct = (int)$trackerRules['halfway_games']; // 100% of 23
 $points_to_75pct = max(0, $target_75pct - $team['points']);
 $points_to_100pct = max(0, $target_100pct - $team['points']);
 
 // Projected final points
 $current_ppg = $games_played > 0 ? $team['points'] / $games_played : 0;
-$projected_points = round($current_ppg * 46, 1);
+$projected_points = round($current_ppg * (int)$trackerRules['total_games'], 1);
 
 // Projected points at halfway (if before halfway)
 if ($is_first_half && $games_to_halfway > 0) {
     $projected_halfway_points = $team['points'] + ($current_ppg * $games_to_halfway);
-    $projected_halfway_pct = ($projected_halfway_points / 23) * 100;
+    $projected_halfway_pct = ($projected_halfway_points / (int)$trackerRules['halfway_games']) * 100;
 } else {
     $projected_halfway_points = $team['points'];
     $projected_halfway_pct = $halfway_progress_pct;
@@ -146,8 +157,8 @@ if ($is_first_half && $games_to_halfway > 0) {
 // Halfway point status with 75% rule
 if ($games_played >= $halfway_point) {
     // After halfway - check what we had
-    if ($team['points'] >= 23) {
-        $halfway_status = "✅ Hit 23-point target at halfway!";
+    if ($team['points'] >= (int)$trackerRules['halfway_games']) {
+        $halfway_status = preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], "✅ Hit 23-point target at halfway!");
         $halfway_color = "#43b581";
         $survival_chance = "95%+";
     } elseif ($team['points'] >= 17) {
@@ -162,7 +173,7 @@ if ($games_played >= $halfway_point) {
 } else {
     // Before halfway
     if ($halfway_progress_pct >= 100) {
-        $halfway_status = "🔥 ALREADY HIT 23-POINT TARGET!";
+        $halfway_status = preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], "🔥 ALREADY HIT 23-POINT TARGET!");
         $halfway_color = "#43b581";
         $survival_chance = "95%+";
     } elseif ($halfway_progress_pct >= 75) {
@@ -193,18 +204,18 @@ if ($team['points'] >= 57) {
     $full_season_status = "🏆 Extended Season Safety with " . $team['points'] . " pts!";
     $full_season_color = "#43b581";
     $survival_chance = "98%+";
-} elseif ($team['points'] >= 46) {
+} elseif ($team['points'] >= (int)$trackerRules['total_games']) {
     $full_season_status = "✅ Full Season Safety with " . $team['points'] . " pts!";
     $full_season_color = "#43b581";
     $survival_chance = "95%+";
 } elseif ($team['points'] >= 37) {
     $full_season_status = "✅ On track for safety with " . $team['points'] . " pts!";
     $full_season_color = "#43b581";
-} elseif ($team['points'] >= 23) {
-    $full_season_status = "⚠️ Need to reach 46-point target (currently at " . $team['points'] . " pts)";
+} elseif ($team['points'] >= (int)$trackerRules['halfway_games']) {
+    $full_season_status = preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], "⚠️ Need to reach 46-point target (currently at ") . $team['points'] . " pts)";
     $full_season_color = "#faa61a";
 } else {
-    $full_season_status = "🚨 Critical! Far from 46-point target";
+    $full_season_status = preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], "🚨 Critical! Far from 46-point target");
     $full_season_color = "#f04747";
 }
 
@@ -273,7 +284,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             </span>
         </div>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'national-league', $currentSubTab ?? 'team-tracker'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? $trackerLeague, $currentSubTab ?? 'team-tracker'); ?>
     </div>
 </div>
 
@@ -312,13 +323,13 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         <div style="font-size: 36px; color: #43b581;">🏁</div>
         <div style="text-align: center; flex: 1; min-width: 100px;">
             <div style="font-size: 14px; color: #FFFFFF; font-weight: bold;">Full Season</div>
-            <div style="font-size: 32px; font-weight: bold; color: #43b581; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">46</div>
+            <div style="font-size: 32px; font-weight: bold; color: #43b581; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);"><?= (int)$trackerRules['total_games'] ?></div>
         </div>
     </div>
 
     <!-- Progress bar showing season progress -->
     <div style="background: #40444b; border-radius: 8px; height: 30px; position: relative; overflow: hidden; border: 2px solid #5865F2;">
-        <?php $season_progress = ($games_played / 46) * 100; ?>
+        <?php $season_progress = ($games_played / (int)$trackerRules['total_games']) * 100; ?>
         <div style="background: linear-gradient(90deg, #5865F2, <?= $teamSecondary ?>); width: <?php echo $season_progress; ?>%; height: 100%; transition: width 0.5s ease;"></div>
         <?php if ($games_played < $halfway_point): ?>
             <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: <?= $teamSecondary ?>; opacity: 0.8; box-shadow: 0 0 10px rgba(255,205,0,0.6);"></div>
@@ -575,12 +586,12 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         <!-- 100% marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 2px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
-            ▼ 100% (23 pts)
+            ▼ 100% (<?= (int)$trackerRules['halfway_games'] ?> pts)
         </div>
 
         <!-- Current progress text -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
-            <?php echo $team['points']; ?> / 23 points (<?php echo round($halfway_progress_pct); ?>%)
+            <?php echo $team['points']; ?> / <?= (int)$trackerRules['halfway_games'] ?> points (<?php echo round($halfway_progress_pct); ?>%)
         </div>
     </div>
 
@@ -653,13 +664,13 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 
 <!-- 38 pts progress bars -->
 <div class="panel">
-    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Full Season Safety Progress (46-Point Target)</h2>
+    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📊 Full Season Safety Progress (<?= (int)$trackerRules['total_games'] ?>-Point Target)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        Target: 46 points for full season safety (historically 95%+ survival rate)
+        Target: <?= (int)$trackerRules['total_games'] ?> points for full season safety (historically 95%+ survival rate)
     </p>
     <div style="background: #40444b; border-radius: 8px; height: 50px; position: relative; overflow: hidden; margin-bottom: 10px; border: 2px solid #43b581;">
         <?php
-        $full_season_progress_pct = ($team['points'] / 46) * 100;
+        $full_season_progress_pct = ($team['points'] / (int)$trackerRules['total_games']) * 100;
 
         // Color based on proximity to 46 points
         if ($full_season_progress_pct >= 100) {
@@ -675,15 +686,15 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 
         <div style="background: <?php echo $bar_color; ?>; width: <?php echo min(100, $full_season_progress_pct); ?>%; height: 100%; transition: width 0.5s ease;"></div>
 
-        <!-- 46-point marker line -->
+        <!-- <?= (int)$trackerRules['total_games'] ?>-point marker line -->
         <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 3px; background: #43b581; opacity: 0.8; box-shadow: 0 0 10px rgba(67,181,129,0.6);"></div>
         <div style="position: absolute; right: 0; top: -32px; font-size: 13px; color: #43b581; font-weight: bold; transform: translateX(50%); background: rgba(0,0,0,0.9); padding: 4px 10px; border-radius: 4px; border: 2px solid #43b581;">
-            ▼ Full Safety (46 pts)
+            ▼ Full Safety (<?= (int)$trackerRules['total_games'] ?> pts)
         </div>
 
         <!-- Current progress text -->
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; font-size: 20px; text-shadow: 2px 2px 6px rgba(0,0,0,0.9);">
-            <?php echo $team['points']; ?> / 46 points (<?php echo round($full_season_progress_pct); ?>%)
+            <?php echo $team['points']; ?> / <?= (int)$trackerRules['total_games'] ?> points (<?php echo round($full_season_progress_pct); ?>%)
         </div>
     </div>
     <div style="margin-top: 15px; text-align: center;">
@@ -692,9 +703,9 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
             if ($full_season_progress_pct >= 100) {
                 echo "🏆 Full Season Target Hit! Exceptional!";
             } elseif ($full_season_progress_pct >= 50) {
-                echo "⚠️ Need " . (46 - $team['points']) . " more to hit safety";
+                echo "⚠️ Need " . ((int)$trackerRules['total_games'] - $team['points']) . " more to hit safety";
             } else {
-                echo "⚠️ Need " . (46 - $team['points']) . " more to hit safety";
+                echo "⚠️ Need " . ((int)$trackerRules['total_games'] - $team['points']) . " more to hit safety";
             }
             ?>
         </span>
@@ -996,14 +1007,14 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 <div class="panel">
     <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🎯 Scenarios for Next <?php echo $games_to_halfway; ?> Games (To Halfway)</h2>
     <p style="color: #FFFFFF; font-size: 13px; margin-bottom: 15px; font-weight: bold;">
-        Current: <?php echo $team['points']; ?> points | Target at game 23: 20 points (100%) or 15 points (75%)
+        Current: <?php echo $team['points']; ?> points | Target at game <?= (int)$trackerRules['halfway_games'] ?>: 20 points (100%) or 15 points (75%)
     </p>
     <table>
         <tr>
             <th>Next <?php echo $games_to_halfway; ?> Games</th>
             <th>Points Gained</th>
-            <th>Total at Game 23</th>
-            <th>% of 23-pt Target</th>
+            <th>Total at Game <?= (int)$trackerRules['halfway_games'] ?></th>
+            <th>% of <?= (int)$trackerRules['halfway_games'] ?>-pt Target</th>
             <th>Status</th>
         </tr>
         <?php
@@ -1060,7 +1071,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
 
         foreach ($scenarios as $scenario):
             $scenario_total = $team['points'] + $scenario['points'];
-            $scenario_pct = ($scenario_total / 23) * 100;
+            $scenario_pct = ($scenario_total / (int)$trackerRules['halfway_games']) * 100;
 
             if ($scenario_pct >= 100) {
                 $row_color = "rgba(67, 181, 129, 0.3)";
@@ -1120,20 +1131,20 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
                 <div style="font-size: 48px; color: <?= $teamTextColor ?>;">→</div>
                 <div style="flex: 1; min-width: 150px;">
                     <h3 style="color: #FFFFFF; font-size: 14px; margin: 0; font-weight: bold;">Projected Final Points</h3>
-                    <div style="font-size: 36px; font-weight: bold; color: <?php echo $projected_points >= 46 ? '#43b581' : '#f04747'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                    <div style="font-size: 36px; font-weight: bold; color: <?php echo $projected_points >= (int)$trackerRules['total_games'] ? '#43b581' : '#f04747'; ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
                         <?php echo $projected_points; ?>
                     </div>
                 </div>
             </div>
             <p style="color: #FFFFFF; font-size: 13px; margin-top: 15px; text-align: center; font-weight: bold;">
                 <?php
-                if ($projected_points >= 46) {
+                if ($projected_points >= (int)$trackerRules['total_games']) {
                     echo "✅ On pace for survival! Keep this form!";
                 } else {
                     // Check if the season is already over to avoid dividing by zero
                     if ($games_remaining > 0) {
-                        $ppg_improvement = round((46 - $projected_points) / $games_remaining, 2);
-                        echo "⚠️ Need to improve PPG by " . $ppg_improvement . " to reach 46 points";
+                        $ppg_improvement = round(((int)$trackerRules['total_games'] - $projected_points) / $games_remaining, 2);
+                        echo "⚠️ Need to improve PPG by " . $ppg_improvement . preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], " to reach 46 points");
                     } else {
                         echo "🏁 Season over. Final standings are locked in.";
                     }
@@ -1416,7 +1427,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     <div style="margin-top: 15px;">
         <?php foreach ($season_scenarios as $scenario): ?>
             <?php
-            $scenario_points = round($scenario['ppg'] * 46);
+            $scenario_points = round($scenario['ppg'] * (int)$trackerRules['total_games']);
             $scenario_gap = $scenario_points - $safety_target;
             $team_comparison = $scenario_points - $team['points'];
             ?>
@@ -1453,13 +1464,13 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
         ['ppg' => 1.3, 'label' => '1.3 PPG (49 pts)'],
         ['ppg' => 1.2, 'label' => '1.2 PPG (48 pts)'],
         ['ppg' => 1.1, 'label' => '1.1 PPG (44 pts)'],
-        ['ppg' => 1.0, 'label' => '1.0 PPG (46 pts)'],
+        ['ppg' => 1.0, 'label' => preg_replace(['/\\b46\\b/', '/\\b23\\b/'], [(string)$trackerRules['total_games'], (string)$trackerRules['halfway_games']], '1.0 PPG (46 pts)')],
     ];
     ?>
     <div style="margin-top: 15px;">
         <?php foreach ($season_scenarios as $scenario): ?>
             <?php
-            $scenario_points = round($scenario['ppg'] * 46);
+            $scenario_points = round($scenario['ppg'] * (int)$trackerRules['total_games']);
             $scenario_gap = $scenario_points - $safety_target;
             $team_comparison = $scenario_points - $team['points'];
             ?>
@@ -1502,7 +1513,7 @@ if ($team['position'] <= 21 && $team['points'] >= $safety_target) {
     <div style="margin-top: 15px;">
         <?php foreach ($season_scenarios as $scenario): ?>
             <?php
-            $scenario_points = round($scenario['ppg'] * 46);
+            $scenario_points = round($scenario['ppg'] * (int)$trackerRules['total_games']);
             $scenario_gap = $scenario_points - $safety_target;
             $team_comparison = $scenario_points - $team['points'];
             ?>
@@ -1552,7 +1563,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         $_ctx_selected = ($_ctx_teamRow['team_name'] === $teamName);
         $_ctx_gap = (int)$_ctx_teamRow['points'] - (int)$team['points'];
         $_ctx_ppg = $_ctx_teamRow['played'] > 0 ? $_ctx_teamRow['points'] / $_ctx_teamRow['played'] : 0;
-        $_ctx_projection = round($_ctx_ppg * 46, 1);
+        $_ctx_projection = round($_ctx_ppg * (int)$trackerRules['total_games'], 1);
         ?>
         <tr style="<?php echo $_ctx_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $_ctx_teamRow['position']; ?></strong></td>
@@ -1567,7 +1578,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             <td style="color: <?php echo $_ctx_gap > 0 ? '#f04747' : ($_ctx_gap < 0 ? '#43b581' : '#FFFFFF'); ?>; font-weight: bold;">
                 <?php echo $_ctx_gap > 0 ? '+' : ''; echo $_ctx_gap; ?>
             </td>
-            <td style="color: <?php echo $_ctx_projection >= 46 ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
+            <td style="color: <?php echo $_ctx_projection >= (int)$trackerRules['total_games'] ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
                 <?php echo $_ctx_projection; ?> pts
             </td>
         </tr>
@@ -1596,7 +1607,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         $is_selected = ($teamRow['team_name'] === $teamName);
         $gap = (int)$teamRow['points'] - (int)$team['points'];
         $team_ppg = $teamRow['played'] > 0 ? $teamRow['points'] / $teamRow['played'] : 0;
-        $team_projection = round($team_ppg * 46, 1);
+        $team_projection = round($team_ppg * (int)$trackerRules['total_games'], 1);
         ?>
         <tr style="<?php echo $is_selected ? 'background: rgba(0,0,0,0.4); border: 2px solid ' . $teamPrimary . ';' : ''; ?>">
             <td style="color: #FFFFFF; font-weight: bold;"><strong><?php echo $teamRow['position']; ?></strong></td>
@@ -1612,7 +1623,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
             <td style="color: <?php echo $gap > 0 ? '#f04747' : ($gap < 0 ? '#43b581' : '#FFFFFF'); ?>; font-weight: bold;">
                 <?php echo $gap > 0 ? '+' : ''; echo $gap; ?>
             </td>
-            <td style="color: <?php echo $team_projection >= 46 ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
+            <td style="color: <?php echo $team_projection >= (int)$trackerRules['total_games'] ? '#43b581' : '#f04747'; ?>; font-weight: bold;">
                 <?php echo $team_projection; ?> pts
             </td>
         </tr>
@@ -1688,7 +1699,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
     <h3 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📚 The 75% Rule for Survival</h3>
     <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">
         <strong style="color: <?= $teamTextColor ?>;">Historical Analysis:</strong> Teams with <strong style="color: #43b581;">17+ points at halfway</strong>
-        (75% of 23-point target) have an <strong style="color: #43b581;">85-90% survival rate</strong>.
+        (75% of <?= (int)$trackerRules['halfway_games'] ?>-point target) have an <strong style="color: #43b581;">85-90% survival rate</strong>.
     </p>
     <p style="color: #FFFFFF; line-height: 1.6; font-weight: bold;">
         <?= htmlspecialchars($teamName) ?> currently at <strong style="color: <?= $teamTextColor ?>;"><?php echo $team['points']; ?> points</strong>
@@ -1697,7 +1708,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
     </p>
     <?php if ($halfway_progress_pct >= 100): ?>
         <p style="color: #43b581; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            🏆 EXCEPTIONAL! Already hit the 23-point target!
+            🏆 EXCEPTIONAL! Already hit the <?= (int)$trackerRules['halfway_games'] ?>-point target!
         </p>
     <?php elseif ($halfway_progress_pct >= 90): ?>
         <p style="color: #43b581; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
@@ -1713,7 +1724,7 @@ $_ctx_teams = array_values(array_filter($standings, function ($teamRow) use ($_c
         </p>
     <?php elseif ($halfway_progress_pct >= 50): ?>
         <p style="color: #faa61a; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
-            ⚠️ Need to hit 75% by game 23 - improvement required!
+            ⚠️ Need to hit 75% by game <?= (int)$trackerRules['halfway_games'] ?> - improvement required!
         </p>
     <?php else: ?>
         <p style="color: #f04747; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">

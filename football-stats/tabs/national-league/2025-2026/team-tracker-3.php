@@ -1,8 +1,19 @@
 <?php
 // TEAM CLASSIC TRACKER (National League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
-
-$tableView = football_stats_get_table_view_combined($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');
+$trackerCode = $regionalCode ?? 'NL';
+$trackerTable = $regionalTable ?? 'league_table_NL';
+$trackerLeague = $currentLeague ?? 'national-league';
+$trackerName = $regionalName ?? 'National League';
+$tableView = football_stats_get_table_view_combined($db, $trackerCode, $trackerTable, $currentMainTab ?? '2025-2026');
+$trackerRules = football_stats_get_competition_rules($trackerCode, $tableView['active_season_label'], $db);
+$trackerRelegationStart = 18; // Retain the original tracker cutoff outside regional leagues.
+if (isset($regionalCode)) {
+    $trackerRelegationStart = (int)$trackerRules['team_count'] + 1;
+    foreach ($trackerRules['zones'] as $zone) {
+        if ($zone['key'] === 'relegation') $trackerRelegationStart = min($trackerRelegationStart, (int)$zone['from']);
+    }
+}
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 
@@ -11,7 +22,7 @@ $team = football_stats_get_tracker_team($standings);
 if (!$team) {
     echo '<div class="panel" style="border:2px solid #f04747">';
     echo '<h2 style="color:#f04747">No Team Data Found</h2>';
-    echo '<p>Please check that Championship data has been loaded.</p>';
+    echo '<p>Please check that ' . htmlspecialchars($trackerName) . ' data has been loaded.</p>';
     $teams = array_column($standings, 'team_name');
     echo '<pre>' . implode("\n", $teams) . '</pre>';
     echo '</div>';
@@ -36,8 +47,8 @@ $teamGD       = (int)$team['gd'];
 $teamPoints   = (int)$team['points'];
 
 // SAFETY CALCULATIONS – flat 38-point target
-$safetyTarget   = 46;                              // points needed for safety
-$gamesRemaining = 46 - $teamPlayed;
+$safetyTarget   = (int)$trackerRules['total_games'];                              // points needed for safety
+$gamesRemaining = (int)$trackerRules['total_games'] - $teamPlayed;
 $pointsToSafety = max(0, $safetyTarget - $teamPoints);
 $ppgNeeded      = $gamesRemaining > 0
     ? round($pointsToSafety / $gamesRemaining, 2)
@@ -53,7 +64,7 @@ $bottomSix = array_values(array_filter($standings, function ($teamRow) {
 
 $eighteenth = null;
 foreach ($standings as $teamRow) {
-    if ((int) $teamRow['position'] === 18) {
+    if ((int) $teamRow['position'] === $trackerRelegationStart) {
         $eighteenth = $teamRow;
         break;
     }
@@ -61,11 +72,11 @@ foreach ($standings as $teamRow) {
 $gapTo18th  = $teamPoints - (int) ($eighteenth['points'] ?? 0);
 
 // Simple survival status
-if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
+if ($teamPosition < ($trackerRelegationStart - 1) && $teamPoints >= $safetyTarget) {
     $survivalStatus = 'SAFE';
     $statusColor    = '#43b581';
     $statusIcon     = '✔';
-} elseif ($teamPosition <= 17) {
+} elseif ($teamPosition < $trackerRelegationStart) {
     $survivalStatus = 'ON TRACK';
     $statusColor    = '#faa61a';
     $statusIcon     = '●';
@@ -87,7 +98,7 @@ if ($teamPosition < 17 && $teamPoints >= $safetyTarget) {
             Survival Tracker
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'team-tracker-3'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $trackerLeague, $currentSubTab ?? 'team-tracker-3'); ?>
         <div style="background:<?= $statusColor ?>;
                     display:inline-block;
                     padding:15px 40px;
@@ -230,7 +241,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
             $_ctx_sel3  = ($_ctx_row3['team_name'] === $teamName);
             $_ctx_gap3  = (int)$_ctx_row3['points'] - $teamPoints;
             $_ctx_ppg3  = $_ctx_row3['played'] > 0 ? $_ctx_row3['points'] / $_ctx_row3['played'] : 0;
-            $_ctx_proj3 = round($_ctx_ppg3 * 46, 1);
+            $_ctx_proj3 = round($_ctx_ppg3 * (int)$trackerRules['total_games'], 1);
             ?>
             <tr style="<?= $_ctx_sel3 ? 'background:' . $teamPrimary . ';border:2px solid ' . $teamSecondary . ';' : '' ?>">
                 <td><strong><?= (int)$_ctx_row3['position'] ?></strong></td>
@@ -245,7 +256,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
                 <td style="color:<?= $_ctx_gap3 <= 0 ? '#43b581' : '#f04747' ?>">
                     <?= $_ctx_gap3 === 0 ? '–' : ($_ctx_gap3 < 0 ? abs($_ctx_gap3) . ' behind' : '+' . $_ctx_gap3 . ' ahead') ?>
                 </td>
-                <td style="color:<?= $_ctx_proj3 >= 46 ? '#43b581' : '#f04747' ?>">
+                <td style="color:<?= $_ctx_proj3 >= (int)$trackerRules['total_games'] ? '#43b581' : '#f04747' ?>">
                     <?= $_ctx_proj3 ?> pts
                 </td>
             </tr>
@@ -343,7 +354,7 @@ $_ctx_teams3 = array_values(array_filter($standings, function ($teamRow) use ($t
     <h2 style="color:white;font-size:32px;margin:0">
         <?php
         $tn = strtoupper(htmlspecialchars($teamName));
-        if ($teamPosition >= 18) {
+        if ($teamPosition >= $trackerRelegationStart) {
             echo "IN THE FIGHT! KEEP GOING $tn!";
         } elseif ($pointsToSafety <= 0) {
             echo "SAFETY SECURED! GREAT WORK $tn!";

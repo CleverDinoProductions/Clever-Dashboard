@@ -6,7 +6,7 @@ function nav_check($condition,$message){if(!$condition)throw new RuntimeExceptio
 $source=file_get_contents(__DIR__.'/../index.php');
 $start=strpos($source,'$seasonLeagueConfigs =');$end=strpos($source,'$hasExplicitDestination', $start);
 eval(substr($source,$start,$end-$start));
-nav_check(football_stats_navigation_league_group('championship')==='EFL','Championship belongs in EFL.');
+nav_check(football_stats_navigation_league_group('championship')==='EFL [Tiers 2–4]','Championship belongs in EFL.');
 nav_check(football_stats_navigation_function('cross-season')==='Comparisons','Cross-season comparison belongs with comparisons.');
 nav_check(football_stats_navigation_function('blocks-dynamic')==='Season Blocks','All blocks should be grouped.');
 ob_start();football_stats_render_grouped_navigation($seasonLeagueConfigs,$worldCupTabs,'2025-2026','premier-league','team-tracker',['calc_mode'=>'by_date'],['tracker_team'=>'Leeds United'],'42');$html=ob_get_clean();

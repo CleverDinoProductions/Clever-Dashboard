@@ -11,12 +11,12 @@ function football_stats_navigation_league_group(string $key): string
 {
     require_once dirname(__DIR__, 2) . '/lib/english-pyramid.php';
     $regional = clever_regional_competitions()[$key] ?? null;
-    if ($regional !== null) return 'Tier ' . $regional['tier'] . ' · ' . ($regional['tier'] === 6 ? 'National League North & South' : 'Regional leagues');
+    if ($regional !== null) return ($regional['tier'] === 6 ? 'National League North & South' : 'Regional leagues') . ' [Tier ' . $regional['tier'] . ']' ;
     return match($key) {
-        'championship','league-one','league-two'=>'EFL',
-        'premier-league'=>'Premier League · FA sanctioned',
-        'national-league'=>'National League · FA pyramid',
-        'division-one'=>'Historic Football League',
+        'championship','league-one','league-two'=>'EFL [Tiers 2–4]',
+        'premier-league'=>'Premier League · FA sanctioned [Tier 1]',
+        'national-league'=>'National League · FA pyramid [Tier 5]',
+        'division-one'=>'Historic Football League [Tier 1]',
         default=>'Other competitions',
     };
 }
@@ -42,7 +42,7 @@ function football_stats_render_grouped_navigation(array $configs,array $worldTab
     <?php foreach($leagueGroups as $name=>$members): $active=isset($members[$league]); ?><details class="navigation-group" data-nav-group="leagues-<?= $h(array_key_first($members)) ?>" <?= $active?'open':'' ?> data-active-group="<?= $active?'1':'0' ?>"><summary><?= $h($name) ?></summary><div class="navigation-links">
     <?php foreach($members as $key=>$config): ?><a class="pill-tab <?= $league===$key?'active':'' ?>" href="<?= $h(build_tab_url($season,$key,$config['defaultSubTab'])) ?>" <?= $league===$key?'aria-current="true"':'' ?>><?= $h($config['label']) ?></a><?php endforeach; ?>
     </div></details><?php endforeach; ?></div><?php endif; ?>
-    <div class="navigation-heading"><?= $h($season==='world-cup'?'World Cup tools':($leagues[$league]['label']??'League').' tools') ?></div><div class="navigation-grid">
+    <div class="navigation-heading"><?= $h($season==='world-cup'?'World Cup tools':($leagues[$league]['label']??'League').' tools' . (isset(clever_regional_competitions()[$league]) ? ' [Tier '.clever_regional_competitions()[$league]['tier'].']' : '')) ?></div><div class="navigation-grid">
     <?php foreach($functions as $name=>$members): $active=isset($members[$activeTab]); ?><details class="navigation-group" data-nav-group="tools-<?= $h(strtolower(str_replace(' ','-',$name))) ?>" <?= $active?'open':'' ?> data-active-group="<?= $active?'1':'0' ?>"><summary><?= $h($name) ?> <small><?= count($members) ?></small></summary><div class="navigation-links">
     <?php foreach($members as $key=>$tab): $id=($season==='world-cup'?'world-cup':$league).'/'.$key; $entry=$catalog[$id]; ?><span class="navigation-tab"><a class="pill-tab <?= $entry['active']?'active':'' ?>" href="<?= $h($entry['url']) ?>" <?= $entry['active']?'aria-current="page"':'' ?>><span class="nav-icon"><?= $h($entry['icon']) ?></span> <?= $h($entry['label']) ?></a><button type="button" data-nav-pin="<?= $h($id) ?>" aria-label="Pin <?= $h($entry['label']) ?>" aria-pressed="false">☆</button></span><?php endforeach; ?>
     </div></details><?php endforeach; ?></div>
