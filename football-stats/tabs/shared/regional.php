@@ -19,12 +19,18 @@ if ($exists->fetchColumn()) {
     }
 }
 if (!$hasData) {
-    ?><section class="panel"><h2><?= htmlspecialchars($regionalName, ENT_QUOTES, 'UTF-8') ?> · Tier <?= $regional['tier'] ?></h2><p>No data has been imported for this division yet.</p></section><?php
+    ?><section class="panel"><h2><?= htmlspecialchars($regionalName, ENT_QUOTES, 'UTF-8') ?> [Tier <?= $regional['tier'] ?>]</h2><p>No data has been imported for this division yet.</p></section><?php
     return;
 }
-$regionalFiles = ['table'=>'table.php', 'table-2'=>'table2.php', 'matches'=>'matches.php', 'compare-seasons'=>'compare-seasons.php', 'simulation'=>'simulation.php'];
+$regionalRules = football_stats_get_competition_rules($regionalCode, $currentMainTab, $db);
+$regionalFiles = ['table'=>'table.php', 'table-2'=>'table2.php', 'matches'=>'matches.php', 'compare-seasons'=>'compare-seasons.php', 'simulation'=>'simulation.php', 'compare'=>'compare.php', 'playoffs'=>'playoffs.php', 'whatifs'=>'whatifs.php'];
 if ($currentSubTab === 'cross-season') {
     require __DIR__ . '/cross-season.php';
+} elseif (str_starts_with($currentSubTab, 'blocks-')) {
+    require __DIR__ . '/../regional/2025-2026/blocks.php';
+} elseif (str_starts_with($currentSubTab, 'team-tracker')) {
+    // Share the existing tracker experience, configured for the selected division.
+    require __DIR__ . '/../national-league/2025-2026/' . $currentSubTab . '.php';
 } else {
     require __DIR__ . '/../regional/2025-2026/' . $regionalFiles[$currentSubTab];
 }

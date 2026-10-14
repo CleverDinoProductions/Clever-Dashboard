@@ -1,8 +1,19 @@
 <?php
 // TEAM TRACKER DASHBOARD (League Two) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
-
-$tableView = football_stats_get_table_view_combined($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');
+$trackerCode = $regionalCode ?? 'NL';
+$trackerTable = $regionalTable ?? 'league_table_NL';
+$trackerLeague = $currentLeague ?? 'national-league';
+$trackerName = $regionalName ?? 'National League';
+$tableView = football_stats_get_table_view_combined($db, $trackerCode, $trackerTable, $currentMainTab ?? '2025-2026');
+$trackerRules = football_stats_get_competition_rules($trackerCode, $tableView['active_season_label'], $db);
+$trackerRelegationStart = 18; // Retain the original tracker cutoff outside regional leagues.
+if (isset($regionalCode)) {
+    $trackerRelegationStart = (int)$trackerRules['team_count'] + 1;
+    foreach ($trackerRules['zones'] as $zone) {
+        if ($zone['key'] === 'relegation') $trackerRelegationStart = min($trackerRelegationStart, (int)$zone['from']);
+    }
+}
 $calcMode = $tableView['calc_mode'];
 $standings = $tableView['standings'];
 
@@ -20,7 +31,7 @@ $teamSecondary = $teamColors['secondary'];
 $teamTextColor = football_stats_get_best_text_color($teamPrimary, $teamSecondary);
 
 // Halfway calculations
-$halfway_point = 23;
+$halfway_point = (int)$trackerRules['halfway_games'];
 $target_100pct = 20; // Ideal target
 $target_75pct = 15;  // Minimum acceptable (75% rule)
 $target_50pct = 10;  // Critical zone
@@ -61,7 +72,7 @@ if ($games_played >= $halfway_point) {
         $status_100_icon = '⚠️';
         $status_100_text = 'Below ideal';
     }
-    
+
     if ($current_points >= $target_75pct) {
         $status_75 = 'HIT';
         $status_75_color = '#43b581';
@@ -96,7 +107,7 @@ if ($games_played >= $halfway_point) {
         $status_100_icon = '🚨';
         $status_100_text = 'Danger!';
     }
-    
+
     if ($progress_75pct >= 100) {
         $status_75 = 'ACHIEVED';
         $status_75_color = '#43b581';
@@ -121,19 +132,19 @@ if ($games_played >= $halfway_point) {
 }
 
 // Calculate gap to relegation
-$relegation_zone = array_filter($standings, function($team) {
-    return $team['position'] == 18;
+$relegation_zone = array_filter($standings, function($team) use ($trackerRelegationStart) {
+    return $team['position'] == $trackerRelegationStart;
 });
 $relegation_team = reset($relegation_zone);
 $gap_to_relegation = $relegation_team ? $current_points - $relegation_team['points'] : 0;
 
 // Full season projection
-$projected_final = round($ppg * 46, 1);
+$projected_final = round($ppg * (int)$trackerRules['total_games'], 1);
 
 // Safety threshold (historical: 38 points usually safe)
-$safety_threshold = 46;
+$safety_threshold = (int)$trackerRules['total_games'];
 $points_to_safety = max(0, $safety_threshold - $current_points);
-$games_remaining_total = 46 - $games_played;
+$games_remaining_total = (int)$trackerRules['total_games'] - $games_played;
 $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_remaining_total : 0;
 ?>
 
@@ -144,10 +155,10 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             ⚽ <?= htmlspecialchars($teamName) ?>
         </h1>
         <h2 style="color: #FFFFFF; font-size: 24px; margin: 10px 0; opacity: 0.85;">
-            National League · Team Dashboard
+            <?= htmlspecialchars($trackerName) ?> · Team Dashboard
         </h2>
         <?php football_stats_render_team_selector($standings, $teamName); ?>
-        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', 'national-league', $currentSubTab ?? 'team-tracker-2'); ?>
+        <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $trackerLeague, $currentSubTab ?? 'team-tracker-2'); ?>
     </div>
 </div>
 
@@ -155,9 +166,9 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">CURRENT POSITION</h3>
-        <div style="font-size: 64px; font-weight: bold; color: <?php 
-            echo $team['position'] <= 10 ? '#43b581' : 
-                ($team['position'] <= 17 ? '#faa61a' : '#f04747'); 
+        <div style="font-size: 64px; font-weight: bold; color: <?php
+            echo $team['position'] <= 10 ? '#43b581' :
+                ($team['position'] < $trackerRelegationStart ? '#faa61a' : '#f04747');
         ?>;">
             <?= $team['position'] ?>
         </div>
@@ -165,7 +176,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             out of 20 teams
         </p>
     </div>
-    
+
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">CURRENT POINTS</h3>
         <div style="font-size: 64px; font-weight: bold; color: <?= $teamTextColor ?>;">
@@ -175,25 +186,25 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             from <?= $games_played ?> games
         </p>
     </div>
-    
+
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">GAP TO RELEGATION</h3>
-        <div style="font-size: 64px; font-weight: bold; color: <?php 
-            echo $gap_to_relegation >= 5 ? '#43b581' : 
-                ($gap_to_relegation >= 2 ? '#faa61a' : '#f04747'); 
+        <div style="font-size: 64px; font-weight: bold; color: <?php
+            echo $gap_to_relegation >= 5 ? '#43b581' :
+                ($gap_to_relegation >= 2 ? '#faa61a' : '#f04747');
         ?>;">
             <?= $gap_to_relegation > 0 ? '+' : '' ?><?= $gap_to_relegation ?>
         </div>
         <p style="color: #dcddde; font-size: 16px; margin: 10px 0 0 0;">
-            points clear of 18th
+            points clear of <?= (int)$trackerRelegationStart ?>
         </p>
     </div>
-    
+
     <div class="panel" style="background: #2e3136; text-align: center;">
         <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">POINTS PER GAME</h3>
-        <div style="font-size: 64px; font-weight: bold; color: <?php 
-            echo $ppg >= 1.2 ? '#43b581' : 
-                ($ppg >= 0.8 ? '#faa61a' : '#f04747'); 
+        <div style="font-size: 64px; font-weight: bold; color: <?php
+            echo $ppg >= 1.2 ? '#43b581' :
+                ($ppg >= 0.8 ? '#faa61a' : '#f04747');
         ?>;">
             <?= number_format($ppg, 2) ?>
         </div>
@@ -226,10 +237,10 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             </div>
         <?php endif; ?>
     </div>
-    
+
     <!-- SIDE-BY-SIDE TARGET DISPLAY -->
     <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
-        
+
         <!-- 75% RULE (MINIMUM SURVIVAL TARGET) -->
         <div style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; border: 3px solid <?= $status_75_color ?>;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -243,7 +254,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     Minimum acceptable for survival
                 </p>
             </div>
-            
+
             <!-- TARGET: 15 POINTS -->
             <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <div style="color: #888; font-size: 14px; margin-bottom: 5px;">Target Points</div>
@@ -254,7 +265,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     by Game <?= $halfway_point ?>
                 </div>
             </div>
-            
+
             <!-- PROGRESS BAR -->
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -270,7 +281,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     </span>
                 </div>
             </div>
-            
+
             <!-- STATUS -->
             <div style="text-align: center; background: <?= $status_75_color ?>; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                 <div style="font-size: 32px; margin-bottom: 5px;"><?= $status_75_icon ?></div>
@@ -278,7 +289,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     <?= $status_75_text ?>
                 </div>
             </div>
-            
+
             <!-- DETAILS -->
             <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 6px;">
                 <?php if ($games_to_halfway > 0): ?>
@@ -302,7 +313,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     </div>
                 <?php endif; ?>
             </div>
-            
+
             <!-- SURVIVAL RATE -->
             <div style="margin-top: 15px; padding: 12px; background: rgba(67,181,129,0.1); border-radius: 6px; border-left: 3px solid #43b581;">
                 <div style="color: #43b581; font-size: 12px; font-weight: bold; margin-bottom: 3px;">
@@ -313,7 +324,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                 </div>
             </div>
         </div>
-        
+
         <!-- 100% RULE (IDEAL TARGET) -->
         <div style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 12px; border: 3px solid <?= $status_100_color ?>;">
             <div style="text-align: center; margin-bottom: 20px;">
@@ -327,7 +338,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     Full points-per-game target
                 </p>
             </div>
-            
+
             <!-- TARGET: 20 POINTS -->
             <div style="text-align: center; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
                 <div style="color: #888; font-size: 14px; margin-bottom: 5px;">Target Points</div>
@@ -338,7 +349,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     by Game <?= $halfway_point ?>
                 </div>
             </div>
-            
+
             <!-- PROGRESS BAR -->
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -354,7 +365,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     </span>
                 </div>
             </div>
-            
+
             <!-- STATUS -->
             <div style="text-align: center; background: <?= $status_100_color ?>; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                 <div style="font-size: 32px; margin-bottom: 5px;"><?= $status_100_icon ?></div>
@@ -362,7 +373,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     <?= $status_100_text ?>
                 </div>
             </div>
-            
+
             <!-- DETAILS -->
             <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 6px;">
                 <?php if ($games_to_halfway > 0): ?>
@@ -386,7 +397,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     </div>
                 <?php endif; ?>
             </div>
-            
+
             <!-- SURVIVAL RATE -->
             <div style="margin-top: 15px; padding: 12px; background: rgba(67,181,129,0.1); border-radius: 6px; border-left: 3px solid #43b581;">
                 <div style="color: #43b581; font-size: 12px; font-weight: bold; margin-bottom: 3px;">
@@ -398,7 +409,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             </div>
         </div>
     </div>
-    
+
     <!-- COMPARISON FOOTER -->
     <div style="margin-top: 25px; padding: 20px; background: rgba(255,205,0,0.1); border-radius: 8px; border: 2px solid <?= $teamSecondary ?>;">
         <h3 style="color: <?= $teamTextColor ?>; margin: 0 0 15px 0; text-align: center;">
@@ -433,7 +444,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     <p style="color: #888; font-size: 13px; margin-bottom: 20px;">
         Based on current form (<?= number_format($ppg, 2) ?> PPG)
     </p>
-    
+
     <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
         <div style="background: #40444b; padding: 20px; border-radius: 8px;">
             <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">Projected Final Points</h3>
@@ -444,7 +455,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                 At current <?= number_format($ppg, 2) ?> PPG
             </p>
         </div>
-        
+
         <div style="background: #40444b; padding: 20px; border-radius: 8px;">
             <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">Points to 38 (Safety)</h3>
             <div style="font-size: 48px; font-weight: bold; color: <?= $points_to_safety <= 10 ? '#43b581' : ($points_to_safety <= 20 ? '#faa61a' : '#f04747') ?>;">
@@ -454,7 +465,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                 Points needed (<?= $games_remaining_total ?> games left)
             </p>
         </div>
-        
+
         <div style="background: #40444b; padding: 20px; border-radius: 8px;">
             <h3 style="color: #888; font-size: 14px; margin: 0 0 10px 0;">PPG Needed for Safety</h3>
             <div style="font-size: 48px; font-weight: bold; color: <?= $ppg_needed_safety <= 1.0 ? '#43b581' : ($ppg_needed_safety <= 1.5 ? '#faa61a' : '#f04747') ?>;">
@@ -465,7 +476,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
             </p>
         </div>
     </div>
-    
+
     <!-- Projection context -->
     <div style="margin-top: 20px; padding: 15px; background: #40444b; border-radius: 8px; border-left: 4px solid #5865F2;">
         <h4 style="color: <?= $teamTextColor ?>; margin: 0 0 10px 0;">💡 Context</h4>
@@ -481,7 +492,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 <!-- DETAILED STATS -->
 <div class="panel">
     <h2 style="color: <?= $teamTextColor ?>;">📊 Season Statistics</h2>
-    
+
     <table>
         <tr>
             <th>Stat</th>
@@ -569,13 +580,13 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
         $selected_pos = (int)$team['position'];
         $selected_pts = (int)$team['points'];
         $start_pos = max(1, $selected_pos - 5);
-        $end_pos = min(24, $selected_pos + 5);
+        $end_pos = min((int)$trackerRules['team_count'], $selected_pos + 5);
 
         foreach ($standings as $tableRow):
             if ($tableRow['position'] < $start_pos || $tableRow['position'] > $end_pos) continue;
 
             $is_selected_row = ($tableRow['team_name'] === $teamName);
-            $is_relegation   = ($tableRow['position'] >= 18);
+            $is_relegation   = ($tableRow['position'] >= $trackerRelegationStart);
 
             $row_style = '';
             if ($is_selected_row) {
@@ -586,7 +597,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
 
             $row_gap  = (int)$tableRow['points'] - $selected_pts;
             $row_ppg2 = $tableRow['played'] > 0 ? $tableRow['points'] / $tableRow['played'] : 0;
-            $row_proj2 = round($row_ppg2 * 46, 1);
+            $row_proj2 = round($row_ppg2 * (int)$trackerRules['total_games'], 1);
         ?>
         <tr style="<?= $row_style ?>">
             <td><strong><?= $tableRow['position'] ?></strong></td>
@@ -609,18 +620,18 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
                     -
                 <?php endif; ?>
             </td>
-            <td style="color: <?= $row_proj2 >= 46 ? '#43b581' : '#f04747' ?>; font-weight: bold;">
+            <td style="color: <?= $row_proj2 >= (int)$trackerRules['total_games'] ? '#43b581' : '#f04747' ?>; font-weight: bold;">
                 <?= $row_proj2 ?> pts
             </td>
         </tr>
         <?php endforeach; ?>
     </table>
-    
+
     <div style="margin-top: 15px; padding: 15px; background: #40444b; border-radius: 8px;">
         <div style="display: flex; gap: 20px; font-size: 12px; flex-wrap: wrap; justify-content: center;">
             <div><span style="color: <?= $teamTextColor ?>;">■</span> Leeds United 🤍💛💙</div>
             <div><span style="color: <?= $teamTextColor ?>;">■</span> <?= htmlspecialchars($teamName) ?> ⭐</div>
-            <div><span style="color: #f04747;">■</span> Relegation Zone (18th-20th)</div>
+            <div><span style="color: #f04747;">■</span> Relegation Zone (<?= (int)$trackerRelegationStart ?>–<?= (int)$trackerRules['team_count'] ?>)</div>
         </div>
     </div>
 </div>
@@ -630,7 +641,7 @@ $ppg_needed_safety = $games_remaining_total > 0 ? $points_to_safety / $games_rem
     <h3 style="color: <?= $teamTextColor ?>;">💡 Key Insights</h3>
     <ul style="color: #dcddde; line-height: 2;">
         <li><strong>Current Status:</strong> <?= $team['position'] ?>th place with <?= $current_points ?> points from <?= $games_played ?> games</li>
-        <li><strong>Gap to Safety:</strong> <?= $gap_to_relegation > 0 ? '+' : '' ?><?= $gap_to_relegation ?> points clear of 18th place (relegation zone)</li>
+        <li><strong>Gap to Safety:</strong> <?= $gap_to_relegation > 0 ? '+' : '' ?><?= $gap_to_relegation ?> points clear of <?= (int)$trackerRelegationStart ?> place (relegation zone)</li>
         <li><strong>75% Rule:</strong> <?= $status_75_text ?> (<?= round($progress_75pct) ?>% of 15-point target)</li>
         <li><strong>100% Rule:</strong> <?= $status_100_text ?> (<?= round($progress_100pct) ?>% of 20-point target)</li>
         <?php if ($games_to_halfway > 0): ?>

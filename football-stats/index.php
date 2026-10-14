@@ -183,8 +183,9 @@ $seasonLeagueConfigs = [
 
 // Shared regional views work for both selectable seasons.
 $regionalTabs = [];
-foreach (['table'=>['Regular Table','📊'], 'table-2'=>['Deep Dive Table','🔢'], 'matches'=>['Matches','📅'], 'compare-seasons'=>['Season Compare','↔️'], 'cross-season'=>['Rules Across Seasons','🧪'], 'simulation'=>['Simulation','🎲']] as $key => [$label, $icon]) {
-    $regionalTabs[$key] = ['label'=>$label, 'icon'=>$icon, 'file'=>'tabs/shared/regional.php'];
+// Mirror every National League tool, with shared regional implementations.
+foreach ($seasonLeagueConfigs['2025-2026']['national-league']['tabs'] as $key => $tab) {
+    $regionalTabs[$key] = array_replace($tab, ['file'=>'tabs/shared/regional.php']);
 }
 foreach (['2025-2026', '2026-2027'] as $season) {
     foreach (clever_regional_competitions() as $slug => $regional) {

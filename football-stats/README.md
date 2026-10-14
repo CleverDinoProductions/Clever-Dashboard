@@ -115,6 +115,6 @@ Premier League 2025-2026 qualification exception remains available after reset.
 
 ## English pyramid tiers 6–8
 
-Both selectable seasons include National League North/South (tier 6), the four regional premier divisions (tier 7), and eight regional feeder divisions (tier 8). Each division has regular/deep tables, fixtures, season comparisons, the cross-season rules lab, and simulations. Admin competition settings and account league preferences include these divisions.
+Both selectable seasons include National League North/South (tier 6), the four regional premier divisions (tier 7), and eight regional feeder divisions (tier 8). Each division has every National League tab: regular/deep tables, fixtures, playoffs, matchweek and season comparisons, the cross-season rules lab, blocks overview/live blocks/all five block details, all three team trackers, what-if scenarios, and simulations. Section headings show tier numbers in brackets. Admin competition settings and account league preferences include these divisions.
 
 `fetch-englishfootball.php` creates their live tables and discovers TheSportsDB IDs using exact league names or alternate names. Unavailable divisions are reported and never populated with another division's results. No standings are fabricated. Regional defaults use 24 clubs/46 games at tier 6 and 22 clubs/42 games at tiers 7–8, with four relegation places; adjust season-specific rules in Admin for exceptions, reprieves, or changed allocations.

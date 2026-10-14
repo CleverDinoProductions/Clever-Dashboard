@@ -7,6 +7,9 @@ function regional_check(bool $condition, string $message): void {
 }
 $leagues = clever_regional_competitions();
 regional_check(array_count_values(array_column($leagues, 'tier')) === [6=>2, 7=>4, 8=>8], 'Include all fourteen divisions in the correct tiers.');
+foreach (['premier-league'=>'[Tier 1]', 'championship'=>'[Tiers 2–4]', 'national-league'=>'[Tier 5]'] as $slug=>$tierLabel) {
+    regional_check(str_contains(football_stats_navigation_league_group($slug),$tierLabel), 'Include bracketed tiers in existing league section headers.');
+}
 $source = file_get_contents(__DIR__ . '/../index.php');
 $start = strpos($source, '$seasonLeagueConfigs =');
 $end = strpos($source, '$hasExplicitDestination', $start);
@@ -18,10 +21,10 @@ foreach ($leagues as $slug => $regional) {
     $code = $regional['code'];
     regional_check(clever_regional_league_codes()[$slug] === $code, 'Keep division slug/code mappings consistent.');
     regional_check(clever_competitions()[$code] === $regional['label'], 'Expose divisions to Admin.');
-    regional_check(str_starts_with(football_stats_navigation_league_group($slug), 'Tier ' . $regional['tier']), 'Group by tier.');
+    regional_check(str_contains(football_stats_navigation_league_group($slug), '[Tier ' . $regional['tier'] . ']'), 'Group by tier.');
     foreach (['2025-2026', '2026-2027'] as $season) {
         $tabs = $seasonLeagueConfigs[$season][$slug]['tabs'];
-        regional_check(count($tabs) === 6, 'Expose all six regional tools for both seasons.');
+        regional_check(array_keys($tabs) === array_keys($seasonLeagueConfigs['2025-2026']['national-league']['tabs']), 'Expose every National League tool for both seasons.');
         foreach ($tabs as $tab) regional_check(is_file(__DIR__ . '/../' . $tab['file']), 'Every route must exist.');
         $rules = clever_competition_rules($db, $code, $season);
         $count = $regional['tier'] === 6 ? 24 : 22;
