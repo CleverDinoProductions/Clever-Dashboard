@@ -1,0 +1,157 @@
+<?php
+require_once dirname(__DIR__, 3) . '/includes/table-view.php';
+
+$tableView = football_stats_get_table_view_combined($db, $regionalCode, $regionalTable, $currentMainTab ?? '2025-2026');
+$standings = $tableView['standings'];
+$movementBaselineStandings = $standings;
+$last_update = $tableView['last_update'];
+$competitionRules = football_stats_get_competition_rules($regionalCode, $tableView['active_season_label'], $db);
+$resultPoints = $tableView['custom_result_points'] ?? ['win' => $competitionRules['win_points'], 'draw' => $competitionRules['draw_points'], 'loss' => $competitionRules['loss_points']];
+
+// Safety calculation Constants
+$halfway_games = (int)$competitionRules['halfway_games'];
+$safety_target_halfway = (int)$competitionRules['safety_target_halfway'];
+$total_games = (int)$competitionRules['total_games'];
+$max_regular_mw = (int)$competitionRules['regular_matchweeks'];
+if (isset($tableView['active_matchweek'])) {
+    $max_regular_mw = min($max_regular_mw, (int)$tableView['active_matchweek']);
+}
+
+// Table filter
+$table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], ['first_half', 'second_half', 'home', 'away'], true) ? $_GET['table_filter'] : 'all';
+$_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
+if ($table_filter !== 'all') {
+    $filteredStandings = football_stats_compute_filtered_standings($db, $regionalCode, $_split_season, $table_filter, $halfway_games, $regionalTable, $max_regular_mw);
+    if (!empty($filteredStandings)) {
+        $standings = $filteredStandings;
+    }
+    $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
+}
+$homeStandings = football_stats_compute_filtered_standings($db, $regionalCode, $_split_season, 'home', $halfway_games, $regionalTable, $max_regular_mw);
+$awayStandings = football_stats_compute_filtered_standings($db, $regionalCode, $_split_season, 'away', $halfway_games, $regionalTable, $max_regular_mw);
+if (!empty($tableView['points_deductions'])) {
+    $standings = football_stats_apply_points_deductions($standings, $tableView['points_deductions']);
+    $movementBaselineStandings = football_stats_apply_points_deductions($movementBaselineStandings, $tableView['points_deductions']);
+}
+$tableView = football_stats_apply_movement_preference(
+    $tableView,
+    $standings,
+    $movementBaselineStandings,
+    $table_filter !== 'all' && !empty($filteredStandings)
+);
+
+// Team metadata
+require_once dirname(__DIR__, 3) . '/includes/team-info.php';
+$team_info = clever_team_metadata($db, $regionalCode);
+
+?>
+
+<?php require __DIR__ . '/../../../includes/table-styles.php'; ?>
+
+<div class="panel">
+    <h2><?= htmlspecialchars($regionalName, ENT_QUOTES, 'UTF-8') ?> Table <?= $tableView['active_season_label'] ?></h2>
+    <?php football_stats_render_table_view_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague, $currentSubTab ?? 'table-2'); ?>
+    <?php football_stats_render_table_filter_buttons($table_filter, $currentMainTab ?? '2025-2026', $currentLeague, $currentSubTab ?? 'table-2'); ?>
+    <p class="update-info">
+        <?= htmlspecialchars($tableView['updated_label']) ?>: 
+        <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>
+    </p>
+    
+    <table class="league-table">
+        <thead>
+            <tr>
+                <th class="movement-column" scope="col">Movement</th>
+                <th title="Position">Pos</th>
+                <th style="text-align: left;">Team</th>
+                <th>P</th>
+                <th title="Games remaining">GR</th>
+                <th>Pts</th>
+                <th>PPG</th>
+                <th title="Required points to reach current performance projection">Pts Req</th>
+                <th title="PPG needed to reach <?= $competitionRules['comparison_target_one'] ?> points">PPG (<?= $competitionRules['comparison_target_one'] ?>)</th>
+                <th title="Points based on current PPG trend">Perf</th>
+                <th>+/- Buffer</th>
+                <th title="Max points based on performance">Max Pts</th>
+                <th title="All Wins">Max(W)</th>
+                <th title="All Draws">Max(D)</th>
+                <th title="50/50 Wins & Draws">Max(W/D)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($standings as $team): ?>
+            <?php
+                $info = getTeamInfo($team['team_name'], $team_info);
+                $pos = (int)$team['position'];
+                
+                // Logic Calculations
+                $ppg = ($team['played'] > 0) ? round($team['points'] / $team['played'], 2) : 0;
+                $games_remaining = max(0, $total_games - $team['played']);
+                $buffer = $team['points'] - $team['played'];
+                $performance = round($ppg * $games_remaining, 0);
+                $max_points_possible = (int)($team['points'] + $performance);
+                
+                // Points Needed Calculations
+                $points_needed_46 = max(0, $competitionRules['comparison_target_one'] - $team['points']);
+                $ppg_needed_46 = ($games_remaining > 0) ? round($points_needed_46 / $games_remaining, 2) : 0;
+                $points_needed_max = $max_points_possible - $team['points'];
+
+                // Max scenarios
+                $max_w = $team['points'] + ($games_remaining * $resultPoints['win']);
+                $max_d = $team['points'] + ($games_remaining * $resultPoints['draw']);
+                $max_wd = round($team['points'] + ($games_remaining / 2 * ($resultPoints['win'] + $resultPoints['draw'])), 0);
+
+                // Dynamic Coloring
+                $ppg_color = ($ppg >= 1.5) ? '#43b581' : (($ppg >= 1.0) ? '#faa61a' : '#f04747');
+                $buffer_color = ($buffer > 0) ? '#43b581' : (($buffer < 0) ? '#f04747' : '#888');
+                $show_common = ($team['team_name'] !== $info['common_name']);
+            ?>
+            <tr <?= football_stats_table_row_attributes($regionalCode, $tableView['active_season_label'], (int)$team['position']) ?>>
+                <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
+                <td><strong><?= $pos ?></strong></td>
+                <td>
+                    <div class="team-cell">
+                        <img src="<?= htmlspecialchars($team['team_crest']) ?>" class="team-crest" onerror="this.style.visibility='hidden'">
+                        <span class="team-name">
+                            <span class="team-official"><?= htmlspecialchars($info['common_name']) ?></span>
+                            <?php if ($show_common): ?>
+                                <span class="team-common">(<?= htmlspecialchars($team['team_name']) ?>)</span>
+                            <?php endif; ?>
+                            <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
+                                <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;"><?= $info['nickname'] ?></span>
+                                <span class="tooltip-short">Short: <?= $info['short'] ?></span>
+                            </span>
+                        </span>
+                    </div>
+                </td>
+                <td><?= $team['played'] ?></td>
+                <td style="opacity: 0.7;"><?= $games_remaining ?></td>
+                <td style="font-weight: bold; color: #5865F2;"><?= $team['points'] ?></td>
+                <td style="color: <?= $ppg_color ?>;"><?= number_format($ppg, 2) ?></td>
+                <td><?= $points_needed_max ?></td>
+                <td style="font-weight: bold;"><?= number_format($ppg_needed_46, 2) ?></td>
+                <td><?= $performance ?></td>
+                <td style="color: <?= $buffer_color ?>;"><?= ($buffer > 0 ? '+' : '') . $buffer ?></td>
+                <td style="font-weight: bold;"><?= $max_points_possible ?></td>
+                <td style="color: #43b581;"><?= $max_w ?></td>
+                <td style="color: #faa61a;"><?= $max_d ?></td>
+                <td style="color: #5865F2;"><?= $max_wd ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+    <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
+    <?php football_stats_render_table_zone_legend($regionalCode, $tableView['active_season_label']); ?>
+    
+    <div style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+        <div style="background: #40444b; padding: 15px; border-radius: 8px; border-left: 4px solid #faa61a; font-size: 13px;">
+            <strong style="color: #FFCD00;">Safety Target:</strong><br>
+            <span style="color: #dcddde;">
+                <?= $safety_target_halfway ?> pts by Game <?= $halfway_games ?> (Halfway Point)
+            </span>
+            <p style="color: #bbb; font-size: 11px; margin: 5px 0 0 0;">
+                Teams reaching 25pts by halfway historically have a ~90% survival rate.
+            </p>
+        </div>
+    </div>
+    <?php football_stats_render_home_away_split($homeStandings, $awayStandings, $team_info); ?>
+</div>

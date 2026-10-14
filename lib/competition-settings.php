@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/english-pyramid.php';
+
 function clever_competitions(): array
 {
-    return ['PL' => 'Premier League', 'ELC' => 'Championship', 'L1' => 'League One', 'L2' => 'League Two', 'NL' => 'National League', 'D1' => 'Division One'];
+    return ['PL' => 'Premier League', 'ELC' => 'Championship', 'L1' => 'League One', 'L2' => 'League Two', 'NL' => 'National League', 'D1' => 'Division One'] + array_column(clever_regional_competitions(), 'label', 'code');
 }
 
 function clever_competition_zone_types(): array
@@ -31,6 +33,17 @@ function clever_bundled_competition_rules(string $code, ?string $season = null):
     static $bundled;
     $bundled ??= require dirname(__DIR__) . '/football-stats/config/competition-rules.php';
     $rules = array_replace($bundled['default'], $bundled[$code]['default'] ?? []);
+    foreach (clever_regional_competitions() as $regional) {
+        if ($regional['code'] !== $code) continue;
+        $count = $regional['tier'] === 6 ? 24 : 22;
+        $games = 2 * ($count - 1);
+        $rules = ['team_count' => $count, 'regular_matchweeks' => $games,
+            'quarter_boundaries' => [(int)ceil($games / 4), (int)($games / 2), (int)ceil(3 * $games / 4)], 'zones' => [
+            ['key'=>'automatic-promotion','label'=>'Automatic promotion','from'=>1,'to'=>1],
+            ['key'=>'playoffs','label'=>'Promotion playoffs','from'=>2,'to'=>$regional['tier'] === 6 ? 7 : 5],
+            ['key'=>'relegation','label'=>'Relegation','from'=>$count - 3,'to'=>$count],
+        ]];
+    }
     $shortSeason = in_array($code, ['PL', 'D1'], true);
     $rules += ['win_points' => 3, 'draw_points' => 1, 'loss_points' => 0,
         'total_games' => $rules['regular_matchweeks'], 'halfway_games' => (int)floor($rules['regular_matchweeks'] / 2),

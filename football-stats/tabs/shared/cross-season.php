@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/cross-season-analysis.php';
-$competition = ['premier-league'=>'PL','championship'=>'ELC','league-one'=>'L1','league-two'=>'L2','national-league'=>'NL','division-one'=>'D1'][$currentLeague];
+$competition = clever_regional_league_codes()[$currentLeague] ?? ['premier-league'=>'PL','championship'=>'ELC','league-one'=>'L1','league-two'=>'L2','national-league'=>'NL','division-one'=>'D1'][$currentLeague];
 $h=static fn($v)=>htmlspecialchars((string)$v, ENT_QUOTES,'UTF-8');
 $stmt=$db->prepare('SELECT DISTINCT season_label FROM matches WHERE competition_code=? ORDER BY season_label DESC'); $stmt->execute([$competition]); $available=$stmt->fetchAll(PDO::FETCH_COLUMN);
 $requested=isset($_GET['analysis_seasons']) && is_array($_GET['analysis_seasons']) ? $_GET['analysis_seasons'] : ['2025-2026','2026-2027'];
