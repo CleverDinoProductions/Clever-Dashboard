@@ -353,6 +353,7 @@ if (!function_exists('football_stats_render_matches_controls')) {
             'league-one' => 'L1', 'league-two' => 'L2', 'national-league' => 'NL',
             'division-one' => 'D1',
         ];
+        $leagueMap += clever_regional_league_codes();
         $competitionCode = $leagueMap[$league] ?? strtoupper((string)$league);
         $availableMatchweeks = football_stats_limit_matchweeks_to_regular_season($availableMatchweeks, $competitionCode, $selectedSeason);
 
@@ -2086,6 +2087,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             'national-league' => 'NL',
             'division-one'    => 'D1'
         ];
+        $leagueMap += clever_regional_league_codes();
         $competitionCode = $leagueMap[$league] ?? strtoupper((string)$league);
 
         $calcMode = $_GET['calc_mode'] ?? $tableView['calc_mode'] ?? 'by_matchweek';

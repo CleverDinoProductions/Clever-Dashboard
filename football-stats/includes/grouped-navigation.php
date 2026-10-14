@@ -9,6 +9,9 @@ function football_stats_navigation_function(string $key): string
 }
 function football_stats_navigation_league_group(string $key): string
 {
+    require_once dirname(__DIR__, 2) . '/lib/english-pyramid.php';
+    $regional = clever_regional_competitions()[$key] ?? null;
+    if ($regional !== null) return 'Tier ' . $regional['tier'] . ' · ' . ($regional['tier'] === 6 ? 'National League North & South' : 'Regional leagues');
     return match($key) {
         'championship','league-one','league-two'=>'EFL',
         'premier-league'=>'Premier League · FA sanctioned',

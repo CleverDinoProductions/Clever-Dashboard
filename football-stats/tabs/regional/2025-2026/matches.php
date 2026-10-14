@@ -1,0 +1,75 @@
+<?php
+// Regional league Matches Tab
+
+
+require_once __DIR__ . '/../../../includes/table-view.php';
+require_once __DIR__ . '/../../../includes/matches-team-filters.php';
+
+// Get available seasons for this competition
+$seasons_stmt = $db->prepare("SELECT DISTINCT season_label FROM matches WHERE competition_code = ? ORDER BY season_label DESC");
+$seasons_stmt->execute([$regionalCode]);
+$availableSeasons = $seasons_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Determine selected season (default to most recent)
+$defaultSeason = !empty($availableSeasons) ? $availableSeasons[0] : '2025-2026';
+$selectedSeason = isset($_GET['snapshot_season']) && $_GET['snapshot_season'] !== ''
+    ? preg_replace('/[^0-9\-]/', '', (string)$_GET['snapshot_season'])
+    : $defaultSeason;
+if (!in_array($selectedSeason, $availableSeasons, true)) {
+    $selectedSeason = $defaultSeason;
+}
+
+// Get matchweeks for the selected season
+$mw_stmt = $db->prepare("SELECT DISTINCT matchweek FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek >= 1 AND matchweek <= ? ORDER BY matchweek ASC");
+$mw_stmt->execute([$regionalCode, $selectedSeason, football_stats_get_final_matchweek($regionalCode, $selectedSeason, $db)]);
+$matchweeks = $mw_stmt->fetchAll(PDO::FETCH_COLUMN);
+
+$selected_mw = football_stats_matches_list_week($_GET);
+
+if ($selected_mw !== '') {
+    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? AND matchweek = ? ORDER BY COALESCE(NULLIF(match_timestamp, ''), match_date), id");
+    $stmt->execute([$regionalCode, $selectedSeason, $selected_mw]);
+} else {
+    $stmt = $db->prepare("SELECT * FROM matches WHERE competition_code = ? AND season_label = ? ORDER BY matchweek, COALESCE(NULLIF(match_timestamp, ''), match_date), id");
+    $stmt->execute([$regionalCode, $selectedSeason]);
+}
+$matches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$totalMatchesBeforeFilters = count($matches);
+$matchTeamFilters = football_stats_match_group_context($db, $regionalCode, $selectedSeason, $GLOBALS['dashboardSettings'] ?? []);
+$matches = football_stats_filter_matches_by_team_group($matches, $matchTeamFilters);
+
+$seasonDisplay = $seasonLabels[$selectedSeason] ?? $selectedSeason;
+?>
+<div class="panel">
+    <h2><?= htmlspecialchars($regionalName, ENT_QUOTES, 'UTF-8') ?> <?= htmlspecialchars($seasonDisplay) ?> – Matches<?php if ($selected_mw !== ''): ?> – MW<?= htmlspecialchars($selected_mw) ?><?php endif; ?></h2>
+    <?php football_stats_render_matches_controls($availableSeasons, $matchweeks, $selectedSeason, $selected_mw, $currentMainTab, $currentLeague, $currentSubTab, $matchTeamFilters); ?>
+    <p role="status">Showing <?= count($matches) ?> of <?= $totalMatchesBeforeFilters ?> fixtures.</p>
+    <table class="matches-table" style="width:100%; font-size:13px;">
+        <thead>
+            <tr style="background:#222; color:#00ff88;">
+                <th>Matchweek</th>
+                <th>Kickoff</th>
+                <th>Home</th>
+                <th>Score</th>
+                <th>Away</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php if (!$matches): ?><tr><td colspan="6" style="text-align:center;padding:20px;">No matches match these filters.</td></tr><?php endif; ?>
+        <?php foreach ($matches as $m): ?>
+            <tr>
+                <td><?= htmlspecialchars($m['matchweek']) ?></td>
+                <td><time<?= !empty($m['match_timestamp']) ? ' datetime="' . htmlspecialchars($m['match_timestamp'], ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= htmlspecialchars(football_stats_format_kickoff($m['match_timestamp'] ?? null, $m['match_date'] ?? null), ENT_QUOTES, 'UTF-8') ?></time></td>
+                <td><?= htmlspecialchars($m['home_team']) ?></td>
+                <td style="text-align:center; font-weight:bold;">
+                    <?= is_numeric($m['home_goals']) && is_numeric($m['away_goals']) ? $m['home_goals'] . ' - ' . $m['away_goals'] : '-' ?>
+                </td>
+                <td><?= htmlspecialchars($m['away_team']) ?></td>
+                <td><?= htmlspecialchars($m['source']) ?></td>
+            </tr>
+        <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+<?php require_once __DIR__ . '/../../../includes/footer.php'; ?>

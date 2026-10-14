@@ -20,6 +20,8 @@ $API_KEY  = '876419';
 $BASE_URL = "https://www.thesportsdb.com/api/v1/json/$API_KEY/";
 $db       = new SQLite3('football-stats.sqlite3');
 
+require_once dirname(__DIR__) . '/lib/competition-settings.php';
+
 // --- 1. Database Schema ---
 $tables = [
     "league_table_D1" => "team_crest TEXT, team_name TEXT, position INTEGER, played INTEGER, won INTEGER, drawn INTEGER, lost INTEGER, gf INTEGER, ga INTEGER, gd INTEGER, points INTEGER, updated_at INTEGER",
@@ -34,6 +36,10 @@ $tables = [
     "points_deductions" => "competition_code TEXT NOT NULL, season_label TEXT NOT NULL, team_name TEXT NOT NULL, points INTEGER NOT NULL CHECK (points > 0), reason TEXT NOT NULL DEFAULT '', PRIMARY KEY (competition_code, season_label, team_name, reason)",
     "live_table_metadata" => "competition_code TEXT PRIMARY KEY, live_table_name TEXT NOT NULL, season_label TEXT NOT NULL, matchweek INTEGER NOT NULL, updated_at INTEGER NOT NULL",
 ];
+
+foreach (clever_regional_competitions() as $regional) {
+    $tables['league_table_' . $regional['code']] = $tables['league_table_NL'];
+}
 
 foreach ($tables as $name => $schema) {
     $db->exec("CREATE TABLE IF NOT EXISTS $name ($schema)");
@@ -60,6 +66,9 @@ foreach ($migrate as $tbl => $cols) {
  * Returns the era-correct competition name for a given code and season start year.
  */
 function era_name(string $code, int $year): string {
+    foreach (clever_regional_competitions() as $regional) {
+        if ($regional['code'] === $code) return $regional['label'];
+    }
     return match($code) {
         'PL'  => $year < 1992 ? 'Football League First Division'  : 'Premier League',
         'ELC' => $year < 1992 ? 'Football League Second Division' : ($year < 2004 ? 'Football League First Division' : 'Championship'),
@@ -199,7 +208,7 @@ function sync_league($db, $BASE_URL, $code, $id) {
             }
             if (!empty($zero_dates)) {
                 ksort($zero_dates);
-                $mw_counter = 47;
+                $mw_counter = (int)clever_bundled_competition_rules($code, $season)['regular_matchweeks'] + 1;
                 foreach (array_keys($zero_dates) as $d) {
                     $playoff_zero_date_map[$d] = $mw_counter++;
                 }
@@ -342,6 +351,27 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
 // --- 3. Execution ---
 $leagues = ['D1' => '4525', 'PL' => '4328', 'ELC' => '4329', 'L1' => '4396', 'L2' => '4397', 'NL' => '4590'];
+// Provider coverage varies for regional leagues. Match exact configured names only.
+$catalog = json_decode(@file_get_contents("{$BASE_URL}all_leagues.php"), true);
+foreach (clever_regional_competitions() as $regional) {
+    $found = false;
+    foreach (($catalog['leagues'] ?? []) as $providerLeague) {
+        $names = array_merge([$providerLeague['strLeague'] ?? ''], explode(';', $providerLeague['strLeagueAlternate'] ?? ''));
+        if (($providerLeague['strSport'] ?? '') !== 'Soccer') continue;
+        foreach ($names as $name) {
+            // The catalog uses an English prefix for many divisions.
+            $normalized = preg_replace('/^English /i', '', trim($name));
+            $aliases = [$regional['label']];
+            if ($regional['code'] === 'NPL') $aliases[] = 'Northern Premier League';
+            if ($regional['code'] === 'ILP') $aliases[] = 'Isthmian Premier League';
+            if (!in_array(strtolower($normalized), array_map('strtolower', $aliases), true)) continue;
+            $leagues[$regional['code']] = $providerLeague['idLeague'];
+            $found = true;
+            break 2;
+        }
+    }
+    if (!$found) echo "Regional provider data unavailable: {$regional['label']}\n";
+}
 foreach ($leagues as $code => $id) {
     sync_league($db, $BASE_URL, $code, $id);
 }

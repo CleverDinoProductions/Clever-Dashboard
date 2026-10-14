@@ -181,6 +181,17 @@ $seasonLeagueConfigs = [
     ],
 ];
 
+// Shared regional views work for both selectable seasons.
+$regionalTabs = [];
+foreach (['table'=>['Regular Table','📊'], 'table-2'=>['Deep Dive Table','🔢'], 'matches'=>['Matches','📅'], 'compare-seasons'=>['Season Compare','↔️'], 'cross-season'=>['Rules Across Seasons','🧪'], 'simulation'=>['Simulation','🎲']] as $key => [$label, $icon]) {
+    $regionalTabs[$key] = ['label'=>$label, 'icon'=>$icon, 'file'=>'tabs/shared/regional.php'];
+}
+foreach (['2025-2026', '2026-2027'] as $season) {
+    foreach (clever_regional_competitions() as $slug => $regional) {
+        $seasonLeagueConfigs[$season][$slug] = ['label'=>$regional['label'], 'defaultSubTab'=>'table', 'tabs'=>$regionalTabs];
+    }
+}
+
 $worldCupTabs = [
     'groups' => ['label' => 'Groups', 'icon' => '🔢', 'file' => 'tabs/world-cup/groups.php'],
     'knockout' => ['label' => 'Knockout Stage', 'icon' => '⚔️', 'file' => 'tabs/world-cup/knockout.php'],

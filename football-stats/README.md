@@ -112,3 +112,9 @@ A saved override is a complete rule set: later changes to defaults do not change
 that saved season. **Reset override** deletes just that saved league/season entry
 and restores bundled season exceptions or inherited league defaults. The bundled
 Premier League 2025-2026 qualification exception remains available after reset.
+
+## English pyramid tiers 6–8
+
+Both selectable seasons include National League North/South (tier 6), the four regional premier divisions (tier 7), and eight regional feeder divisions (tier 8). Each division has regular/deep tables, fixtures, season comparisons, the cross-season rules lab, and simulations. Admin competition settings and account league preferences include these divisions.
+
+`fetch-englishfootball.php` creates their live tables and discovers TheSportsDB IDs using exact league names or alternate names. Unavailable divisions are reported and never populated with another division's results. No standings are fabricated. Regional defaults use 24 clubs/46 games at tier 6 and 22 clubs/42 games at tiers 7–8, with four relegation places; adjust season-specific rules in Admin for exceptions, reprieves, or changed allocations.
