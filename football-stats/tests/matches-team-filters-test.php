@@ -88,3 +88,12 @@ match_filter_assert('current-bottom-half', $url['matches_opponent_group'], 'Navi
 ob_start(); football_stats_render_match_team_filters($c, '2025-2026', 'premier-league', 'matches'); $html = ob_get_clean();
 match_filter_assert(true, str_contains($html, 'mf_opponents[]'), 'Controls must render opponent group.');
 echo "Matches team filter tests passed.\n";
+
+$_GET = ['matches_team_group'=>'big-three'];
+$db->exec("INSERT INTO matches VALUES (10, 'ELC', '2025-2026', 1, '2025-08-01', NULL, 'Cardiff City', 'Reading', 1, 0), (11, 'ELC', '2025-2026', 1, '2025-08-01', NULL, 'Arsenal', 'Watford', 1, 0)");
+$leagueContext = football_stats_match_group_context($db, 'ELC', '2025-2026', ['team_group_big_three'=>'Arsenal']);
+$leagueFixtures = $db->query("SELECT * FROM matches WHERE competition_code='ELC'")->fetchAll(PDO::FETCH_ASSOC);
+match_filter_assert([10], array_column(football_stats_filter_matches_by_team_group($leagueFixtures, $leagueContext), 'id'), 'Championship match filters must use Championship rankings and ignore legacy PL overrides.');
+match_filter_assert('milton keynes dons', football_stats_normalize_group_team('MK Dons'), 'MK Dons aliases must match rankings.');
+match_filter_assert('wrexham', football_stats_normalize_group_team('Wrexham AFC'), 'Wrexham aliases must match rankings.');
+echo "League-specific match filter tests passed.\n";
