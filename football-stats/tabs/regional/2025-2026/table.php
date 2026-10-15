@@ -79,6 +79,15 @@ $team_info = clever_team_metadata($db, $regionalCode);
                 $pos = (int)$team['position'];
                 
                 $games_remaining = max(0, $total_games - $team['played']);
+                // Match the Premier League table's GR and points colours.
+                if ($games_remaining <= 5) {
+                    $games_color = '#f04747';
+                } elseif ($games_remaining <= 10) {
+                    $games_color = '#faa61a';
+                } else {
+                    $games_color = '#43b581';
+                }
+                $points_color = $team['points'] >= $team['played'] ? '#43b581' : '#f04747';
                 $show_common = ($team['team_name'] !== $info['common_name']);
             ?>
             <tr <?= football_stats_table_row_attributes($regionalCode, $tableView['active_season_label'], (int)$team['position']) ?>>
@@ -109,14 +118,14 @@ $team_info = clever_team_metadata($db, $regionalCode);
                 </div>
                 </td>
                 <td><?= $team['played'] ?></td>
-                <td style="font-weight: bold; opacity: 0.8;"><?= $games_remaining ?></td>
-                <td style="font-weight: bold;"><?= $team['points'] ?></td>
+                <td style="color: <?= $games_color ?>; font-weight: bold;"><?= $games_remaining ?></td>
+                <td style="color: <?= $points_color ?>; font-weight: bold;"><?= $team['points'] ?></td>
                 <td><?= $team['won'] ?></td>
                 <td><?= $team['drawn'] ?></td>
                 <td><?= $team['lost'] ?></td>
                 <td><?= $team['gf'] ?></td>
                 <td><?= $team['ga'] ?></td>
-                <td style="font-weight: bold; color: <?= $team['gd'] >= 0 ? '#43b581' : '#f04747' ?>;">
+                <td style="font-weight: bold; color: <?= $team['gd'] > 0 ? '#43b581' : ($team['gd'] < 0 ? '#f04747' : '#dcddde') ?>;">
                     <?= $team['gd'] > 0 ? '+' . $team['gd'] : $team['gd'] ?>
                 </td>
             </tr>
