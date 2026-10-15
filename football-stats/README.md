@@ -118,3 +118,19 @@ Premier League 2025-2026 qualification exception remains available after reset.
 Both selectable seasons include National League North/South (tier 6), the four regional premier divisions (tier 7), and eight regional feeder divisions (tier 8). Each division has every National League tab: regular/deep tables, fixtures, playoffs, matchweek and season comparisons, the cross-season rules lab, blocks overview/live blocks/all five block details, all three team trackers, what-if scenarios, and simulations. Section headings show tier numbers in brackets. Admin competition settings and account league preferences include these divisions.
 
 `fetch-englishfootball.php` creates their live tables and discovers TheSportsDB IDs using exact league names or alternate names. Unavailable divisions are reported and never populated with another division's results. No standings are fabricated. Regional defaults use 24 clubs/46 games at tier 6 and 22 clubs/42 games at tiers 7–8, with four relegation places; adjust season-specific rules in Admin for exceptions, reprieves, or changed allocations.
+
+### League-specific Big club groups
+
+Big 3, 6, 9 and 12 use the first N clubs in each competition's Transfermarkt
+**all-time points table**. These are stored snapshots, not squad market values or
+live standings. Source URLs and snapshot dates are in
+`lib/transfermarkt-rankings.php`; Transfermarkt's historical coverage varies by
+competition. Verified snapshots currently cover PL, ELC, L1, L2, NL, NLN and NLS.
+Other divisions start empty rather than inheriting Premier League clubs.
+
+In Admin → Dashboard → Custom Rules team groups, select a league to view or edit
+its memberships. Each group (including Typical top half) has independent league
+settings. Legacy global memberships remain Premier League overrides only.
+Table custom rules, match filters and the cross-season rules lab all resolve
+memberships for the selected league. Refresh snapshots by updating the ordered
+club list and checked date after verifying the linked source.

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 require_once __DIR__ . '/competition-settings.php';
+require_once __DIR__ . '/transfermarkt-rankings.php';
 
 function clever_football_db(): PDO
 {
@@ -96,18 +97,16 @@ function clever_team_metadata(PDO $db, string $competitionCode): array
     return $teams;
 }
 
-function clever_team_group_defaults(): array
+function clever_team_group_defaults(string $competitionCode = 'PL'): array
 {
-    // Transfermarkt Premier League all-time points table, consulted 12 October 2026.
-    // https://www.transfermarkt.co.uk/premier-league/ewigeTabelle/wettbewerb/GB1
-    $ranked = ['Manchester United', 'Arsenal', 'Liverpool', 'Chelsea', 'Tottenham Hotspur', 'Manchester City', 'Everton', 'Newcastle United', 'Aston Villa', 'West Ham United', 'Southampton', 'Blackburn Rovers'];
+    $ranked = clever_transfermarkt_rankings()[$competitionCode]['teams'] ?? [];
     return [
         'big_three' => array_slice($ranked, 0, 3),
         'big_six' => array_slice($ranked, 0, 6),
         'big_nine' => array_slice($ranked, 0, 9),
-        'big_twelve' => $ranked,
+        'big_twelve' => array_slice($ranked, 0, 12),
         // Curated recent top-half regulars; administrators can adjust this independently.
-        'typical_top_half' => ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Newcastle United', 'Aston Villa', 'Brighton & Hove Albion', 'West Ham United'],
+        'typical_top_half' => $competitionCode === 'PL' ? ['Arsenal', 'Chelsea', 'Liverpool', 'Manchester City', 'Manchester United', 'Tottenham Hotspur', 'Newcastle United', 'Aston Villa', 'Brighton & Hove Albion', 'West Ham United'] : [],
     ];
 }
 
@@ -126,21 +125,25 @@ function clever_parse_team_group(string $value): array
     return array_values($teams);
 }
 
-function clever_team_groups(array $settings): array
+function clever_team_groups(array $settings, string $competitionCode = 'PL'): array
 {
-    $groups = clever_team_group_defaults();
+    $groups = clever_team_group_defaults($competitionCode);
     foreach ($groups as $key => $default) {
-        if (array_key_exists('team_group_' . $key, $settings)) {
-            $groups[$key] = clever_parse_team_group((string)$settings['team_group_' . $key]);
+        $settingKey = 'team_group_' . $competitionCode . '_' . $key;
+        // Legacy unscoped lists belonged to the Premier League only.
+        if (!array_key_exists($settingKey, $settings) && $competitionCode === 'PL') $settingKey = 'team_group_' . $key;
+        if (array_key_exists($settingKey, $settings)) {
+            $groups[$key] = clever_parse_team_group((string)$settings[$settingKey]);
         }
     }
     return $groups;
 }
 
-function clever_save_team_groups(PDO $db, array $values): void
+function clever_save_team_groups(PDO $db, array $values, string $competitionCode = 'PL'): void
 {
+    if (!isset(clever_competitions()[$competitionCode])) throw new InvalidArgumentException('Select a valid league.');
     $groups = [];
-    foreach (clever_team_group_defaults() as $key => $default) {
+    foreach (clever_team_group_defaults($competitionCode) as $key => $default) {
         if (!isset($values[$key]) || !is_string($values[$key])) {
             throw new InvalidArgumentException('Supply a team list for every group.');
         }
@@ -149,7 +152,7 @@ function clever_save_team_groups(PDO $db, array $values): void
     $db->beginTransaction();
     try {
         $stmt = $db->prepare('INSERT INTO dashboard_settings (setting_key, setting_value) VALUES (?, ?) ON CONFLICT(setting_key) DO UPDATE SET setting_value=excluded.setting_value');
-        foreach ($groups as $key => $teams) $stmt->execute(['team_group_' . $key, implode("\n", $teams)]);
+        foreach ($groups as $key => $teams) $stmt->execute(['team_group_' . $competitionCode . '_' . $key, implode("\n", $teams)]);
         $db->commit();
     } catch (Throwable $exception) {
         $db->rollBack();

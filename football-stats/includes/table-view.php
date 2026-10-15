@@ -2800,7 +2800,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var selectionStatus = panel.querySelector('[data-match-selection-status]');
                         var pendingSummary = panel.querySelector('[data-match-pending-summary]');
                         var pendingDetails = panel.querySelector('[data-match-pending-details]');
-                        var configuredTeamGroups = <?php echo json_encode(clever_team_groups($GLOBALS['dashboardSettings'] ?? []), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR); ?>;
+                        var configuredTeamGroups = <?php echo json_encode(clever_team_groups($GLOBALS['dashboardSettings'] ?? [], $competitionCode), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR); ?>;
                         var bigSixTeams = configuredTeamGroups.big_six.map(normalizedTeamName);
                         var bigThreeTeams = configuredTeamGroups.big_three.map(normalizedTeamName);
                         var bigNineTeams = configuredTeamGroups.big_nine.map(normalizedTeamName);
@@ -2823,7 +2823,10 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 .replace(/^newcastle$/, 'newcastle united')
                                 .replace(/^palace$/, 'crystal palace')
                                 .replace(/^(?:brighton|brighton and hove albion)$/, 'brighton & hove albion')
-                                .replace(/^west ham$/, 'west ham united');
+                                .replace(/^west ham$/, 'west ham united')
+                                .replace(/^mk dons$/, 'milton keynes dons')
+                                .replace(/^wrexham afc$/, 'wrexham')
+                                .replace(/^halifax town$/, 'fc halifax town');
                         }
                         function matchesTeamPreset(preset, teamName) {
                             var name = normalizedTeamName(teamName);

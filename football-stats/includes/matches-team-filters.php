@@ -25,13 +25,15 @@ function football_stats_normalize_group_team(string $name): string
         'leeds' => 'leeds united', 'newcastle' => 'newcastle united', 'palace' => 'crystal palace',
         'brighton' => 'brighton & hove albion', 'brighton and hove albion' => 'brighton & hove albion',
         'west ham' => 'west ham united',
+        'mk dons' => 'milton keynes dons', 'wrexham afc' => 'wrexham',
+        'halifax town' => 'fc halifax town',
     ][$name] ?? $name;
 }
 
 /** Resolve full-season or selected-matchweek standings independently of custom rules. */
 function football_stats_match_group_context(PDO $db, string $competition, string $season, array $settings): array
 {
-    $groups = clever_team_groups($settings);
+    $groups = clever_team_groups($settings, $competition);
     $basis = ($_GET['matches_standings_basis'] ?? null) === 'matchweek' ? 'matchweek' : 'season';
     $week = isset($_GET['matchweek']) && is_scalar($_GET['matchweek']) ? filter_var($_GET['matchweek'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : false;
     $week = $week === false ? null : $week;

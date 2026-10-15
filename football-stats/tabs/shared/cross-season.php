@@ -16,7 +16,7 @@ $options=['opponent_group'=>$enum('analysis_opponent',array_keys($labels),'all')
 $options['excluded']=isset($_GET['analysis_excluded'])&&is_array($_GET['analysis_excluded'])?array_map('intval',array_filter($_GET['analysis_excluded'],'is_scalar')):[];
 $options['outcomes']=isset($_GET['analysis_outcomes'])&&is_array($_GET['analysis_outcomes'])?array_filter($_GET['analysis_outcomes'],static fn($v)=>is_string($v)&&in_array($v,['win','draw','loss'],true)):[];
 $deduction=$number('analysis_deduction',0,1000);
-$results=[]; $groups=clever_team_groups($dashboardSettings??[]);
+$results=[]; $groups=clever_team_groups($dashboardSettings??[], $competition);
 foreach ($selected as $season) {
  $stmt=$db->prepare('SELECT * FROM matches WHERE competition_code=? AND season_label=? AND matchweek>=1 AND matchweek<=?'); $stmt->execute([$competition,$season,football_stats_get_final_matchweek($competition,$season,$db)]);
  $fixtures=$stmt->fetchAll(PDO::FETCH_ASSOC); $results[$season]=football_stats_cross_season_analysis($fixtures,$team,$options,$groups);
