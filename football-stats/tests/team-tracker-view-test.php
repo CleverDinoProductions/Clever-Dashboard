@@ -20,10 +20,17 @@ $currentMainTab = '2025-2026'; $currentSubTab = 'leeds';
 foreach (['premier-league', 'championship', 'league-one', 'league-two', 'division-one', 'national-league'] as $currentLeague) {
     $_GET = ['calc_mode' => 'by_matchweek', 'table_view' => 'live'];
     ob_start(); include __DIR__ . '/../tabs/' . $currentLeague . '/2025-2026/team-tracker.php'; $html = ob_get_clean();
-    foreach (['Season record', 'Milestone progress', 'What if?', 'Competition zone watch', 'Attack and defence', 'Reading this tracker'] as $panel) check_tracker_view(strpos($html, $panel) !== false, "$currentLeague panel: $panel");
+    foreach (['Season record', 'Milestone progress', 'What if?', 'Competition zone watch', 'Attack and defence', 'Reading this tracker', 'Survival status and probability guide', 'Guaranteed Safety Target Progress', 'Mathematical Safety Target Progress', 'European Target Progress', 'Title Target Progress', 'Scenarios to Halfway', 'Season Projection', 'The 75% Rule for Survival'] as $panel) check_tracker_view(strpos($html, $panel) !== false, "$currentLeague panel: $panel");
+    for ($horizon = 1; $horizon <= 6; $horizon++) check_tracker_view(strpos($html, 'Next ' . $horizon . ' ') !== false, 'Every short-horizon panel retained');
     check_tracker_view(strpos($html, 'Test &lt;Team&gt;') !== false, 'Team names escaped');
-    check_tracker_view(strpos($html, 'Survival Probability') === false, 'No invented probabilities');
+    check_tracker_view(strpos($html, 'Survival Probability') === false, 'No unlabeled probability badge');
 }
+$db->exec('UPDATE league_table_PL SET played = 38');
+$currentLeague = 'premier-league';
+ob_start(); include __DIR__ . '/../tabs/premier-league/2025-2026/team-tracker.php'; $html = ob_get_clean();
+check_tracker_view(strpos($html, 'Unavailable: only 0 games remain') !== false, 'Completed season retains scenario panels with clear empty state');
+check_tracker_view(strpos($html, 'Historical halfway total unavailable') !== false, 'Later points do not claim halfway achievement');
+check_tracker_view(strpos($html, 'legacy heuristic') !== false, 'Probability guide remains visibly identified as heuristic');
 $regionalCode = 'NPLE'; $regionalTable = 'league_table_NPLE'; $regionalName = 'Northern Premier East';
 ob_start(); include __DIR__ . '/../tabs/national-league/2025-2026/team-tracker.php'; $html = ob_get_clean();
 check_tracker_view(strpos($html, 'Northern Premier East') !== false && strpos($html, 'Finish · 42') !== false, 'Regional rules and identity preserved');

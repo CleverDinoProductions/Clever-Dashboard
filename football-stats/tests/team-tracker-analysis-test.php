@@ -27,4 +27,15 @@ check_tracker(football_stats_get_tracker_team($rows)['team_name'] === 'Team 1', 
 ob_start(); football_stats_render_team_selector($rows, 'Team 1'); $html = ob_get_clean();
 check_tracker(strpos($html, 'name="custom_win_points" value="2"') !== false, 'Switching teams preserves scoring');
 check_tracker(strpos($html, 'name="excluded_results" value="h4,a5"') !== false, 'Switching teams preserves excluded results');
+
+$scenarios = football_stats_tracker_scenarios(6, $scoring);
+check_tracker(count($scenarios) === 28, 'All six-game records retained');
+foreach ($scenarios as $row) check_tracker($row['wins'] + $row['draws'] + $row['losses'] === 6, 'Every scenario fills its complete horizon');
+$miniRules = ['team_count' => 3, 'total_games' => 4, 'zones' => [['key'=>'relegation','from'=>3,'to'=>3]]];
+$miniTeams = [['team_name'=>'A','points'=>10,'played'=>4], ['team_name'=>'B','points'=>6,'played'=>3], ['team_name'=>'C','points'=>3,'played'=>3]];
+check_tracker(football_stats_tracker_safety($miniTeams[0], $miniTeams, $miniRules, $scoring) === true, 'Enough rivals cannot catch selected team');
+$miniTeams[0]['points'] = 6;
+check_tracker(football_stats_tracker_safety($miniTeams[0], $miniTeams, $miniRules, $scoring) === false, 'Tied maximum is not secured safety');
+check_tracker(football_stats_tracker_safety($miniTeams[0], array_slice($miniTeams,0,2), $miniRules, $scoring) === null, 'Incomplete roster cannot prove safety');
+
 echo "Team tracker analysis tests passed.\n";

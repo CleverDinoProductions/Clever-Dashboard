@@ -32,3 +32,8 @@
 .tt-result { background:#202632; padding:16px; border-radius:8px; }
 .team-tracker section[id] { scroll-margin-top:20px; }
 @media(max-width:600px) { .tt-hero form { flex-wrap:wrap; justify-content:center; max-width:100%; box-sizing:border-box; }.tt-hero select { min-width:0!important; max-width:100%; }.team-tracker .panel { padding:16px; } }
+.tt-target-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:16px; }
+.tt-target-grid progress { width:100%; height:18px; accent-color:#7b9eff; }
+.tt-target-number { display:block; font-size:30px; margin:12px 0; }
+
+.tt-halfway-bar { height:20px; background:#454d5c; border-radius:8px; overflow:hidden; position:relative; }
