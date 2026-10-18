@@ -1,6 +1,6 @@
 <section id="tt-targets" class="panel">
     <h2>Milestone progress — original target ladder</h2>
-    <p>All original targets are retained below. “Guaranteed”, “Mathematical”, “Top Half”, “European” and “Title” are traditional benchmark names; reaching a fixed points total does not establish those outcomes.</p>
+    <p>The original targets and separate 30-point halfway and full-season goals are shown below. “Guaranteed”, “Mathematical”, “Top Half”, “European” and “Title” are traditional benchmark names; reaching a fixed points total does not establish those outcomes.</p>
     <div class="tt-cards">
         <div><h3>Current position</h3><strong>#<?= (int)$team['position'] ?></strong><p><?= $escapeTracker($analysis['zone']) ?></p></div>
         <div><h3>Current points</h3><strong><?= (int)$team['points'] ?></strong><p><?= $analysis['pace'] === null ? 'No games played' : number_format($analysis['pace'], 2) . ' points per game' ?></p></div>
@@ -9,16 +9,29 @@
     </div>
 </section>
 <div class="tt-target-grid">
-<?php foreach ($legacyTargets as $index => $target):
+<?php
+$targetPanels = [];
+foreach ($legacyTargets as $index => $target) {
+    // The original 30-point card is replaced by the two explicit deadlines.
+    if ($target !== 30) $targetPanels[] = ['index' => $index, 'target' => $target, 'label' => $legacyLabels[$index], 'halfway' => $index === 0];
+    if ($index === 0) {
+        $targetPanels[] = ['index' => null, 'target' => 30, 'label' => '30 Points by Halfway', 'halfway' => true];
+        $targetPanels[] = ['index' => null, 'target' => 30, 'label' => '30 Points for Full Season', 'halfway' => false];
+    }
+}
+foreach ($targetPanels as $targetPanel):
+    $index = $targetPanel['index'];
+    $target = $targetPanel['target'];
+    $halfwayDeadline = $targetPanel['halfway'];
     $need = max(0, $target - (int)$team['points']);
-    $horizon = $index === 0 ? $gamesToHalfway : $analysis['remaining'];
-    $historical = $index === 0 && $games_played > $halfway_point;
+    $horizon = $halfwayDeadline ? $gamesToHalfway : $analysis['remaining'];
+    $historical = $halfwayDeadline && $games_played > $halfway_point;
     $reachable = $need <= $horizon * $analysis['max_result_points'];
-    $label = $legacyLabels[$index];
+    $label = $targetPanel['label'];
 ?>
 <section class="panel">
     <h2><?= $escapeTracker($label) ?> Target Progress</h2>
-    <p class="tt-eyebrow"><?= $target ?>-point benchmark<?= $index === 0 ? ' · by game ' . $halfway_point : ' · full season' ?></p>
+    <p class="tt-eyebrow"><?= $target ?>-point benchmark<?= $halfwayDeadline ? ' · by game ' . $halfway_point : ' · full season' ?></p>
     <strong class="tt-target-number"><?= (int)$team['points'] ?> / <?= $target ?> pts</strong>
     <progress max="<?= max(1, $target) ?>" value="<?= min($target, max(0, (int)$team['points'])) ?>" aria-label="<?= $escapeTracker($label) ?> target progress"></progress>
     <p><?= $need ?> points needed · <?= number_format(max(0, (int)$team['points'] / max(1, $target) * 100), 1) ?>% of target</p>

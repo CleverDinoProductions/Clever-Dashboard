@@ -21,6 +21,13 @@ foreach (['premier-league', 'championship', 'league-one', 'league-two', 'divisio
     $_GET = ['calc_mode' => 'by_matchweek', 'table_view' => 'live'];
     ob_start(); include __DIR__ . '/../tabs/' . $currentLeague . '/2025-2026/team-tracker.php'; $html = ob_get_clean();
     foreach (['Season record', 'Milestone progress', 'What if?', 'Competition zone watch', 'Attack and defence', 'Reading this tracker', 'Survival status and probability guide', 'Guaranteed Safety Target Progress', 'Mathematical Safety Target Progress', 'European Target Progress', 'Title Target Progress', 'Scenarios to Halfway', 'Season Projection', 'The 75% Rule for Survival'] as $panel) check_tracker_view(strpos($html, $panel) !== false, "$currentLeague panel: $panel");
+    foreach (['30 Points by Halfway', '30 Points for Full Season'] as $goal) check_tracker_view(strpos($html, $goal . ' Target Progress') !== false, 'Both 30-point deadlines available in ' . $currentLeague);
+    if ($currentLeague === 'premier-league') {
+        preg_match('/<h2>30 Points by Halfway Target Progress<\/h2>(.*?)<\/section>/s', $html, $halfCard);
+        preg_match('/<h2>30 Points for Full Season Target Progress<\/h2>(.*?)<\/section>/s', $html, $fullCard);
+        check_tracker_view(strpos($halfCard[1], '1.53 PPG needed from 17 games') !== false, 'Halfway pace uses only games before halfway');
+        check_tracker_view(strpos($fullCard[1], '0.72 PPG needed from 36 games') !== false, 'Full-season pace uses all remaining games');
+    }
     for ($horizon = 1; $horizon <= 6; $horizon++) check_tracker_view(strpos($html, 'Next ' . $horizon . ' ') !== false, 'Every short-horizon panel retained');
     check_tracker_view(strpos($html, 'Test &lt;Team&gt;') !== false, 'Team names escaped');
     check_tracker_view(strpos($html, 'Survival Probability') === false, 'No unlabeled probability badge');
