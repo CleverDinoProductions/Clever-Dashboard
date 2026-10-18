@@ -41,3 +41,36 @@ function football_stats_tracker_analysis(array $team, array $standings, array $r
         'adjustment' => $points - $earned,
         'max_result_points' => max($scoring), 'min_result_points' => min($scoring)];
 }
+
+/** Every W/D/L combination for a short horizon, with no invented fixtures. */
+function football_stats_tracker_scenarios(int $games, array $scoring): array
+{
+    $rows = [];
+    for ($wins = $games; $wins >= 0; $wins--) {
+        for ($draws = $games - $wins; $draws >= 0; $draws--) {
+            $losses = $games - $wins - $draws;
+            $rows[] = ['wins' => $wins, 'draws' => $draws, 'losses' => $losses,
+                'points' => $wins * $scoring['win'] + $draws * $scoring['draw'] + $losses * $scoring['loss']];
+        }
+    }
+    usort($rows, static function ($a, $b) { return $b['points'] <=> $a['points']; });
+    return $rows;
+}
+
+/** Conservative safety check: ties count as rivals still able to catch the team. */
+function football_stats_tracker_safety(array $team, array $standings, array $rules, array $scoring): ?bool
+{
+    $from = null;
+    foreach ($rules['zones'] as $zone) if ($zone['key'] === 'relegation') $from = (int)$zone['from'];
+    if ($from === null || count($standings) !== (int)$rules['team_count']) return null;
+    $names = array_unique(array_column($standings, 'team_name'));
+    if (count($names) !== (int)$rules['team_count']) return null;
+    $below = 0;
+    $minimum = (int)$team['points'] + max(0, (int)$rules['total_games'] - (int)$team['played']) * min($scoring);
+    foreach ($standings as $row) {
+        if ($row['team_name'] === $team['team_name']) continue;
+        $maximum = (int)$row['points'] + max(0, (int)$rules['total_games'] - (int)$row['played']) * max($scoring);
+        if ($minimum > $maximum) $below++;
+    }
+    return $below >= (int)$rules['team_count'] - $from + 1;
+}

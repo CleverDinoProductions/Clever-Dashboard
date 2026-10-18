@@ -23,17 +23,21 @@ $teamTextColor = '#ffffff';
 $games_played = $analysis['played'];
 $trackerTotalGames = $analysis['total'];
 $halfway_point = (int)$trackerRules['halfway_games'];
-// Retain familiar points milestones as explicitly labelled planning benchmarks.
-$full_season_safety_target = $trackerTotalGames;
-$extended_season_safety_target = (int)ceil($trackerTotalGames * 1.1);
-$guaranteed_season_safety_target = (int)ceil($trackerTotalGames * 1.15);
-$mathematical_season_safety_target = (int)ceil($trackerTotalGames * 1.2);
-$top_half_season_safety_target = (int)ceil($trackerTotalGames * 1.3);
-$european_season_safety_target = (int)ceil($trackerTotalGames * 1.6);
-$title_season_safety_target = $trackerTotalGames * 2;
-$halfwayTarget = (int)ceil($trackerTotalGames / 2);
+// Preserve the original league-specific target ladder and familiar panel names.
+$legacyTargets = in_array($trackerCode, ['PL', 'D1'], true)
+    ? [20, 30, 38, 40, 42, 45, 50, 60, 70]
+    : [23, 37, 46, 51, 54, 57, 60, 70, 90];
+if ($trackerCode !== 'PL' && $trackerCode !== 'D1') {
+    $legacyTargets[0] = $halfway_point;
+    $legacyTargets[2] = $trackerTotalGames;
+}
+[$halfwayTarget, $halfSeasonTarget, $full_season_safety_target, $extended_season_safety_target,
+ $guaranteed_season_safety_target, $mathematical_season_safety_target, $top_half_season_safety_target,
+ $european_season_safety_target, $title_season_safety_target] = $legacyTargets;
 $gamesToHalfway = max(0, $halfway_point - $games_played);
 $halfwayNeed = max(0, $halfwayTarget - (int)$team['points']);
+$legacyLabels = ['Halfway Point', 'Halfway Safety', 'Full Season Safety', 'Extended Safety', 'Guaranteed Safety', 'Mathematical Safety', 'Top Half', 'European', 'Title'];
+$legacySafety = football_stats_tracker_safety($team, $standings, $trackerRules, $trackerScoring);
 $trackerTableRows = static function ($rows) use ($teamName, $team, $games_played, $escapeTracker) {
     foreach ($rows as $row) {
         $selected = $row['team_name'] === $teamName;
@@ -55,6 +59,7 @@ $trackerTableRows = static function ($rows) use ($teamName, $team, $games_played
     <?php football_stats_render_combined_table_controls($tableView, $currentMainTab ?? '2025-2026', $currentLeague ?? 'premier-league', $currentSubTab ?? 'leeds'); ?>
 </section>
 <nav class="panel tt-nav" aria-label="Tracker sections"><a href="#tt-outlook">Progress</a><a href="#tt-record">Record</a><a href="#tt-targets">Milestones</a><a href="#tt-scenarios">Scenarios</a><a href="#tt-battle">Position battle</a><a href="#tt-goals">Goals</a></nav>
+<?php include __DIR__ . '/team-tracker-survival.php'; ?>
 <div id="tt-outlook"><?php include __DIR__ . '/team-tracker-progress.php'; ?></div>
 <section id="tt-record" class="panel">
     <h2>Season record</h2>
@@ -69,20 +74,7 @@ $trackerTableRows = static function ($rows) use ($teamName, $team, $games_played
     </div><p class="tt-muted">Green: wins · Blue: draws · Red: losses. Record covers the selected table; recent match form is not inferred from season totals.</p><?php endif; ?>
     <?php if ($analysis['adjustment']): ?><p class="tt-notice">Table points differ from the W/D/L scoring total by <?= sprintf('%+d', $analysis['adjustment']) ?> points. This may reflect deductions or table adjustments; projections keep the displayed points.</p><?php endif; ?>
 </section>
-<section id="tt-targets" class="panel">
-    <h2>Milestone progress</h2>
-    <p class="tt-muted">Points benchmarks help measure pace. Final places depend on other teams, tie-breakers and competition rules.</p>
-    <div class="tt-cards">
-        <?php foreach (['Halfway benchmark' => $halfwayTarget, 'One point per season game' => $trackerTotalGames, 'Two points per season game' => $trackerTotalGames * 2] as $label => $target):
-            $pct = min(100, max(0, (int)$team['points'] / max(1, $target) * 100)); ?>
-        <div><h3><?= $label ?></h3><strong><?= (int)$team['points'] ?> / <?= $target ?></strong>
-            <progress max="<?= $target ?>" value="<?= min($target, max(0, (int)$team['points'])) ?>" aria-label="<?= $label ?>"></progress>
-            <p><?= round($pct, 1) ?>% of benchmark · <?= max(0, $target - (int)$team['points']) ?> points short</p>
-            <?php if ($label === 'Halfway benchmark'): ?><p><?= $gamesToHalfway ? $gamesToHalfway . ' games until halfway' : 'Halfway has been reached. Current points do not establish the points held at halfway.' ?></p><?php endif; ?>
-        </div><?php endforeach; ?>
-    </div>
-    <?php if ($gamesToHalfway): ?><p>Halfway pace needed: <strong><?= $halfwayNeed > $gamesToHalfway * $analysis['max_result_points'] ? 'Benchmark out of reach' : number_format($halfwayNeed / $gamesToHalfway, 2) . ' points per game' ?></strong>.</p><?php endif; ?>
-</section>
+<?php include __DIR__ . '/team-tracker-targets.php'; ?>
 <section id="tt-scenarios" class="panel">
     <h2>What if? Results calculator</h2>
     <p>Explore a run of results within the <?= $analysis['remaining'] ?> games remaining. Points for a win/draw/loss: <?= implode(' / ', $trackerScoring) ?>.</p>
@@ -100,6 +92,7 @@ $trackerTableRows = static function ($rows) use ($teamName, $team, $games_played
     <tr><th scope="row"><?= number_format($pace, 2) ?></th><td><?= number_format($pace * $analysis['remaining'], 1) ?></td><td><?= number_format((int)$team['points'] + $pace * $analysis['remaining'], 1) ?></td></tr><?php endforeach; ?>
     </tbody></table></div></details>
 </section>
+<?php include __DIR__ . '/team-tracker-scenario-panels.php'; ?>
 <section id="tt-battle" class="panel">
     <h2>League position battle</h2>
     <p>Compare the teams within two places. Points gap and games in hand are measured against <?= $escapeTracker($teamName) ?>; a positive number means the listed team has more points or games in hand.</p>
@@ -113,7 +106,7 @@ $trackerTableRows = static function ($rows) use ($teamName, $team, $games_played
         <?php if ($boundary['rival']): ?><strong><?= abs($boundary['gap']) ?> pts <?= $boundary['gap'] > 0 ? 'ahead' : ($boundary['gap'] < 0 ? 'behind' : 'level') ?></strong><p>Compared with #<?= (int)$boundary['rival']['position'] ?> <?= $escapeTracker($boundary['rival']['team_name']) ?></p><p><?= $boundary['games_in_hand'] === 0 ? 'Same games played' : abs($boundary['games_in_hand']) . ($boundary['games_in_hand'] > 0 ? ' games in hand for your team' : ' more games played by your team') ?></p>
         <?php else: ?><p>Boundary team is unavailable in this table.</p><?php endif; ?></div>
     <?php endforeach; ?></div><p class="tt-muted">These are current table gaps, not clinching calculations. Level points can still mean different positions because of tie-breakers. Zones follow the configured rules for this season.</p><?php endif; ?>
-    <details><summary>Bottom six comparison</summary><div class="tt-scroll" tabindex="0" role="region" aria-label="Bottom six teams"><table><thead><tr><th scope="col">Pos</th><th scope="col">Team</th><th scope="col">P</th><th scope="col">Pts</th><th scope="col">GD</th><th scope="col">Points gap</th><th scope="col">Games in hand</th></tr></thead><tbody><?php $trackerTableRows($analysis['bottom']); ?></tbody></table></div></details>
+    <details open><summary>Relegation Battle — Bottom six comparison</summary><div class="tt-scroll" tabindex="0" role="region" aria-label="Bottom six teams"><table><thead><tr><th scope="col">Pos</th><th scope="col">Team</th><th scope="col">P</th><th scope="col">Pts</th><th scope="col">GD</th><th scope="col">Points gap</th><th scope="col">Games in hand</th></tr></thead><tbody><?php $trackerTableRows($analysis['bottom']); ?></tbody></table></div></details>
 </section>
 <section id="tt-goals" class="panel">
     <h2>Attack and defence</h2><div class="tt-cards">
@@ -121,10 +114,12 @@ $trackerTableRows = static function ($rows) use ($teamName, $team, $games_played
     </div>
     <?php if ($analysis['league_goal_rate'] !== null && $games_played): ?><p>The selected league table averages <strong><?= number_format($analysis['league_goal_rate'], 2) ?></strong> goals scored per team per game. Your attack is <?= number_format(abs((int)$team['gf'] / $games_played - $analysis['league_goal_rate']), 2) ?> goals per game <?= (int)$team['gf'] / $games_played >= $analysis['league_goal_rate'] ? 'above' : 'below' ?> that average.</p><?php endif; ?>
 </section>
+<?php include __DIR__ . '/team-tracker-halfway.php'; ?>
 <section class="panel tt-notes"><h2>Reading this tracker</h2>
     <p>Every panel uses the same selected table, including its filters, scoring rules and points adjustments. A filtered or hypothetical table describes that selection, rather than the full real-world season.</p>
     <p>Points forecasts continue the current average and are estimates, not survival probabilities. Fixed totals cannot guarantee safety, promotion, qualification or a title. The halfway benchmark is a planning aid, not a historical survival model.</p>
     <p>Use the zone gaps to identify nearby rivals, the target planner to choose a points goal, and the results calculator to test a feasible route toward it.</p>
 </section>
+<section class="panel tt-hero"><h2>Keep pushing, <?= $escapeTracker($teamName) ?>!</h2><p><?= $analysis['remaining'] ? $analysis['remaining'] . ' games remain. Pick the next points milestone and test a route to it above.' : 'Season complete in this view. Review the final record and milestones above.' ?></p></section>
 </div>
 <script src="assets/team-tracker.js" defer></script>
