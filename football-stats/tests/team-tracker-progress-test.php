@@ -1,7 +1,8 @@
 <?php
 // Exercise the shared panel without a database or live standings.
-function render_tracker_progress($played, $points, $total = 38)
+function render_tracker_progress($played, $points, $total = 38, $scoring = null)
 {
+    $trackerScoring = $scoring;
     $games_played = $played;
     $trackerTotalGames = $total;
     $halfway_point = (int)($total / 2);
@@ -44,4 +45,9 @@ expect_progress(strpos($html, '<strong>-3</strong>') !== false, 'Negative points
 $html = render_tracker_progress(23, 30, 46);
 expect_progress(strpos($html, 'Halfway reached') !== false, '46-game halfway supported');
 expect_progress(strpos($html, 'Finish · 46') !== false, '46-game finish marker');
+$html = render_tracker_progress(37, 37, 38, ['win' => 2, 'draw' => 1, 'loss' => 0]);
+expect_progress(strpos($html, '<strong>39</strong>') !== false, 'Maximum points use configured scoring');
+expect_progress(strpos($html, 'highest available result score (2 points per game)') !== false, 'Scoring explanation matches calculator');
+$html = render_tracker_progress(1, -3);
+expect_progress(strpos($html, '<strong>-3.0</strong>') !== false, 'Projection respects possible remaining results after deductions');
 echo "Team tracker progress tests passed.\n";

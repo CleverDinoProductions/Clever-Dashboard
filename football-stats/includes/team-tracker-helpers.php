@@ -161,7 +161,7 @@ if (!function_exists('football_stats_get_best_text_color')) {
 
 if (!function_exists('football_stats_get_tracker_team')) {
     function football_stats_get_tracker_team($standings, $defaultTeamName = null) {
-        $requestedTeam = isset($_GET['tracker_team']) ? trim($_GET['tracker_team']) : null;
+        $requestedTeam = isset($_GET['tracker_team']) && is_string($_GET['tracker_team']) ? trim($_GET['tracker_team']) : null;
 
         if ($requestedTeam) {
             foreach ($standings as $row) {
@@ -206,8 +206,16 @@ if (!function_exists('football_stats_render_team_selector')) {
             'match_filter_mode',
             'match_id',
             'table_filter',
+            'pre_season',
+            'excluded_matches',
+            'excluded_results',
+            'outcome_overrides',
+            'custom_points_deductions',
+            'custom_win_points',
+            'custom_draw_points',
+            'custom_loss_points',
         ] as $key) {
-            if (isset($_GET[$key]) && $_GET[$key] !== '') {
+            if (isset($_GET[$key]) && is_scalar($_GET[$key]) && $_GET[$key] !== '') {
                 $baseParams[$key] = $_GET[$key];
             }
         }
@@ -217,10 +225,10 @@ if (!function_exists('football_stats_render_team_selector')) {
                 <?php foreach ($baseParams as $key => $val): ?>
                     <input type="hidden" name="<?= htmlspecialchars($key, ENT_QUOTES) ?>" value="<?= htmlspecialchars($val, ENT_QUOTES) ?>">
                 <?php endforeach; ?>
-                <label style="color: #FFFFFF; font-weight: bold; font-size: 15px; white-space: nowrap;">
+                <label for="tracker-team-select" style="color: #FFFFFF; font-weight: bold; font-size: 15px; white-space: nowrap;">
                     🔍 Select Team:
                 </label>
-                <select name="tracker_team" onchange="this.form.submit()"
+                <select id="tracker-team-select" name="tracker_team" onchange="this.form.submit()"
                         style="background: #40444b; color: #FFFFFF; border: 2px solid #5865F2; border-radius: 6px; padding: 8px 12px; font-size: 15px; cursor: pointer; min-width: 220px;">
                     <?php foreach ($standings as $row): ?>
                         <option value="<?= htmlspecialchars($row['team_name'], ENT_QUOTES) ?>"

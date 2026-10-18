@@ -1,0 +1,30 @@
+<?php
+require_once __DIR__ . '/../includes/team-tracker-analysis.php';
+require_once __DIR__ . '/../includes/team-tracker-helpers.php';
+function check_tracker($condition, $message) { if (!$condition) throw new RuntimeException($message); }
+$rows = [];
+for ($i = 1; $i <= 24; $i++) $rows[] = ['team_name' => 'Team ' . $i, 'position' => $i, 'played' => 30, 'points' => 70 - $i * 2, 'won' => 10, 'drawn' => 5, 'lost' => 15, 'gf' => 40, 'ga' => 40, 'gd' => 0];
+$rules = ['total_games' => 46, 'zones' => [['key' => 'automatic-promotion', 'label' => 'Promotion', 'from' => 1, 'to' => 3], ['key' => 'relegation', 'label' => 'Relegation', 'from' => 24, 'to' => 24]]];
+$scoring = ['win' => 3, 'draw' => 1, 'loss' => 0];
+$a = football_stats_tracker_analysis($rows[22], $rows, $rules, $scoring);
+check_tracker($a['zone'] === 'Outside configured zones', 'League Two 23rd is outside relegation zone');
+check_tracker($a['boundaries'][1]['rival']['position'] === 24, 'Correct League Two relegation cutoff');
+check_tracker($a['boundaries'][1]['gap'] === 2, 'Gap sign describes selected team lead');
+$a = football_stats_tracker_analysis($rows[23], $rows, $rules, $scoring);
+check_tracker($a['zone'] === 'Relegation' && $a['boundaries'][1]['rival']['position'] === 23, 'Inside zone compares to first safe team');
+$a = football_stats_tracker_analysis($rows[0], $rows, $rules, $scoring);
+check_tracker($a['boundaries'][0]['rival']['position'] === 4, 'Promotion team compares with first chaser');
+check_tracker(count($a['nearby']) === 3 && count($a['bottom']) === 6, 'Neighbour and bottom panels');
+$team = $rows[5]; $team['played'] = 28; $team['points'] = -4;
+$a = football_stats_tracker_analysis($team, $rows, $rules, ['win' => 2, 'draw' => 1, 'loss' => 0]);
+check_tracker($a['remaining'] === 18 && $a['max_result_points'] === 2, 'Custom scoring and schedule');
+check_tracker($a['boundaries'][0]['games_in_hand'] === 2, 'Selected team has two games in hand');
+check_tracker($a['adjustment'] === -29, 'Points adjustment retained');
+$rules['zones'] = [];
+check_tracker(football_stats_tracker_analysis($team, [], $rules, $scoring)['league_goal_rate'] === null, 'Empty league has no fabricated average');
+$_GET = ['tracker_team' => ['invalid'], 'calc_mode' => 'custom_matches', 'custom_win_points' => '2', 'excluded_results' => 'h4,a5'];
+check_tracker(football_stats_get_tracker_team($rows)['team_name'] === 'Team 1', 'Malformed selection falls back safely');
+ob_start(); football_stats_render_team_selector($rows, 'Team 1'); $html = ob_get_clean();
+check_tracker(strpos($html, 'name="custom_win_points" value="2"') !== false, 'Switching teams preserves scoring');
+check_tracker(strpos($html, 'name="excluded_results" value="h4,a5"') !== false, 'Switching teams preserves excluded results');
+echo "Team tracker analysis tests passed.\n";

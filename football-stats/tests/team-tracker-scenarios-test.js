@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const calculate = require('../assets/team-tracker.js');
+const scoring = {win:3, draw:1, loss:0};
+assert.deepEqual(calculate(30, 4, 2, 1, 1, scoring), {games:4, left:0, added:7, points:37});
+assert.equal(calculate(30, 2, 3, 0, 0, scoring), null);
+assert.equal(calculate(30, 2, 0.5, 0, 0, scoring), null);
+assert.equal(calculate(30, 2, -1, 0, 0, scoring), null);
+assert.equal(calculate(30, 2, NaN, 0, 0, scoring), null);
+assert.deepEqual(calculate(-3, 0, 0, 0, 0, scoring), {games:0, left:0, added:0, points:-3});
+assert.equal(calculate(10, 4, 2, 1, 0, {win:2, draw:1, loss:0}).points, 15);
+console.log('Team tracker scenario tests passed.');

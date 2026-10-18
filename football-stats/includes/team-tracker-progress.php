@@ -3,11 +3,12 @@
 $trackerPlayed = max(0, (int)$games_played);
 $trackerRemaining = max(0, $trackerTotalGames - $trackerPlayed);
 $trackerPoints = (int)$team['points'];
-$trackerAvailable = $trackerRemaining * 3;
+$trackerResultPoints = $trackerScoring ?? ['win' => 3, 'draw' => 1, 'loss' => 0];
+$trackerAvailable = $trackerRemaining * max($trackerResultPoints);
 $trackerMaximum = $trackerPoints + $trackerAvailable;
 $trackerPercent = min(100, max(0, $trackerPlayed / max(1, $trackerTotalGames) * 100));
 $trackerPace = $trackerPlayed > 0 ? $trackerPoints / $trackerPlayed : null;
-$trackerProjection = $trackerPace === null ? null : $trackerPoints + $trackerPace * $trackerRemaining;
+$trackerProjection = $trackerPace === null ? null : min($trackerMaximum, max($trackerPoints + min($trackerResultPoints) * $trackerRemaining, $trackerPoints + $trackerPace * $trackerRemaining));
 $trackerPhase = $trackerRemaining === 0 ? 'Season complete' : ($trackerPlayed === 0 ? 'Season not started' : ($trackerPlayed < $halfway_point ? 'First half' : ($trackerPlayed === $halfway_point ? 'Halfway reached' : 'Second half')));
 $trackerMilestones = array_unique([(int)$full_season_safety_target, (int)$extended_season_safety_target, (int)$guaranteed_season_safety_target, (int)$mathematical_season_safety_target, (int)$top_half_season_safety_target, (int)$european_season_safety_target, (int)$title_season_safety_target]);
 sort($trackerMilestones);
@@ -50,7 +51,7 @@ sort($trackerMilestones);
         <div class="tracker-metric"><span class="tracker-muted"><?= $trackerRemaining === 0 ? 'Final points' : 'Projected finish' ?></span><strong><?= $trackerProjection === null ? '—' : number_format($trackerProjection, 1) ?></strong></div>
         <div class="tracker-metric"><span class="tracker-muted">Maximum possible points</span><strong><?= $trackerMaximum ?></strong></div>
     </div>
-    <p class="tracker-muted">Based on the selected table view. Projection uses current points per game; future results and deductions can change it. Remaining points assume three points for a win.</p>
+    <p class="tracker-muted">Based on the selected table view. Projection uses current points per game, bounded by possible remaining results; future results and deductions can change it. Remaining points use the highest available result score (<?= max($trackerResultPoints) ?> points per game).</p>
     <details open>
         <summary>Points target planner</summary>
         <div style="overflow-x:auto" tabindex="0" role="region" aria-label="Points targets">

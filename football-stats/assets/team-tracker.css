@@ -1,0 +1,34 @@
+.team-tracker { color:#f4f6fb; }
+.team-tracker .panel { background:#292f3b; border:1px solid #505b70; border-radius:12px; }
+.team-tracker h1,.team-tracker h2,.team-tracker h3 { color:#fff; }
+.team-tracker h2 { margin-top:0; font-size:23px; }
+.team-tracker h3 { font-size:15px; margin:0 0 10px; }
+.team-tracker p { line-height:1.6; }
+.team-tracker .tt-muted,.team-tracker .tt-eyebrow { color:#ccd3df; }
+.tt-hero { text-align:center; }
+.tt-hero h1 { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px; font-size:clamp(26px,4vw,42px); }
+.tt-hero img { object-fit:contain; }
+.tt-badge { display:inline-block; background:#404c62; padding:8px 16px; border-radius:20px; }
+.tt-nav { display:flex; flex-wrap:wrap; gap:12px 24px; }
+.team-tracker a { color:#b6caff; }
+.tt-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr)); gap:14px; margin:16px 0; }
+.tt-cards > div { background:#202632; padding:18px; border-radius:8px; }
+.tt-cards strong { font-size:26px; display:block; overflow-wrap:anywhere; }
+.tt-cards p { margin-bottom:0; color:#d0d7e3; }
+.tt-cards progress { width:100%; height:16px; margin-top:12px; accent-color:#7b9eff; }
+.tt-record-bar { display:flex; height:16px; overflow:hidden; border-radius:8px; background:#454d5c; }
+.tt-won { background:#57c994; }.tt-drawn { background:#809eff; }.tt-lost { background:#f48383; }
+.team-tracker .tt-notice { background:#3e3840; border-left:3px solid #ffd589; padding:14px; }
+.tt-scroll { overflow-x:auto; }
+.team-tracker table { width:100%; border-collapse:collapse; }
+.team-tracker th,.team-tracker td { text-align:left; padding:12px; border-bottom:1px solid #505b70; white-space:nowrap; }
+.team-tracker th { color:#fff; }.team-tracker caption { text-align:left; padding:12px 0; color:#d0d7e3; }
+.team-tracker .tt-selected { background:#364869; }
+.team-tracker details summary { cursor:pointer; font-weight:600; padding:14px 0; }
+.tt-calculator label { display:flex; flex-direction:column; gap:8px; }
+.tt-calculator input { width:100%; box-sizing:border-box; border:1px solid #8a97b0; border-radius:6px; padding:12px; background:#1d2330; color:#fff; font-size:18px; }
+.tt-calculator button { background:#5169bb; color:#fff; border:1px solid #a9baff; border-radius:6px; padding:10px 16px; cursor:pointer; }
+.team-tracker :focus-visible { outline:3px solid #ffd589; outline-offset:3px; }
+.tt-result { background:#202632; padding:16px; border-radius:8px; }
+.team-tracker section[id] { scroll-margin-top:20px; }
+@media(max-width:600px) { .tt-hero form { flex-wrap:wrap; justify-content:center; max-width:100%; box-sizing:border-box; }.tt-hero select { min-width:0!important; max-width:100%; }.team-tracker .panel { padding:16px; } }
