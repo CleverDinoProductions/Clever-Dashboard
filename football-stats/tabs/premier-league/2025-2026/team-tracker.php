@@ -27,7 +27,7 @@ $teamTextColor = football_stats_get_best_text_color($teamPrimary, $teamSecondary
 // === HALFWAY POINT SAFETY CALCULATIONS ===
 $halfway_point = 19; // Halfway through 38-game season
 $games_played = $team['played'];
-$games_remaining = 38 - $games_played;
+$games_remaining = max(0, 38 - $games_played);
 $games_to_halfway = max(0, $halfway_point - $games_played);
 
 // Check if we're before or after halfway
@@ -296,42 +296,10 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
 </div>
 <?php endif; ?>
 
-<!-- Season Progress Indicator -->
-<div class="panel" style="background: #2e3136;">
-    <h2 style="color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">📅 Season Progress</h2>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <div style="text-align: center; flex: 1; min-width: 100px;">
-            <div style="font-size: 14px; color: #FFFFFF; font-weight: bold;">Games Played</div>
-            <div style="font-size: 32px; font-weight: bold; color: #5865F2; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);"><?php echo $games_played; ?></div>
-        </div>
-        <div style="font-size: 36px; color: #5865F2;">📊</div>
-        <div style="text-align: center; flex: 1; min-width: 100px;">
-            <div style="font-size: 14px; color: #FFFFFF; font-weight: bold;">Halfway Point</div>
-            <div style="font-size: 32px; font-weight: bold; color: <?= $teamTextColor ?>; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);"><?php echo $halfway_point; ?></div>
-        </div>
-        <div style="font-size: 36px; color: #43b581;">🏁</div>
-        <div style="text-align: center; flex: 1; min-width: 100px;">
-            <div style="font-size: 14px; color: #FFFFFF; font-weight: bold;">Full Season</div>
-            <div style="font-size: 32px; font-weight: bold; color: #43b581; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">38</div>
-        </div>
-    </div>
-    
-    <!-- Progress bar showing season progress -->
-    <div style="background: #40444b; border-radius: 8px; height: 30px; position: relative; overflow: hidden; border: 2px solid #5865F2;">
-        <?php $season_progress = ($games_played / 38) * 100; ?>
-        <div style="background: linear-gradient(90deg, #5865F2, <?= $teamSecondary ?>); width: <?php echo $season_progress; ?>%; height: 100%; transition: width 0.5s ease;"></div>
-        <?php if ($games_played < $halfway_point): ?>
-            <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: <?= $teamSecondary ?>; opacity: 0.8; box-shadow: 0 0 10px rgba(255,205,0,0.6);"></div>
-            <div style="position: absolute; left: 50%; top: -28px; font-size: 12px; color: <?= $teamTextColor ?>; font-weight: bold; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 3px 8px; border-radius: 4px; border: 1px solid <?= $teamSecondary ?>;">
-                ▼ Halfway
-            </div>
-        <?php endif; ?>
-    </div>
-    <p style="color: #FFFFFF; font-size: 13px; margin-top: 10px; text-align: center; font-weight: bold;">
-        <?php echo $is_first_half ? "First half of season" : "Second half of season"; ?> • 
-        <?php echo round($season_progress, 1); ?>% complete
-    </p>
-</div>
+<?php
+$trackerTotalGames = 38;
+include dirname(__DIR__, 3) . '/includes/team-tracker-progress.php';
+?>
 
 <!-- Key Stats Grid -->
 <div class="grid">
@@ -354,7 +322,7 @@ if ($team['position'] <= 17 && $team['points'] >= $safety_target) {
             <?php echo $team['points']; ?>
         </div>
         <p style="text-align: center; color: #FFFFFF; font-size: 14px; font-weight: bold;">
-            PPG needed: <?php echo $ppg_needed; ?> points from <?php echo $games_to_halfway; ?> games
+            Required PPG: <?php echo $points_to_safety > 0 && ($is_first_half ? $games_to_halfway : $games_remaining) === 0 ? "N/A (target missed)" : $ppg_needed; ?> · <?php echo $games_label; ?>
         </p>
     </div>
 
