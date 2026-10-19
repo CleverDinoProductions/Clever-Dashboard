@@ -1,0 +1,428 @@
+{
+  "2018-2019": {
+    "A1": [
+      "Germany",
+      "France",
+      "Netherlands"
+    ],
+    "A2": [
+      "Belgium",
+      "Switzerland",
+      "Iceland"
+    ],
+    "A3": [
+      "Portugal",
+      "Italy",
+      "Poland"
+    ],
+    "A4": [
+      "Spain",
+      "England",
+      "Croatia"
+    ],
+    "B1": [
+      "Slovakia",
+      "Ukraine",
+      "Czech Republic"
+    ],
+    "B2": [
+      "Russia",
+      "Sweden",
+      "Turkey"
+    ],
+    "B3": [
+      "Austria",
+      "Bosnia-Herzegovina",
+      "Northern Ireland"
+    ],
+    "B4": [
+      "Wales",
+      "Ireland",
+      "Denmark"
+    ],
+    "C1": [
+      "Scotland",
+      "Albania",
+      "Israel"
+    ],
+    "C2": [
+      "Hungary",
+      "Greece",
+      "Finland",
+      "Estonia"
+    ],
+    "C3": [
+      "Slovenia",
+      "Norway",
+      "Bulgaria",
+      "Cyprus"
+    ],
+    "C4": [
+      "Romania",
+      "Serbia",
+      "Montenegro",
+      "Lithuania"
+    ],
+    "D1": [
+      "Georgia",
+      "Latvia",
+      "Kazakhstan",
+      "Andorra"
+    ],
+    "D2": [
+      "Belarus",
+      "Luxembourg",
+      "Moldova",
+      "San Marino"
+    ],
+    "D3": [
+      "Azerbaijan",
+      "Faroe Islands",
+      "Malta",
+      "Kosovo"
+    ],
+    "D4": [
+      "North Macedonia",
+      "Armenia",
+      "Liechtenstein",
+      "Gibraltar"
+    ]
+  },
+  "2020-2021": {
+    "A1": [
+      "Netherlands",
+      "Italy",
+      "Bosnia-Herzegovina",
+      "Poland"
+    ],
+    "A2": [
+      "England",
+      "Belgium",
+      "Denmark",
+      "Iceland"
+    ],
+    "A3": [
+      "Portugal",
+      "France",
+      "Sweden",
+      "Croatia"
+    ],
+    "A4": [
+      "Switzerland",
+      "Spain",
+      "Ukraine",
+      "Germany"
+    ],
+    "B1": [
+      "Austria",
+      "Norway",
+      "Northern Ireland",
+      "Romania"
+    ],
+    "B2": [
+      "Czech Republic",
+      "Scotland",
+      "Slovakia",
+      "Israel"
+    ],
+    "B3": [
+      "Russia",
+      "Serbia",
+      "Turkey",
+      "Hungary"
+    ],
+    "B4": [
+      "Wales",
+      "Finland",
+      "Ireland",
+      "Bulgaria"
+    ],
+    "C1": [
+      "Montenegro",
+      "Cyprus",
+      "Luxembourg",
+      "Azerbaijan"
+    ],
+    "C2": [
+      "Georgia",
+      "North Macedonia",
+      "Estonia",
+      "Armenia"
+    ],
+    "C3": [
+      "Greece",
+      "Kosovo",
+      "Slovenia",
+      "Moldova"
+    ],
+    "C4": [
+      "Albania",
+      "Belarus",
+      "Lithuania",
+      "Kazakhstan"
+    ],
+    "D1": [
+      "Faroe Islands",
+      "Latvia",
+      "Andorra",
+      "Malta"
+    ],
+    "D2": [
+      "Gibraltar",
+      "Liechtenstein",
+      "San Marino"
+    ]
+  },
+  "2022-2023": {
+    "A1": [
+      "France",
+      "Denmark",
+      "Croatia",
+      "Austria"
+    ],
+    "A2": [
+      "Spain",
+      "Portugal",
+      "Switzerland",
+      "Czech Republic"
+    ],
+    "A3": [
+      "Italy",
+      "Germany",
+      "England",
+      "Hungary"
+    ],
+    "A4": [
+      "Belgium",
+      "Netherlands",
+      "Poland",
+      "Wales"
+    ],
+    "B1": [
+      "Ukraine",
+      "Scotland",
+      "Ireland",
+      "Armenia"
+    ],
+    "B2": [
+      "Iceland",
+      "Israel",
+      "Albania"
+    ],
+    "B3": [
+      "Bosnia-Herzegovina",
+      "Finland",
+      "Romania",
+      "Montenegro"
+    ],
+    "B4": [
+      "Sweden",
+      "Norway",
+      "Serbia",
+      "Slovenia"
+    ],
+    "C1": [
+      "Turkey",
+      "Luxembourg",
+      "Lithuania",
+      "Faroe Islands"
+    ],
+    "C2": [
+      "Northern Ireland",
+      "Greece",
+      "Kosovo",
+      "Cyprus"
+    ],
+    "C3": [
+      "Slovakia",
+      "Belarus",
+      "Azerbaijan",
+      "Kazakhstan"
+    ],
+    "C4": [
+      "Bulgaria",
+      "North Macedonia",
+      "Georgia",
+      "Gibraltar"
+    ],
+    "D1": [
+      "Liechtenstein",
+      "Moldova",
+      "Andorra",
+      "Latvia"
+    ],
+    "D2": [
+      "Malta",
+      "Estonia",
+      "San Marino"
+    ]
+  },
+  "2024-2025": {
+    "A1": [
+      "Croatia",
+      "Portugal",
+      "Poland",
+      "Scotland"
+    ],
+    "A2": [
+      "Italy",
+      "Belgium",
+      "France",
+      "Israel"
+    ],
+    "A3": [
+      "Netherlands",
+      "Hungary",
+      "Germany",
+      "Bosnia-Herzegovina"
+    ],
+    "A4": [
+      "Spain",
+      "Denmark",
+      "Switzerland",
+      "Serbia"
+    ],
+    "B1": [
+      "Czech Republic",
+      "Ukraine",
+      "Albania",
+      "Georgia"
+    ],
+    "B2": [
+      "England",
+      "Finland",
+      "Ireland",
+      "Greece"
+    ],
+    "B3": [
+      "Austria",
+      "Norway",
+      "Slovenia",
+      "Kazakhstan"
+    ],
+    "B4": [
+      "Wales",
+      "Iceland",
+      "Montenegro",
+      "Turkey"
+    ],
+    "C1": [
+      "Sweden",
+      "Azerbaijan",
+      "Slovakia",
+      "Estonia"
+    ],
+    "C2": [
+      "Romania",
+      "Kosovo",
+      "Cyprus",
+      "Lithuania"
+    ],
+    "C3": [
+      "Luxembourg",
+      "Bulgaria",
+      "Northern Ireland",
+      "Belarus"
+    ],
+    "C4": [
+      "Armenia",
+      "Faroe Islands",
+      "North Macedonia",
+      "Latvia"
+    ],
+    "D1": [
+      "Gibraltar",
+      "San Marino",
+      "Liechtenstein"
+    ],
+    "D2": [
+      "Moldova",
+      "Malta",
+      "Andorra"
+    ]
+  },
+  "2026-2027": {
+    "A1": [
+      "France",
+      "Italy",
+      "Belgium",
+      "Turkey"
+    ],
+    "A2": [
+      "Germany",
+      "Netherlands",
+      "Serbia",
+      "Greece"
+    ],
+    "A3": [
+      "Spain",
+      "Croatia",
+      "England",
+      "Czech Republic"
+    ],
+    "A4": [
+      "Portugal",
+      "Denmark",
+      "Norway",
+      "Wales"
+    ],
+    "B1": [
+      "Scotland",
+      "Switzerland",
+      "Slovenia",
+      "North Macedonia"
+    ],
+    "B2": [
+      "Hungary",
+      "Ukraine",
+      "Georgia",
+      "Northern Ireland"
+    ],
+    "B3": [
+      "Israel",
+      "Austria",
+      "Ireland",
+      "Kosovo"
+    ],
+    "B4": [
+      "Poland",
+      "Bosnia-Herzegovina",
+      "Romania",
+      "Sweden"
+    ],
+    "C1": [
+      "Albania",
+      "Finland",
+      "Belarus",
+      "San Marino"
+    ],
+    "C2": [
+      "Montenegro",
+      "Armenia",
+      "Cyprus",
+      "Latvia"
+    ],
+    "C3": [
+      "Kazakhstan",
+      "Slovakia",
+      "Faroe Islands",
+      "Moldova"
+    ],
+    "C4": [
+      "Iceland",
+      "Bulgaria",
+      "Estonia",
+      "Luxembourg"
+    ],
+    "D1": [
+      "Gibraltar",
+      "Malta",
+      "Andorra"
+    ],
+    "D2": [
+      "Lithuania",
+      "Azerbaijan",
+      "Liechtenstein"
+    ]
+  }
+}

@@ -12,7 +12,7 @@ function football_stats_nations_league_tabs(string $edition, string $league): ar
         'matches'=>['label'=>'Fixtures & Results', 'icon'=>'📅'],
     ];
     if ($league === 'league-a') $tabs['finals'] = ['label'=>'Finals', 'icon'=>'🏆'];
-    if (($edition >= '2024-2025' && $league !== 'league-d') || (in_array($edition, ['2020-2021', '2022-2023'], true) && $league === 'league-c')) {
+    if (($edition >= '2024-2025') || (in_array($edition, ['2020-2021', '2022-2023'], true) && $league === 'league-c')) {
         $tabs['playoffs'] = ['label'=>'Play-offs', 'icon'=>'🎟️'];
     }
     $tabs['format'] = ['label'=>'Format & Rules', 'icon'=>'📖'];

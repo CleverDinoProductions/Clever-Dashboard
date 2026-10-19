@@ -127,6 +127,29 @@ $hideUpdateControls = ($dashboardSettings['show_update_controls'] ?? '1') !== '1
             <span>Live data • Updates Daily • <?php echo date('Y-m-d H:i:s'); ?> UTC</span>
             <button id="update-el-data-btn" style="margin-left:auto;padding:6px 16px;font-size:1em;cursor:pointer;">🔄 Update English League Data</button>
             <button id="update-wc-data-btn" style="margin-left:auto;padding:6px 16px;font-size:1em;cursor:pointer;">🔄 Update World Cup Data</button>
+            <?php if ($currentMainTab === 'nations-league' && !$hideUpdateControls): ?>
+            <button id="update-nl-data-btn" type="button">🔄 Update Nations League <?= htmlspecialchars(football_stats_nations_league_editions()[$currentTournament], ENT_QUOTES, 'UTF-8') ?></button>
+            <span id="update-nl-status" role="status"></span>
+            <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var button = document.getElementById('update-nl-data-btn');
+                var status = document.getElementById('update-nl-status');
+                button.addEventListener('click', function () {
+                    button.disabled = true;
+                    status.textContent = 'Starting update…';
+                    fetch('update-nl-data.php', {
+                        method: 'POST',
+                        headers: {'X-CSRF-Token': <?= json_encode(clever_csrf_token()) ?>},
+                        body: new URLSearchParams({tournament: <?= json_encode($currentTournament) ?>})
+                    }).then(function (response) { return response.json(); }).then(function (data) {
+                        status.textContent = data.message;
+                    }).catch(function () {
+                        status.textContent = 'Could not start update. Please try again.';
+                    }).finally(function () { button.disabled = false; });
+                });
+            });
+            </script>
+            <?php endif; ?>
             <span id="update-el-status" style="font-size:0.95em;color:#2a8c2a;display:none;"></span>
             <span id="update-wc-status" style="font-size:0.95em;color:#2a8c2a;display:none;"></span>
         </div>

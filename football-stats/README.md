@@ -139,4 +139,6 @@ club list and checked date after verifying the linked source.
 
 The main navigation includes UEFA Nations League alongside World Cup, with
 Leagues A–D, edition-specific views, and historic tournament selection.
-See [Nations League setup and optional data schema](tabs/nations-league/README.md).
+The global fetcher now imports Nations League fixtures with the same TheSportsDB
+key as the English fetcher, and calculates group standings from finished results.
+See [Nations League sync and setup](tabs/nations-league/README.md).

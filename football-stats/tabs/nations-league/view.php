@@ -6,6 +6,18 @@ $leagueLabel = ucwords(str_replace('-', ' ', $currentLeague));
 ?>
 <section class="panel">
     <h2><?= $h('UEFA Nations League '.$editionLabel.' · '.$leagueLabel.' · '.$viewLabel) ?></h2>
+    <p>Fixtures and results provided by <a href="https://www.thesportsdb.com/">TheSportsDB</a>.</p>
+    <?php
+    $metaExists = $db->query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'nl_sync_status'")->fetchColumn();
+    if ($metaExists) {
+        $metaQuery = $db->prepare('SELECT * FROM nl_sync_status WHERE tournament = ?');
+        $metaQuery->execute([$currentTournament]); $syncMeta = $metaQuery->fetch(PDO::FETCH_ASSOC);
+        if ($syncMeta): ?>
+            <p>Last synced: <?= $h($syncMeta['synced_at']) ?> UTC. <?= (int)$syncMeta['match_count'] ?> fixtures received in that update.</p>
+            <?php if ($syncMeta['skipped_count']): ?><p>Some provider events could not be assigned to this tournament's groups and were skipped.</p><?php endif;
+        endif;
+    }
+    ?>
     <?php if ($currentSubTab === 'format'): ?>
         <p>Teams play home and away within their group. A win earns three points, a draw one point, and a defeat zero points. Ties on points are resolved first by head-to-head criteria under UEFA regulations.</p>
         <?php if ($currentTournament === '2018-2019'): ?>
@@ -23,15 +35,20 @@ $leagueLabel = ucwords(str_replace('-', ' ', $currentLeague));
         <?php endif; ?>
         <p><a href="https://www.uefa.com/uefanationsleague/" target="_blank" rel="noopener noreferrer">UEFA Nations League tournament information and regulations</a></p>
     <?php else:
-        // Optional imported tables. Never create or modify databases on a page request.
+        // Read the tables populated by fetch-worldfootball.php; web requests never import data.
         $isGroups = $currentSubTab === 'groups';
         $table = $isGroups ? 'nl_standings' : 'nl_matches';
         $exists = $db->prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?");
         $exists->execute([$table]);
         $rows = [];
         if ($exists->fetchColumn()) {
-            $sql = "SELECT * FROM $table WHERE tournament = ? AND league = ?";
+            $leagueFilter = 'league = ?';
+            if (!$isGroups && $db->query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'nl_match_leagues'")->fetchColumn()) {
+                $leagueFilter = '(league = ? OR EXISTS (SELECT 1 FROM nl_match_leagues WHERE match_id = nl_matches.id AND league = ?))';
+            }
+            $sql = "SELECT * FROM $table WHERE tournament = ? AND $leagueFilter";
             $params = [$currentTournament, $currentLeague];
+            if (str_contains($leagueFilter, 'EXISTS')) $params[] = $currentLeague;
             if (!$isGroups && $currentSubTab !== 'matches') {
                 $sql .= ' AND stage = ?';
                 $params[] = $currentSubTab;
@@ -45,6 +62,7 @@ $leagueLabel = ucwords(str_replace('-', ' ', $currentLeague));
             <p role="status">No <?= $h(strtolower($viewLabel)) ?> data has been imported for <?= $h($editionLabel.' '.$leagueLabel) ?>.</p>
             <p>Select another tournament or league, or open Format &amp; Rules for information about this edition.</p>
         <?php else: ?>
+            <?php if ($isGroups): ?><p>Calculated from synced, finished group matches. Coverage may be incomplete. UEFA disciplinary adjustments and final disciplinary/access-ranking tie-breaks are not included; otherwise tied teams are listed alphabetically.</p><?php endif; ?>
             <div style="overflow-x:auto" tabindex="0" role="region" aria-label="<?= $h($viewLabel) ?>">
                 <table>
                     <caption><?= $h($editionLabel.' '.$leagueLabel.' — '.$viewLabel) ?></caption>
@@ -55,7 +73,7 @@ $leagueLabel = ucwords(str_replace('-', ' ', $currentLeague));
                         <thead><tr><th scope="col">Date (UTC)</th><th scope="col">Stage</th><th scope="col">Home</th><th scope="col">Score</th><th scope="col">Away</th><th scope="col">Status</th></tr></thead>
                         <tbody><?php foreach ($rows as $row): ?><tr>
                             <td><?= $h($row['match_date'] ?? 'TBC') ?></td><td><?= $h($row['round_name']) ?></td><td><?= $h($row['home_team']) ?></td>
-                            <td><?= $row['home_score'] === null || $row['away_score'] === null ? '—' : $h($row['home_score'].'–'.$row['away_score']) ?></td>
+                            <td><?= $row['home_score'] === null || $row['away_score'] === null ? '—' : $h($row['home_score'].'–'.$row['away_score']) ?><?php if (($row['home_pens'] ?? null) !== null && ($row['away_pens'] ?? null) !== null): ?> (pens <?= $h($row['home_pens'].'–'.$row['away_pens']) ?>)<?php endif; ?></td>
                             <td><?= $h($row['away_team']) ?></td><td><?= $h($row['status']) ?></td>
                         </tr><?php endforeach; ?></tbody>
                     <?php endif; ?>

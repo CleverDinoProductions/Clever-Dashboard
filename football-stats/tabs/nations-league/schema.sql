@@ -1,4 +1,4 @@
--- Optional import schema. Apply to CLEVER_FOOTBALL_DB before importing data.
+-- Created automatically by the Nations League sync in fetch-worldfootball.php.
 CREATE TABLE IF NOT EXISTS nl_standings (
     tournament TEXT NOT NULL,
     league TEXT NOT NULL,
@@ -26,6 +26,20 @@ CREATE TABLE IF NOT EXISTS nl_matches (
     away_team TEXT NOT NULL,
     home_score INTEGER,
     away_score INTEGER,
-    status TEXT NOT NULL DEFAULT 'Scheduled'
+    status TEXT NOT NULL DEFAULT 'Scheduled',
+    home_pens INTEGER,
+    away_pens INTEGER
 );
 CREATE INDEX IF NOT EXISTS nl_matches_edition ON nl_matches(tournament, league, stage, match_date);
+
+CREATE TABLE IF NOT EXISTS nl_match_leagues (
+    match_id TEXT NOT NULL,
+    league TEXT NOT NULL,
+    PRIMARY KEY (match_id, league)
+);
+CREATE TABLE IF NOT EXISTS nl_sync_status (
+    tournament TEXT PRIMARY KEY,
+    synced_at TEXT NOT NULL,
+    match_count INTEGER NOT NULL,
+    skipped_count INTEGER NOT NULL DEFAULT 0
+);
