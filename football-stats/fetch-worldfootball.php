@@ -5,6 +5,11 @@
  *          wc_teams and wc_bracket_sides lookup tables.
  */
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Run this sync from the command line or the protected update controls.');
+}
+
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');
@@ -15,12 +20,29 @@ echo "⚽ Initializing Global Football Sync (2026 World Cup Ready)...\n";
 $API_KEY  = '2467baa7f4d747f5b7d2d99498a70172';
 $BASE_URL = "https://api.football-data.org/v4/";
 
-try {
-    $db = new PDO('sqlite:world-cup-stats.sqlite3');
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/sportsdb-config.php';
+require_once __DIR__ . '/includes/nations-league-sync.php';
+
+$options = getopt('', ['nations-league-only', 'tournament:']);
+$editions = isset($options['tournament']) ? [$options['tournament']] : array_keys(football_stats_nations_league_editions());
+foreach ($editions as $edition) {
+    if (!is_string($edition) || !isset(football_stats_nations_league_editions()[$edition])) {
+        fwrite(STDERR, "Unsupported Nations League tournament. Use an edition such as 2024-2025.\n");
+        exit(1);
+    }
 }
+echo "\n[Nations League] Syncing TheSportsDB fixtures and group results...\n";
+$nationsResults = football_stats_sync_nations_league($db, football_stats_sportsdb_api_key(), $editions);
+$nationsFailed = false;
+foreach ($nationsResults as $edition => $result) {
+    echo $edition . ': ' . ($result['error'] ?? ($result['matches'] . ' matches synced; ' . $result['skipped'] . ' unrecognised events skipped.')) . "\n";
+    if (isset($result['error'])) $nationsFailed = true;
+}
+if (isset($options['nations-league-only'])) exit($nationsFailed ? 1 : 0);
+
+// The existing World Cup sync continues to use its own configured connection.
+$db = $world_cup_db;
 
 // ============================================================
 // 1. DATABASE SCHEMA
@@ -328,4 +350,4 @@ if (!$matches_data || !isset($matches_data['matches'])) {
     }
 }
 
-echo "\n🏁 Data sync complete! Your World Cup database is up to date.\n";
+echo "\n🏁 Global football sync finished. Review any skipped or failed imports above.\n";

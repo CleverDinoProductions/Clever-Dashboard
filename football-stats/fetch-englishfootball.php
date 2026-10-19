@@ -17,6 +17,8 @@ date_default_timezone_set('UTC');
 echo "⚽ Initializing Optimized Sync & Badge Injector...\n";
 
 $API_KEY  = '876419';
+require_once __DIR__ . '/includes/sportsdb-config.php';
+$API_KEY = football_stats_sportsdb_api_key($API_KEY);
 $BASE_URL = "https://www.thesportsdb.com/api/v1/json/$API_KEY/";
 $db       = new SQLite3('football-stats.sqlite3');
 
