@@ -134,3 +134,9 @@ settings. Legacy global memberships remain Premier League overrides only.
 Table custom rules, match filters and the cross-season rules lab all resolve
 memberships for the selected league. Refresh snapshots by updating the ordered
 club list and checked date after verifying the linked source.
+
+## Nations League
+
+The main navigation includes UEFA Nations League alongside World Cup, with
+Leagues A–D, edition-specific views, and historic tournament selection.
+See [Nations League setup and optional data schema](tabs/nations-league/README.md).

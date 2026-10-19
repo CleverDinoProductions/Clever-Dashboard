@@ -29,7 +29,11 @@ if (!function_exists('build_tab_url')) {
 
 $currentTitle = 'Football Stats Dashboard';
 
-if ($currentMainTab === 'world-cup') {
+if ($currentMainTab === 'nations-league') {
+    $currentTitle .= ' - UEFA Nations League ' . football_stats_nations_league_editions()[$currentTournament];
+    $currentTitle .= ' - ' . ucwords(str_replace('-', ' ', $currentLeague));
+    $currentTitle .= ' - ' . football_stats_nations_league_tabs($currentTournament, $currentLeague)[$currentSubTab]['label'];
+} elseif ($currentMainTab === 'world-cup') {
     $currentTitle .= ' - World Cup 2026';
 
     if (isset($worldCupTabs[$currentSubTab]['label'])) {
@@ -191,19 +195,27 @@ $hideUpdateControls = ($dashboardSettings['show_update_controls'] ?? '1') !== '1
         <!-- Main Navigation Pills -->
         <nav class="pill-nav main-pills">
             <a href="<?php echo htmlspecialchars(build_tab_url('2025-2026', 'premier-league', 'table'), ENT_QUOTES, 'UTF-8'); ?>"
-               class="pill-tab <?php echo ($currentMainTab !== 'world-cup') ? 'active' : ''; ?>">
+               class="pill-tab <?php echo (!in_array($currentMainTab, ['world-cup', 'nations-league'], true)) ? 'active' : ''; ?>">
                 <span class="nav-icon">🏴</span> English Leagues
             </a>
             <a href="<?php echo htmlspecialchars(build_tab_url('world-cup', null, 'groups'), ENT_QUOTES, 'UTF-8'); ?>"
                class="pill-tab <?php echo ($currentMainTab === 'world-cup') ? 'active' : ''; ?>">
                 <span class="nav-icon">🌍</span> World Cup 2026
             </a>
+            <a href="<?php echo htmlspecialchars(build_tab_url('nations-league', 'league-a', 'groups'), ENT_QUOTES, 'UTF-8'); ?>"
+               class="pill-tab <?php echo $currentMainTab === 'nations-league' ? 'active' : ''; ?>" <?php echo $currentMainTab === 'nations-league' ? 'aria-current="true"' : ''; ?>>
+                <span class="nav-icon">🏆</span> Nations League
+            </a>
         </nav>
         
         <?php
         $tableViewParams = football_stats_get_current_table_view_params();
         $trackerTeamParam = isset($_GET['tracker_team']) && is_string($_GET['tracker_team']) && $_GET['tracker_team'] !== '' ? ['tracker_team'=>$_GET['tracker_team']] : [];
-        football_stats_render_grouped_navigation($seasonLeagueConfigs,$worldCupTabs,$currentMainTab,$currentLeague,$currentSubTab,$tableViewParams,$trackerTeamParam,(string)($dashboardUser['id']??'guest'));
+        if ($currentMainTab === 'nations-league') {
+            football_stats_render_nations_league_navigation($currentTournament, $currentLeague, $currentSubTab);
+        } else {
+            football_stats_render_grouped_navigation($seasonLeagueConfigs,$worldCupTabs,$currentMainTab,$currentLeague,$currentSubTab,$tableViewParams,$trackerTeamParam,(string)($dashboardUser['id']??'guest'));
+        }
         ?>
 
         <!-- Main Content Area -->
