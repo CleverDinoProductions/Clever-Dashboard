@@ -1,6 +1,7 @@
 <?php
 // Include database configuration
 require_once 'config.php';
+require_once __DIR__ . '/includes/nations-league.php';
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once dirname(__DIR__) . '/lib/football-settings.php';
 $dashboardUser = clever_current_user();
@@ -229,7 +230,12 @@ if ($currentMainTab !== 'world-cup' && isset($seasonLeagueConfigs[$currentMainTa
     $currentSubTab = null;
 }
 
-if ($currentMainTab === 'world-cup') {
+if ($currentMainTab === 'nations-league') {
+    $nationsRoute = football_stats_nations_league_route($_GET);
+    $currentTournament = $nationsRoute['tournament'];
+    $currentLeague = $nationsRoute['league'];
+    $currentSubTab = $nationsRoute['subtab'];
+} elseif ($currentMainTab === 'world-cup') {
     $currentLeague = 'world-cup';
 
     if ($currentSubTab === null || !isset($worldCupTabs[$currentSubTab])) {
@@ -257,7 +263,9 @@ $contentFile = null;
 $placeholderTitle = null;
 $placeholderMessage = null;
 
-if ($currentMainTab === 'world-cup') {
+if ($currentMainTab === 'nations-league') {
+    $contentFile = 'tabs/nations-league/view.php';
+} elseif ($currentMainTab === 'world-cup') {
     $contentFile = $worldCupTabs[$currentSubTab]['file'];
 } else {
     $selectedTabConfig = $seasonLeagueConfigs[$currentMainTab][$currentLeague]['tabs'][$currentSubTab];
