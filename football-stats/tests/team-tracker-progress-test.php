@@ -33,7 +33,7 @@ expect_progress(strpos($html, 'On current pace') !== false, 'Achievable targets 
 expect_progress(strpos($html, 'Higher pace needed') !== false, 'Higher targets need improvement');
 $html = render_tracker_progress(37, 37);
 expect_progress(strpos($html, 'Out of reach') !== false, 'Impossible targets marked');
-expect_progress(strpos($html, '0.00') === false, 'Unreached targets cannot require zero pace');
+expect_progress(preg_match('/<th scope="row">38 pts<\/th><td>1<\/td><td>1.00<\/td>/', $html) === 1, 'Unreached target uses the remaining-game pace');
 $html = render_tracker_progress(38, 40);
 expect_progress(strpos($html, 'Season complete') !== false, 'Completed season label');
 expect_progress(strpos($html, 'Target reached') !== false, 'Reached target');
