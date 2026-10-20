@@ -10,7 +10,7 @@ $trackerPercent = min(100, max(0, $trackerPlayed / max(1, $trackerTotalGames) * 
 $trackerPace = $trackerPlayed > 0 ? $trackerPoints / $trackerPlayed : null;
 $trackerProjection = $trackerPace === null ? null : min($trackerMaximum, max($trackerPoints + min($trackerResultPoints) * $trackerRemaining, $trackerPoints + $trackerPace * $trackerRemaining));
 $trackerPhase = $trackerRemaining === 0 ? 'Season complete' : ($trackerPlayed === 0 ? 'Season not started' : ($trackerPlayed < $halfway_point ? 'First half' : ($trackerPlayed === $halfway_point ? 'Halfway reached' : 'Second half')));
-$trackerMilestones = array_unique([(int)$full_season_safety_target, (int)$extended_season_safety_target, (int)$guaranteed_season_safety_target, (int)$mathematical_season_safety_target, (int)$top_half_season_safety_target, (int)$european_season_safety_target, (int)$title_season_safety_target]);
+$trackerMilestones = array_unique([20, 30, (int)$full_season_safety_target, (int)$extended_season_safety_target, (int)$guaranteed_season_safety_target, (int)$mathematical_season_safety_target, (int)$top_half_season_safety_target, (int)$european_season_safety_target, (int)$title_season_safety_target]);
 sort($trackerMilestones);
 ?>
 <style>
