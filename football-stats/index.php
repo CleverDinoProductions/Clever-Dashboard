@@ -4,6 +4,7 @@ require_once 'config.php';
 require_once __DIR__ . '/includes/nations-league.php';
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once dirname(__DIR__) . '/lib/football-settings.php';
+require_once dirname(__DIR__) . '/lib/saved-results.php';
 $dashboardUser = clever_current_user();
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_movement_preferences'])) {
     $movementUser = clever_require_login();
@@ -278,12 +279,34 @@ if ($currentMainTab === 'nations-league') {
     }
 }
 
+$savedResultsError = '';
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['results_action'])) {
+    $resultsUser = clever_require_login();
+    clever_csrf_token();
+    clever_verify_csrf();
+    try {
+        $returnParams = $_GET;
+        if ($_POST['results_action'] === 'save') {
+            clever_save_results((int)$resultsUser['id'], (string)($_POST['save_name'] ?? ''), $currentMainTab, (string)$currentLeague, $_GET);
+        } elseif ($_POST['results_action'] === 'load') {
+            $returnParams = clever_load_results((int)$resultsUser['id'], (int)($_POST['save_id'] ?? 0), $currentMainTab, (string)$currentLeague, $_GET);
+        } elseif ($_POST['results_action'] === 'delete') {
+            clever_delete_results((int)$resultsUser['id'], (int)($_POST['save_id'] ?? 0));
+        }
+        header('Location: ?' . http_build_query($returnParams));
+        exit;
+    } catch (InvalidArgumentException $exception) {
+        $savedResultsError = $exception->getMessage();
+    }
+}
+
 // Include header (which now contains tab navigation)
 include 'includes/header.php';
 ?>
 
 <!-- Main Content Area -->
 <div class="content-wrapper">
+    <?php include __DIR__ . "/includes/saved-results.php"; ?>
     <?php
     if ($contentFile !== null) {
         try {
