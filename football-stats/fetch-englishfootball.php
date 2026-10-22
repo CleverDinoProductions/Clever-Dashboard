@@ -353,24 +353,15 @@ function sync_league($db, $BASE_URL, $code, $id) {
 
 // --- 3. Execution ---
 $leagues = ['D1' => '4525', 'PL' => '4328', 'ELC' => '4329', 'L1' => '4396', 'L2' => '4397', 'NL' => '4590'];
-// Provider coverage varies for regional leagues. Match exact configured names only.
+// Provider coverage varies. Match explicit names and known provider aliases.
 $catalog = json_decode(@file_get_contents("{$BASE_URL}all_leagues.php"), true);
 foreach (clever_regional_competitions() as $regional) {
     $found = false;
     foreach (($catalog['leagues'] ?? []) as $providerLeague) {
-        $names = array_merge([$providerLeague['strLeague'] ?? ''], explode(';', $providerLeague['strLeagueAlternate'] ?? ''));
-        if (($providerLeague['strSport'] ?? '') !== 'Soccer') continue;
-        foreach ($names as $name) {
-            // The catalog uses an English prefix for many divisions.
-            $normalized = preg_replace('/^English /i', '', trim($name));
-            $aliases = [$regional['label']];
-            if ($regional['code'] === 'NPL') $aliases[] = 'Northern Premier League';
-            if ($regional['code'] === 'ILP') $aliases[] = 'Isthmian Premier League';
-            if (!in_array(strtolower($normalized), array_map('strtolower', $aliases), true)) continue;
-            $leagues[$regional['code']] = $providerLeague['idLeague'];
-            $found = true;
-            break 2;
-        }
+        if (clever_regional_provider_code($providerLeague) !== $regional['code']) continue;
+        $leagues[$regional['code']] = $providerLeague['idLeague'];
+        $found = true;
+        break;
     }
     if (!$found) echo "Regional provider data unavailable: {$regional['label']}\n";
 }

@@ -27,3 +27,24 @@ function clever_regional_league_codes(): array
 {
     return array_map(static fn(array $league): string => $league['code'], clever_regional_competitions());
 }
+
+/** Match explicit provider aliases so Premier and Division One stay separate. */
+function clever_regional_provider_code(array $league): ?string
+{
+    if (($league['strSport'] ?? '') !== 'Soccer') return null;
+    $aliases = [
+        'NPL' => ['Northern Premier League'],
+        'ILP' => ['Isthmian Premier League'],
+        'SLPC' => ['Southern Premier League Central Division', 'Southern Football League Division Central'],
+        'SLPS' => ['Southern Premier League South Division', 'Southern Football League Division South'],
+    ];
+    $names = array_merge([$league['strLeague'] ?? ''], explode(';', $league['strLeagueAlternate'] ?? ''));
+    foreach ($names as $name) {
+        $normalized = strtolower(preg_replace('/^English /i', '', trim($name)));
+        foreach (clever_regional_competitions() as $regional) {
+            $accepted = array_merge([$regional['label']], $aliases[$regional['code']] ?? []);
+            if (in_array($normalized, array_map('strtolower', $accepted), true)) return $regional['code'];
+        }
+    }
+    return null;
+}
