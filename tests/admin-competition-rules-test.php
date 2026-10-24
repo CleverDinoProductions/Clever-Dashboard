@@ -34,11 +34,12 @@ admin_rules_assert(clever_competition_rules($football, 'ELC', '2026-2027')['zone
 admin_rules_assert(str_contains($html, 'name="zones[1][to]" value="8"'), 'The editor reloads persisted values.');
 admin_rules_assert(str_contains($html, 'name="win_points" value="5"') && str_contains($html, 'name="draw_points" value="2"') && str_contains($html, 'name="loss_points" value="1"'), 'The admin saves and reloads result points.');
 $_POST['zones'][1]['from'] = 2;
-$_POST['default_display_zone'] = '1';
+$_POST['zones'][1]['fill_default'] = '1';
+$_POST['zones'][0]['edge_default'] = '1';
 ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
 admin_rules_assert(str_contains($html, 'Competition rules saved.'), 'The admin accepts overlapping zones.');
-admin_rules_assert(clever_competition_rules($football, 'ELC', '2026-2027')['zones'][1]['display_default'], 'The admin persists the selected default display zone.');
-admin_rules_assert(str_contains($html, 'value="1" aria-label="Default display zone" checked'), 'The selected display control reloads checked.');
+admin_rules_assert(clever_competition_rules($football, 'ELC', '2026-2027')['zones'][1]['fill_default'], 'The admin persists the selected default display zone.');
+admin_rules_assert(str_contains($html, 'value="1" aria-label="Row colour preferred zone" checked'), 'The selected display control reloads checked.');
 $_POST['zones'][1]['from'] = 0;
 ob_start(); include dirname(__DIR__) . '/admin/admin.php'; $html = ob_get_clean();
 admin_rules_assert(str_contains($html, 'Zone positions must run'), 'The admin still validates ranges.');

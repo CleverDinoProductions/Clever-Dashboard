@@ -125,10 +125,12 @@ function football_stats_table_zone_colors(?array $zone): array
 
 function football_stats_table_row_attributes(string $competitionCode, string $seasonLabel, int $position): string
 {
-    $defaultZone = football_stats_get_default_position_zone($competitionCode, $position);
+    $defaultZone = clever_position_display_zone(football_stats_get_competition_rules($competitionCode)['zones'], $position, 'edge');
     $seasonZone = football_stats_get_position_zone($competitionCode, $seasonLabel, $position);
     [$defaultColor] = football_stats_table_zone_colors($defaultZone);
-    [$seasonColor, $seasonFill] = football_stats_table_zone_colors($seasonZone);
+    $seasonEdge = clever_position_display_zone(football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'], $position, 'edge');
+    [$seasonColor] = football_stats_table_zone_colors($seasonEdge);
+    [, $seasonFill] = football_stats_table_zone_colors($seasonZone);
     return 'class="row-zone" style="--default-zone-color: ' . $defaultColor
         . '; --season-zone-color: ' . $seasonColor . '; --season-zone-fill: ' . $seasonFill . ';"';
 }

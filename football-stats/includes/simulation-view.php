@@ -279,7 +279,7 @@ details .sim-table th { position:static; z-index:auto; }
                 $tzone = sim_zone_for_pos($tpos, $zones);
                 $tgd   = (int)($row['gd'] ?? ($row['gf'] - $row['ga']));
             ?>
-            <tr style="<?= $tzone['bg'] !== 'transparent' ? "background:{$tzone['bg']};" : '' ?>">
+            <tr style="<?= $tzone['bg'] !== 'transparent' ? "background:{$tzone['bg']};" : '' ?>box-shadow:inset -3px 0 <?= htmlspecialchars($tzone['edge_color'] ?? $tzone['color']) ?>;">
                 <td style="text-align:center; font-weight:700; color:<?= htmlspecialchars($tzone['color']) ?>;"><?= $tpos ?></td>
                 <td style="text-align:left;"><?= htmlspecialchars($row['team_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                 <td style="text-align:center;"><?= (int)($row['played'] ?? 0) ?></td>
@@ -481,7 +481,7 @@ details .sim-table th { position:static; z-index:auto; }
                 $pos_arrow = '';
             }
         ?>
-        <tr style="<?= $row_bg !== 'transparent' ? "background:$row_bg;" : '' ?>">
+        <tr style="<?= $row_bg !== 'transparent' ? "background:$row_bg;" : '' ?>box-shadow:inset -3px 0 <?= htmlspecialchars($zone['edge_color'] ?? $zone['color']) ?>;">
             <td style="font-weight:600; color:<?= htmlspecialchars($zone['color']) ?>; text-align:center;">
                 <?= number_format($t['avg_final_position'], 1) ?><?= $pos_arrow ?>
             </td>

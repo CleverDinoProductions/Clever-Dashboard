@@ -86,3 +86,12 @@ foreach (['0', '1'] as $display) {
     simulation_assert($config['zones'][0]['name'] === 'Title + Champions League', 'Overlap bar label includes both regions.');
     simulation_assert($config['zones'][0]['to'] === 1, 'Bar splits at membership changes even with the same highlight.');
 }
+
+unset($rules['default_display_zone']);
+$rules['zones'][0]['fill_default'] = '1';
+$rules['zones'][0]['edge_default'] = '0';
+$rules['zones'][1]['fill_default'] = '0';
+$rules['zones'][1]['edge_default'] = '1';
+clever_save_competition_rules($db, 'ELC', '2026-2027', $rules);
+$config = football_stats_simulation_config($db, 'ELC', '2026-2027', 'Championship');
+simulation_assert($config['zones'][0]['color'] === '#FFD700' && $config['zones'][0]['edge_color'] === '#006400', 'Simulation rows support independent fill and edge regions.');

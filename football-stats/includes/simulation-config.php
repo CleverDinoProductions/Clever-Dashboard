@@ -22,6 +22,7 @@ function football_stats_simulation_config(PDO $db, string $code, string $season,
         $selected = clever_position_display_zone($rules['zones'], $position);
         $zone = $selected ?? ['key'=>'unassigned', 'label'=>'Unassigned', 'color'=>'#555555'];
         [$color, $bg] = football_stats_table_zone_colors($zone);
+        [$edgeColor] = football_stats_table_zone_colors(clever_position_display_zone($rules['zones'], $position, 'edge'));
         $members = array_values(array_filter($targetZones, static fn($candidate) => $position >= $candidate['from'] && $position <= $candidate['to']));
         $name = $members ? implode(' + ', array_column($members, 'name')) : 'Unassigned';
         $last = count($displayZones) - 1;
@@ -30,7 +31,7 @@ function football_stats_simulation_config(PDO $db, string $code, string $season,
         } else {
             $displayZones[] = ['source'=>$selected, 'members'=>$members, 'key'=>$zone['key'], 'name'=>$name,
                 'emoji'=>$emojis[$zone['key']] ?? '', 'from'=>$position, 'to'=>$position,
-                'color'=>$color, 'bg'=>$selected === null ? 'transparent' : $bg];
+                'color'=>$color, 'edge_color'=>$edgeColor, 'bg'=>$selected === null ? 'transparent' : $bg];
         }
     }
     // Region probabilities retain full overlapping ranges. Only the bar uses disjoint segments.

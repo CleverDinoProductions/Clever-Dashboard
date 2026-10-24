@@ -95,3 +95,18 @@ foreach (['q1'=>1, 'q2'=>2, 'q3'=>2, 'q4'=>2] as $quarter=>$played) {
 $rows = football_stats_compute_custom_match_standings($db, 'ELC', '2026-2027', 'league_table_ELC', []);
 settings_assert($rows[0]['played'] === 7, 'Custom result tables use the selected season cutoff.');
 echo "Competition settings tests passed.\n";
+
+// Fill and edge preferences are independent and local to matching ranges.
+$independent = $overlap;
+unset($independent['default_display_zone']);
+$independent['zones'][0]['fill_default'] = '1';
+$independent['zones'][0]['edge_default'] = '0';
+$independent['zones'][1]['fill_default'] = '0';
+$independent['zones'][1]['edge_default'] = '1';
+$independent['zones'][] = ['key'=>'custom','label'=>'Lower band','from'=>10,'to'=>14,'color'=>'#123456','fill_default'=>'0','edge_default'=>'0'];
+$independent['zones'][] = ['key'=>'custom','label'=>'Lower preference','from'=>12,'to'=>15,'color'=>'#654321','fill_default'=>'1','edge_default'=>'1'];
+clever_save_competition_rules($db, 'ELC', '2026-2027', $independent);
+$attributes = football_stats_table_row_attributes('ELC', '2026-2027', 1);
+settings_assert(str_contains($attributes, '--season-zone-color: #006400') && str_contains($attributes, 'rgba(255, 215, 0, 0.15)'), 'Title fill and Champions League edge can be selected independently.');
+settings_assert(football_stats_get_position_zone('ELC', '2026-2027', 12)['label'] === 'Lower preference', 'Another overlapping pair has its own preference.');
+settings_assert(football_stats_get_position_zone('ELC', '2026-2027', 2)['key'] === 'champions-league', 'Preferences only apply where their region matches.');
