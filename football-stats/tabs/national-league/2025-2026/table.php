@@ -21,9 +21,7 @@ $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], 
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
     $filteredStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, $table_filter, $halfway_games, 'league_table_NL', $max_regular_mw);
-    if (!empty($filteredStandings)) {
-        $standings = $filteredStandings;
-    }
+    $standings = $filteredStandings;
     $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'NL', $_split_season, 'home', $halfway_games, 'league_table_NL', $max_regular_mw);
@@ -55,83 +53,10 @@ $team_info = $team_info_NL;
         <?= $last_update['ts'] ? date('Y-m-d H:i:s', $last_update['ts'] / 1000) : 'Updating...' ?>
     </p>
     
-    <table class="league-table">
-        <thead>
-            <tr>
-                <th class="movement-column" scope="col">Movement</th>
-                <th title="Position">Pos</th>
-                <th title="Team" style="text-align: left;">Team</th>
-                <th>P</th>
-                <th title="Games remaining">GR</th>
-                <th>Pts</th>
-                <th>W</th>
-                <th>D</th>
-                <th>L</th>
-                <th>GF</th>
-                <th>GA</th>
-                <th>GD</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($standings as $team): ?>
-            <?php
-                $info = getTeamInfo($team['team_name'], $team_info);
-                $pos = (int)$team['position'];
-                
-                $games_remaining = max(0, $total_games - $team['played']);
-                // Match the Premier League table's GR and points colours.
-                if ($games_remaining <= 5) {
-                    $games_color = '#f04747';
-                } elseif ($games_remaining <= 10) {
-                    $games_color = '#faa61a';
-                } else {
-                    $games_color = '#43b581';
-                }
-                $points_color = $team['points'] >= $team['played'] ? '#43b581' : '#f04747';
-                $show_common = ($team['team_name'] !== $info['common_name']);
-            ?>
-            <tr <?= football_stats_table_row_attributes('NL', $tableView['active_season_label'], (int)$team['position']) ?>>
-                <td class="movement-column"><?php football_stats_render_position_movement($tableView, $team['team_name']); ?></td>
-                <td><strong><?= $pos ?></strong></td>
-                <td>
-                    <div class="team-cell">
-                    <img src="<?= htmlspecialchars($team['team_crest']) ?>" 
-                        alt="<?= htmlspecialchars($info['name']) ?> crest" 
-                        class="team-crest"
-                        onerror="this.style.display='none'"> <span class="team-name">
-                        <span class="team-official">
-                            <?= htmlspecialchars($info['name']) ?>
-                        </span>
-                        <?php if ($show_common): ?>
-                            <span class="team-common">(<?= $team['team_name'] ?>)</span>
-                        <?php endif; ?>
-                
-                        <span class="team-tooltip" style="border-color: <?= $info['color'] ?>;">
-                            <span class="tooltip-nickname" style="color: <?= $info['color'] ?>;">
-                                <?= $info['nickname'] ?>
-                            </span>
-                            <span class="tooltip-short">
-                                Abbreviated: <?= $info['short'] ?>
-                            </span>
-                        </span>
-                    </span>
-                </div>
-                </td>
-                <td><?= $team['played'] ?></td>
-                <td style="color: <?= $games_color ?>; font-weight: bold;"><?= $games_remaining ?></td>
-                <td style="color: <?= $points_color ?>; font-weight: bold;"><?= $team['points'] ?></td>
-                <td><?= $team['won'] ?></td>
-                <td><?= $team['drawn'] ?></td>
-                <td><?= $team['lost'] ?></td>
-                <td><?= $team['gf'] ?></td>
-                <td><?= $team['ga'] ?></td>
-                <td style="font-weight: bold; color: <?= $team['gd'] > 0 ? '#43b581' : ($team['gd'] < 0 ? '#f04747' : '#dcddde') ?>;">
-                    <?= $team['gd'] > 0 ? '+' . $team['gd'] : $team['gd'] ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+    <?php
+    $standingsCompetitionCode = 'NL';
+    require __DIR__ . '/../../../includes/standings-table.php';
+    ?>
     <?php football_stats_render_points_deductions($tableView['points_deductions']); ?>
     <?php football_stats_render_table_zone_legend('NL', $tableView['active_season_label']); ?>
     

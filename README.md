@@ -91,7 +91,7 @@ find . -name '*.php' -print0 | xargs -0 -n1 php -l
 
 # Run the football regression tests
 php football-stats/tests/competition-rules-test.php
-php football-stats/tests/table2-filters-test.php
+php football-stats/tests/league-table-rendering-test.php
 php football-stats/tests/table2-metrics-test.php
 php football-stats/tests/table-view-movement-test.php
 php football-stats/tests/table-view-team-crests-test.php
