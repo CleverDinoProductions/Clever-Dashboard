@@ -23,9 +23,7 @@ $table_filter = isset($_GET['table_filter']) && in_array($_GET['table_filter'], 
 $_split_season = $tableView['active_season_label'] ?? ($currentMainTab ?? '2025-2026');
 if ($table_filter !== 'all') {
     $filteredStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, $table_filter, $halfway_games, 'league_table_PL', $max_regular_mw);
-    if (!empty($filteredStandings)) {
-        $standings = $filteredStandings;
-    }
+    $standings = $filteredStandings;
     $total_games = ($table_filter === 'first_half') ? $halfway_games : (($table_filter === 'second_half') ? ($total_games - $halfway_games) : (int)($total_games / 2));
 }
 $homeStandings = football_stats_compute_filtered_standings($db, 'PL', $_split_season, 'home', $halfway_games, 'league_table_PL', $max_regular_mw);
@@ -90,6 +88,9 @@ $team_info = $team_info_PL;
             <th title="Max Points Possible if all remaining games are draws">Max Pts (D)</th>
             <th title="Max Points Possible if all remaining games are wins/draws (50/50)">Max Pts (W/D)</th>
         </tr>
+        <?php if (empty($standings)): ?>
+            <tr><td colspan="19">No completed matches available for this selection.</td></tr>
+        <?php endif; ?>
         <?php foreach ($standings as $team): ?>
         <?php
             // Get team info
