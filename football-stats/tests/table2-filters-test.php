@@ -36,6 +36,26 @@ foreach ($leagues as $league => $code) {
         ob_start();
         include __DIR__ . '/../tabs/' . $league . '/2025-2026/table2.php';
         $html = ob_get_clean();
+        $document = new DOMDocument();
+        $previousXmlErrors = libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="UTF-8">' . $html);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousXmlErrors);
+        $xpath = new DOMXPath($document);
+        $headers = $xpath->query('//table[contains(@class, "table2-table")]/thead/tr[last()]/th[@scope="col"]');
+        if ($headers->length !== 16) throw new RuntimeException("$league must display 16 labelled columns.");
+        foreach ($xpath->query('//table[contains(@class, "table2-table")]/tbody/tr') as $row) {
+            $cells = $xpath->query('./td|./th', $row);
+            if ($cells->length !== 16 && !($cells->length === 1 && $cells->item(0)->getAttribute('colspan') === '16')) {
+                throw new RuntimeException("$league must align data and empty states with the headers.");
+            }
+        }
+        foreach ($xpath->query('//div[contains(@class, "table-view-custom-nav")]/a') as $link) {
+            parse_str(parse_url($link->getAttribute('href'), PHP_URL_QUERY), $destination);
+            if ($destination['league'] !== $league || $destination['tab'] !== $currentMainTab) {
+                throw new RuntimeException("$league links must retain the current league and season.");
+            }
+        }
         $shouldBeEmpty = in_array($filter, ['second_half', 'q2', 'q3', 'q4'], true);
         if ($shouldBeEmpty !== empty($standings)) {
             throw new RuntimeException("$league/$filter must use only the selected period's standings.");
