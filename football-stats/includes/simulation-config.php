@@ -7,26 +7,33 @@ function football_stats_simulation_config(PDO $db, string $code, string $season,
     $rules = football_stats_get_competition_rules($code, $season, $db);
     $zones = [];
     $columns = [['label' => 'P(🏆 Title)', 'from' => 1, 'to' => 1, 'color' => '#FFD700']];
-    $emojis = ['champions-league' => '🌍', 'europa-league' => '⚽', 'conference-league' => '🏅',
+    $emojis = ['title' => '🏆', 'champions-league' => '🌍', 'europa-league' => '⚽', 'conference-league' => '🏅',
         'automatic-promotion' => '⬆️', 'playoffs' => '🎯', 'relegation' => '⬇️'];
-    $occupied = [];
     foreach ($rules['zones'] as $zone) {
         [$color, $bg] = football_stats_table_zone_colors($zone);
         $zones[] = ['key' => $zone['key'], 'name' => $zone['label'], 'emoji' => $emojis[$zone['key']] ?? '',
             'from' => $zone['from'], 'to' => $zone['to'], 'color' => $color, 'bg' => $bg];
-        $columns[] = ['label' => 'P(' . $zone['label'] . ')', 'from' => $zone['from'], 'to' => $zone['to'], 'color' => $color];
-        for ($position = $zone['from']; $position <= $zone['to']; $position++) $occupied[$position] = true;
+        if ($zone['key'] === 'title') $columns[0] = ['label' => 'P(' . $zone['label'] . ')', 'from' => $zone['from'], 'to' => $zone['to'], 'color' => $color];
+        else $columns[] = ['label' => 'P(' . $zone['label'] . ')', 'from' => $zone['from'], 'to' => $zone['to'], 'color' => $color];
     }
-    // Include unassigned places once so distribution bars always total 100%.
+    $targetZones = $zones;
+    $displayZones = [];
     for ($position = 1; $position <= $rules['team_count']; $position++) {
-        if (isset($occupied[$position])) continue;
-        $from = $position;
-        while ($position < $rules['team_count'] && !isset($occupied[$position + 1])) $position++;
-        $zones[] = ['key' => 'unassigned', 'name' => 'Unassigned', 'emoji' => '', 'from' => $from,
-            'to' => $position, 'color' => '#555555', 'bg' => 'transparent'];
+        $selected = clever_position_display_zone($rules['zones'], $position);
+        $zone = $selected ?? ['key'=>'unassigned', 'label'=>'Unassigned', 'color'=>'#555555'];
+        [$color, $bg] = football_stats_table_zone_colors($zone);
+        $last = count($displayZones) - 1;
+        if ($last >= 0 && $displayZones[$last]['source'] === $selected) {
+            $displayZones[$last]['to'] = $position;
+        } else {
+            $displayZones[] = ['source'=>$selected, 'key'=>$zone['key'], 'name'=>$zone['label'],
+                'emoji'=>$emojis[$zone['key']] ?? '', 'from'=>$position, 'to'=>$position,
+                'color'=>$color, 'bg'=>$selected === null ? 'transparent' : $bg];
+        }
     }
+    $zones = $displayZones;
     usort($zones, static fn($a, $b) => $a['from'] <=> $b['from']);
     return ['comp_code' => $code, 'season_label' => $season, 'league_name' => $name,
         'total_games' => $rules['total_games'], 'halfway_games' => $rules['halfway_games'],
-        'n_teams' => $rules['team_count'], 'zones' => $zones, 'prob_columns' => $columns];
+        'n_teams' => $rules['team_count'], 'zones' => $zones, 'target_zones' => $targetZones, 'prob_columns' => $columns];
 }

@@ -12,7 +12,7 @@ function match_projection_parse(array $simulation, array $zones): ?array
             $position = (int)$zone['from'] - 1;
             $label = 'Safety';
             $key = 'safety';
-        } elseif (in_array($key, ['champions-league', 'europa-league', 'conference-league', 'automatic-promotion', 'playoffs', 'custom'], true)) {
+        } elseif (in_array($key, ['title', 'champions-league', 'europa-league', 'conference-league', 'automatic-promotion', 'playoffs', 'custom'], true)) {
             $position = (int)$zone['to'];
             $label = $zone['name'];
         } else {

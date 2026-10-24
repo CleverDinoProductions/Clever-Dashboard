@@ -11,7 +11,7 @@ function clever_competitions(): array
 
 function clever_competition_zone_types(): array
 {
-    return ['champions-league' => 'Champions League', 'europa-league' => 'Europa League',
+    return ['title' => 'Title', 'champions-league' => 'Champions League', 'europa-league' => 'Europa League',
         'conference-league' => 'Conference League', 'automatic-promotion' => 'Automatic promotion',
         'playoffs' => 'Promotion playoffs', 'relegation' => 'Relegation', 'custom' => 'Other'];
 }
@@ -104,10 +104,9 @@ function clever_validate_competition_rules(array $input): array
         $previous = $value;
     }
     $rules['zones'] = [];
-    $occupied = [];
     $zones = $input['zones'] ?? [];
     if (!is_array($zones) || count($zones) > 100) throw new InvalidArgumentException('Supply at most 100 position zones.');
-    foreach ($zones as $zone) {
+    foreach ($zones as $index => $zone) {
         if (!is_array($zone)) throw new InvalidArgumentException('Invalid position zone.');
         $key = trim((string)($zone['key'] ?? ''));
         if ($key === '') continue;
@@ -117,13 +116,16 @@ function clever_validate_competition_rules(array $input): array
         $from = filter_var($zone['from'] ?? null, FILTER_VALIDATE_INT);
         $to = filter_var($zone['to'] ?? null, FILTER_VALIDATE_INT);
         if (!$from || !$to || $from < 1 || $to < $from || $to > $rules['team_count']) throw new InvalidArgumentException('Zone positions must run from 1 to the club count, with the end at or after the start.');
-        for ($position = $from; $position <= $to; $position++) {
-            if (isset($occupied[$position])) throw new InvalidArgumentException('Position zones cannot overlap.');
-            $occupied[$position] = true;
-        }
         $color = strtoupper(trim((string)($zone['color'] ?? '')));
         if (!preg_match('/^#[0-9A-F]{6}$/D', $color)) throw new InvalidArgumentException('Each zone colour must be a six-digit hex colour.');
-        $rules['zones'][] = compact('key', 'label', 'from', 'to', 'color');
+        $display_default = array_key_exists('default_display_zone', $input)
+            ? (string)$input['default_display_zone'] === (string)$index
+            : !empty($zone['display_default']);
+        $rules['zones'][] = compact('key', 'label', 'from', 'to', 'color', 'display_default');
+    }
+    if (isset($input['default_display_zone']) && $input['default_display_zone'] !== ''
+        && count(array_filter($rules['zones'], static fn($zone) => $zone['display_default'])) !== 1) {
+        throw new InvalidArgumentException('Choose an active zone for the default display.');
     }
     usort($rules['zones'], static fn($a, $b) => $a['from'] <=> $b['from']);
     return $rules;
@@ -141,4 +143,16 @@ function clever_reset_competition_rules(PDO $db, string $code, string $season): 
 {
     clever_validate_competition_identity($code, $season);
     $db->prepare('DELETE FROM competition_rule_overrides WHERE competition_code=? AND season_label=?')->execute([$code, $season]);
+}
+
+/** Prefer the selected display zone wherever it overlaps; otherwise use the first match. */
+function clever_position_display_zone(array $zones, int $position): ?array
+{
+    $first = null;
+    foreach ($zones as $zone) {
+        if ($position < (int)$zone['from'] || $position > (int)$zone['to']) continue;
+        $first ??= $zone;
+        if (!empty($zone['display_default'])) return $zone;
+    }
+    return $first;
 }

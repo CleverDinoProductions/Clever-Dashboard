@@ -53,3 +53,18 @@ simulation_assert(match_projection_parse(['teams'=>[]], []) === null, 'Empty sim
 $short = ['teams' => array_slice($teams, 0, 2)];
 simulation_assert(match_projection_parse($short, [['key'=>'playoffs','name'=>'Playoffs','from'=>3,'to'=>6]])['targets'] === [], 'Unavailable cut lines are not clamped to another team.');
 echo "Simulation configuration and outlook tests passed.\n";
+
+$rules['zones'] = [
+    ['key'=>'title','label'=>'Title','from'=>1,'to'=>1,'color'=>'#FFD700'],
+    ['key'=>'champions-league','label'=>'Champions League','from'=>1,'to'=>4,'color'=>'#006400'],
+];
+$rules['default_display_zone'] = '1';
+clever_save_competition_rules($db, 'ELC', '2026-2027', $rules);
+$config = football_stats_simulation_config($db, 'ELC', '2026-2027', 'Championship');
+simulation_assert(count($config['prob_columns']) === 2, 'Title and qualification probabilities remain independent without duplicating Title.');
+simulation_assert(array_column(match_projection_parse($simulation, $config['target_zones'])['targets'], 'position') === [1, 4], 'Both overlapping targets keep their full cutoffs.');
+for ($position = 1; $position <= $config['n_teams']; $position++) {
+    $cover = array_values(array_filter($config['zones'], static fn($zone) => $position >= $zone['from'] && $position <= $zone['to']));
+    simulation_assert(count($cover) === 1, 'Overlapping distribution places are counted exactly once.');
+    if ($position === 1) simulation_assert($cover[0]['key'] === 'champions-league', 'Distribution honours the display selection.');
+}
