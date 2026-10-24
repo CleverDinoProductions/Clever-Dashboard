@@ -37,10 +37,10 @@ settings_assert(str_contains($attributes, '--default-zone-color: #5865F2') && st
 settings_assert(str_contains($attributes, 'rgba(18, 52, 86, 0.15)'), 'Saved colour drives season fill.');
 ob_start(); football_stats_render_table_zone_legend('ELC', '2026-2027'); $legend = ob_get_clean();
 settings_assert(str_contains($legend, 'Expanded playoffs (3–10)'), 'Legends use saved labels and position ranges.');
-foreach (['overlap', 'range', 'colour', 'quarter', 'number', 'halfway', 'target', 'label'] as $invalid) {
+foreach (['display', 'range', 'colour', 'quarter', 'number', 'halfway', 'target', 'label'] as $invalid) {
     $bad = $season;
     switch ($invalid) {
-        case 'overlap': $bad['zones'][] = ['key'=>'custom','label'=>'Overlap','from'=>8,'to'=>12,'color'=>'#ABCDEF']; break;
+        case 'display': $bad['default_display_zone'] = '999'; break;
         case 'range': $bad['zones'][0]['to'] = 23; break;
         case 'colour': $bad['zones'][0]['color'] = 'red; background:url(x)'; break;
         case 'quarter': $bad['quarter_boundaries'] = '11,11,42'; break;
@@ -57,6 +57,19 @@ foreach ([['INVALID','2026-2027'], ['ELC','2026-2028'], ['ELC','2026-2027<script
     try { clever_save_competition_rules($db, $code, $label, $season); throw new RuntimeException('Accepted invalid identity'); }
     catch (InvalidArgumentException $expected) {}
 }
+$overlap = $season;
+$overlap['zones'] = [
+    ['key'=>'title','label'=>'Title','from'=>1,'to'=>1,'color'=>'#FFD700'],
+    ['key'=>'champions-league','label'=>'Champions League','from'=>1,'to'=>4,'color'=>'#006400'],
+];
+$overlap['default_display_zone'] = '1';
+clever_save_competition_rules($db, 'ELC', '2026-2027', $overlap);
+settings_assert(count(clever_competition_rules($db, 'ELC', '2026-2027')['zones']) === 2, 'Overlapping zones persist.');
+settings_assert(football_stats_get_position_zone('ELC', '2026-2027', 1)['key'] === 'champions-league', 'Selected default wins overlap.');
+$overlap['default_display_zone'] = '0';
+clever_save_competition_rules($db, 'ELC', '2026-2027', $overlap);
+settings_assert(football_stats_get_position_zone('ELC', '2026-2027', 1)['key'] === 'title', 'Display selection can switch to Title.');
+settings_assert(football_stats_get_position_zone('ELC', '2026-2027', 2)['key'] === 'champions-league', 'Non-overlapping positions retain their zone.');
 $empty = $season; $empty['zones'] = [];
 clever_save_competition_rules($db, 'ELC', '2026-2027', $empty);
 settings_assert(football_stats_get_position_zone('ELC', '2026-2027', 3) === null, 'An empty zone list removes all season highlights.');

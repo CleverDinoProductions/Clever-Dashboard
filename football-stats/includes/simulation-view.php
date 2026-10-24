@@ -441,7 +441,7 @@ details .sim-table th { position:static; z-index:auto; }
         <?php endif; ?>
     </div>
 
-    <?php match_projection_render($sim, $zones); ?>
+    <?php match_projection_render($sim, $league_config['target_zones'] ?? $zones); ?>
 
     <!-- Results table -->
     <div class="table-container">

@@ -86,10 +86,7 @@ function football_stats_reweight_standings(array $standings, array $points): arr
 if (!function_exists('football_stats_get_position_zone')) {
     function football_stats_get_position_zone($competitionCode, $seasonLabel, $position)
     {
-        foreach (football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'] as $zone) {
-            if ((int)$position >= (int)$zone['from'] && (int)$position <= (int)$zone['to']) return $zone;
-        }
-        return null;
+        return clever_position_display_zone(football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'], (int)$position);
     }
 }
 
@@ -106,6 +103,7 @@ if (!function_exists('football_stats_get_default_position_zone')) {
 function football_stats_table_zone_palette(): array
 {
     return [
+        'title' => ['#FFD700', 'rgba(255, 215, 0, 0.15)'],
         'champions-league' => ['#006400', 'rgba(0, 100, 0, 0.15)'],
         'europa-league' => ['#5865F2', 'rgba(88, 101, 242, 0.15)'],
         'conference-league' => ['#FFCD00', 'rgba(255, 205, 0, 0.15)'],

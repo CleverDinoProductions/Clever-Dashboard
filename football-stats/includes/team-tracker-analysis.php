@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/lib/competition-settings.php';
 
 /** Derive every comparison from the same selected standings, including deductions. */
 function football_stats_tracker_analysis(array $team, array $standings, array $rules, array $scoring): array
@@ -16,10 +17,9 @@ function football_stats_tracker_analysis(array $team, array $standings, array $r
         $leagueGames += (int)$row['played'];
     }
     ksort($byPosition);
-    $zoneLabel = 'Outside configured zones';
+    $zoneLabel = clever_position_display_zone($rules['zones'], (int)$position)['label'] ?? 'Outside configured zones';
     $boundaries = [];
     foreach ($rules['zones'] as $zone) {
-        if ($position >= (int)$zone['from'] && $position <= (int)$zone['to']) $zoneLabel = $zone['label'];
         // For relegation compare to the other side of the line; for positive
         // zones compare to the last qualifying position (or the first chaser).
         $inside = $position >= (int)$zone['from'] && $position <= (int)$zone['to'];
