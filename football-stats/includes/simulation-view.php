@@ -178,6 +178,7 @@ function sim_zone_prob(array $pos_dist, int $from, int $to, int $n_sims) {
 }
 
 $zones        = $league_config['zones'];
+$region_zones = $league_config['region_zones'] ?? $zones;
 $prob_columns = $league_config['prob_columns'];
 $n_teams      = $league_config['n_teams'];
 ?>
@@ -513,7 +514,7 @@ details .sim-table th { position:static; z-index:auto; }
             </td>
             <?php endforeach; ?>
 
-            <!-- Distribution bar: one segment per zone, width = P(zone) -->
+            <!-- Disjoint bar segments retain every matching zone in their labels. -->
             <td style="text-align:center;">
                 <div class="pos-dist-bar">
                 <?php foreach ($zones as $z): ?>
@@ -530,7 +531,7 @@ details .sim-table th { position:static; z-index:auto; }
                 </div>
             </td>
             <td style="text-align:center;">
-                <?php foreach ($zones as $z): ?>
+                <?php foreach ($region_zones as $z): ?>
                 <?php
                     $z_count = sim_zone_prob($t['pos_dist'], $z['from'], $z['to'], $n_sims);
                     $z_pct   = $n_sims > 0 ? $z_count / $n_sims * 100 : 0;
@@ -549,14 +550,14 @@ details .sim-table th { position:static; z-index:auto; }
 
     <!-- Legend -->
     <div class="sim-legend">
-        <?php foreach ($zones as $z): ?>
+        <?php foreach ($region_zones as $z): ?>
         <div class="sim-legend-item">
             <div class="sim-legend-dot" style="background:<?= htmlspecialchars($z['color']) ?>;"></div>
             <span><?= htmlspecialchars($z['emoji'] . ' ' . $z['name'] . ' (' . $z['from'] . ($z['to'] > $z['from'] ? '–' . $z['to'] : '') . ')', ENT_QUOTES, 'UTF-8') ?></span>
         </div>
         <?php endforeach; ?>
         <div class="sim-legend-item" style="margin-left:auto; color:#888; font-size:11px;">
-            💡 Hover distribution bar segments for zone probabilities
+            💡 Overlapping zone probabilities include the same positions and may total more than 100%. The bar counts each position once.
         </div>
     </div>
 
