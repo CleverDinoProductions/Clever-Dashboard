@@ -22,7 +22,9 @@ $renderZoneRow = static function ($index, $zone) use ($h, $palette, $ruleForm) {
     <td><input type="number" name="zones[<?= $h($index) ?>][from]" value="<?= $h($zone['from'] ?? '') ?>" min="1" max="100" aria-label="First position"></td>
     <td><input type="number" name="zones[<?= $h($index) ?>][to]" value="<?= $h($zone['to'] ?? '') ?>" min="1" max="100" aria-label="Last position"></td>
     <td><input type="color" name="zones[<?= $h($index) ?>][color]" value="<?= $h($color) ?>" aria-label="Zone colour"></td>
-    <td><input type="radio" name="default_display_zone" value="<?= $h($index) ?>" aria-label="Default display zone" <?= (isset($ruleForm['default_display_zone']) ? (string)$ruleForm['default_display_zone'] === (string)$index : !empty($zone['display_default'])) ? 'checked' : '' ?>></td>
+    <?php foreach (['fill' => 'Row colour', 'edge' => 'Row edge'] as $channel => $caption): ?>
+    <td><input type="hidden" name="zones[<?= $h($index) ?>][<?= $channel ?>_default]" value="0"><input type="checkbox" name="zones[<?= $h($index) ?>][<?= $channel ?>_default]" value="1" aria-label="<?= $caption ?> preferred zone" <?= !empty($zone[$channel . '_default'] ?? $zone['display_default'] ?? false) ? 'checked' : '' ?>></td>
+    <?php endforeach; ?>
     <td><button type="button" class="secondary compact remove-zone">Remove</button></td>
 </tr>
 <?php }; ?>
@@ -51,9 +53,9 @@ $renderZoneRow = static function ($index, $zone) use ($h, $palette, $ruleForm) {
         <p class="muted">Win, draw and loss points set the scoring system for this league or season (normally 3, 1, 0). Custom rules can override these for a what-if table. The three last-game numbers split quarter filters where available. Matchweeks exclude playoff fixtures from regular-season tables. Comparison points targets control the Table 2 points-needed and PPG columns.</p>
         <h3>Qualification, Playoff, Promotion and Relegation simulation zones</h3>
         <p class="muted">Position zones also configure simulation probabilities, colours and outlook targets for the selected league and season. Choose European qualification, automatic promotion, promotion playoffs or relegation by type; labels can be renamed. Removing a zone removes its simulation target.</p>
-        <p class="muted">Zones can overlap (for example, Title at 1 and Champions League at 1–4). Select the default display zone to choose its highlight wherever zones overlap. Other positions use the first matching zone. All configured zones still count toward their simulation probabilities and targets.</p>
-        <label><input type="radio" name="default_display_zone" value="" <?= (isset($ruleForm['default_display_zone']) ? $ruleForm['default_display_zone'] === '' : !array_filter($zoneRows, static fn($zone) => !empty($zone['display_default']))) ? 'checked' : '' ?>> Use first matching zone</label>
-        <div class="table-wrap"><table><thead><tr><th>Type</th><th>Label</th><th>From</th><th>To</th><th>Colour</th><th>Default display</th><th></th></tr></thead><tbody id="rule-zones"><?php foreach ($zoneRows as $index => $zone) $renderZoneRow($index, $zone); ?></tbody></table></div>
+        <p class="muted">Zones can overlap (for example, Title at 1 and Champions League at 1–4). Tick Row colour or Row edge to prefer a zone for that part of the row wherever zones overlap. For example, tick Title for row colour and Champions League for row edge. You can tick zones in separate parts of the table independently. If several matching zones are ticked, the first matching ticked zone wins; without a tick, the first matching zone is used. All configured zones still count toward their simulation probabilities and targets.</p>
+
+        <div class="table-wrap"><table><thead><tr><th>Type</th><th>Label</th><th>From</th><th>To</th><th>Colour</th><th>Row colour</th><th>Row edge</th><th></th></tr></thead><tbody id="rule-zones"><?php foreach ($zoneRows as $index => $zone) $renderZoneRow($index, $zone); ?></tbody></table></div>
         <button type="button" class="secondary" id="add-rule-zone">Add position zone</button>
         <button <?= !$football instanceof PDO ? 'disabled' : '' ?>>Save rules</button>
     </form>
@@ -78,14 +80,13 @@ $renderZoneRow = static function ($index, $zone) use ($h, $palette, $ruleForm) {
     let nextIndex = <?= max(array_keys($zoneRows)) + 1 ?>;
     document.getElementById('add-rule-zone').addEventListener('click', () => {
         const fragment = document.getElementById('rule-zone-template').content.cloneNode(true);
-        fragment.querySelectorAll('[name]').forEach(input => { input.name = input.name.replace('__INDEX__', nextIndex); if (input.type === 'radio') input.value = nextIndex; });
+        fragment.querySelectorAll('[name]').forEach(input => { input.name = input.name.replace('__INDEX__', nextIndex); });
         nextIndex++;
         rows.appendChild(fragment);
     });
     rows.addEventListener('click', event => {
         if (event.target.closest('.remove-zone')) {
             const row = event.target.closest('tr');
-            if (row.querySelector('input[type=radio]').checked) document.querySelector('input[name=default_display_zone][value=""]').checked = true;
             row.remove();
         }
     });

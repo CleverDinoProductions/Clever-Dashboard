@@ -121,7 +121,9 @@ function clever_validate_competition_rules(array $input): array
         $display_default = array_key_exists('default_display_zone', $input)
             ? (string)$input['default_display_zone'] === (string)$index
             : !empty($zone['display_default']);
-        $rules['zones'][] = compact('key', 'label', 'from', 'to', 'color', 'display_default');
+        $fill_default = filter_var($zone['fill_default'] ?? $display_default, FILTER_VALIDATE_BOOLEAN);
+        $edge_default = filter_var($zone['edge_default'] ?? $display_default, FILTER_VALIDATE_BOOLEAN);
+        $rules['zones'][] = compact('key', 'label', 'from', 'to', 'color', 'display_default', 'fill_default', 'edge_default');
     }
     if (isset($input['default_display_zone']) && $input['default_display_zone'] !== ''
         && count(array_filter($rules['zones'], static fn($zone) => $zone['display_default'])) !== 1) {
@@ -146,13 +148,13 @@ function clever_reset_competition_rules(PDO $db, string $code, string $season): 
 }
 
 /** Prefer the selected display zone wherever it overlaps; otherwise use the first match. */
-function clever_position_display_zone(array $zones, int $position): ?array
+function clever_position_display_zone(array $zones, int $position, string $channel = 'fill'): ?array
 {
     $first = null;
     foreach ($zones as $zone) {
         if ($position < (int)$zone['from'] || $position > (int)$zone['to']) continue;
         $first ??= $zone;
-        if (!empty($zone['display_default'])) return $zone;
+        if ($zone[$channel . '_default'] ?? $zone['display_default'] ?? false) return $zone;
     }
     return $first;
 }
