@@ -68,3 +68,21 @@ for ($position = 1; $position <= $config['n_teams']; $position++) {
     simulation_assert(count($cover) === 1, 'Overlapping distribution places are counted exactly once.');
     if ($position === 1) simulation_assert($cover[0]['key'] === 'champions-league', 'Distribution honours the display selection.');
 }
+
+// Every overlapping region remains visible, regardless of the default highlight.
+foreach (['0', '1'] as $display) {
+    $rules['default_display_zone'] = $display;
+    clever_save_competition_rules($db, 'ELC', '2026-2027', $rules);
+    $config = football_stats_simulation_config($db, 'ELC', '2026-2027', 'Championship');
+    $regions = array_column($config['region_zones'], null, 'key');
+    simulation_assert($regions['title']['from'] === 1 && $regions['title']['to'] === 1, 'Title remains a full region.');
+    simulation_assert($regions['champions-league']['from'] === 1 && $regions['champions-league']['to'] === 4, 'Qualification includes first place regardless of highlight.');
+    $dist = [1=>20, 2=>30, 3=>10, 4=>10, 5=>30];
+    $count = static function ($region) use ($dist) {
+        return array_sum(array_intersect_key($dist, array_flip(range($region['from'], $region['to']))));
+    };
+    simulation_assert($count($regions['title']) === 20 && $count($regions['champions-league']) === 70, 'First-place outcomes contribute to both region probabilities.');
+    simulation_assert(array_sum(array_map($count, $config['zones'])) === 100, 'Bar counts overlapping outcomes once.');
+    simulation_assert($config['zones'][0]['name'] === 'Title + Champions League', 'Overlap bar label includes both regions.');
+    simulation_assert($config['zones'][0]['to'] === 1, 'Bar splits at membership changes even with the same highlight.');
+}

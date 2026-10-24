@@ -22,18 +22,25 @@ function football_stats_simulation_config(PDO $db, string $code, string $season,
         $selected = clever_position_display_zone($rules['zones'], $position);
         $zone = $selected ?? ['key'=>'unassigned', 'label'=>'Unassigned', 'color'=>'#555555'];
         [$color, $bg] = football_stats_table_zone_colors($zone);
+        $members = array_values(array_filter($targetZones, static fn($candidate) => $position >= $candidate['from'] && $position <= $candidate['to']));
+        $name = $members ? implode(' + ', array_column($members, 'name')) : 'Unassigned';
         $last = count($displayZones) - 1;
-        if ($last >= 0 && $displayZones[$last]['source'] === $selected) {
+        if ($last >= 0 && $displayZones[$last]['source'] === $selected && $displayZones[$last]['members'] === $members) {
             $displayZones[$last]['to'] = $position;
         } else {
-            $displayZones[] = ['source'=>$selected, 'key'=>$zone['key'], 'name'=>$zone['label'],
+            $displayZones[] = ['source'=>$selected, 'members'=>$members, 'key'=>$zone['key'], 'name'=>$name,
                 'emoji'=>$emojis[$zone['key']] ?? '', 'from'=>$position, 'to'=>$position,
                 'color'=>$color, 'bg'=>$selected === null ? 'transparent' : $bg];
         }
+    }
+    // Region probabilities retain full overlapping ranges. Only the bar uses disjoint segments.
+    $regionZones = $targetZones;
+    foreach ($displayZones as $zone) {
+        if ($zone['key'] === 'unassigned') $regionZones[] = $zone;
     }
     $zones = $displayZones;
     usort($zones, static fn($a, $b) => $a['from'] <=> $b['from']);
     return ['comp_code' => $code, 'season_label' => $season, 'league_name' => $name,
         'total_games' => $rules['total_games'], 'halfway_games' => $rules['halfway_games'],
-        'n_teams' => $rules['team_count'], 'zones' => $zones, 'target_zones' => $targetZones, 'prob_columns' => $columns];
+        'n_teams' => $rules['team_count'], 'zones' => $zones, 'target_zones' => $targetZones, 'region_zones' => $regionZones, 'prob_columns' => $columns];
 }
