@@ -55,7 +55,8 @@ and request timeouts and returns exit code 1 if any channel fails. A failed chan
 is rolled back and its last successful check time is preserved; other channels
 continue importing. Successful empty feeds still update check metadata.
 Configured channel IDs must start with `UC` and contain 24 ID characters in
-total. The feed and every entry must match that channel ID exactly. Video IDs
+total. The feed channel ID may omit the `UC` prefix, as YouTube RSS does;
+every entry must match the full configured channel ID exactly. Video IDs
 must contain 11 letters, digits, underscores or hyphens and are case sensitive.
 Invalid IDs reject the feed before any database changes.
 

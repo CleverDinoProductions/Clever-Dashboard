@@ -84,7 +84,9 @@ function youtubeParseFeed(string $body, string $channelId): array
         }
         $atom = $xml->children('http://www.w3.org/2005/Atom');
         $youtube = $xml->children('http://www.youtube.com/xml/schemas/2015');
-        if ((string) $youtube->channelId !== $channelId) {
+        // YouTube's feed-level channelId can omit UC; entries use the full ID.
+        $feedChannelId = (string) $youtube->channelId;
+        if ($feedChannelId !== $channelId && $feedChannelId !== substr($channelId, 2)) {
             throw new RuntimeException('Feed channel does not match the configured channel');
         }
         $entries = [];
