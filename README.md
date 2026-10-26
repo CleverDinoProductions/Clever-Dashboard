@@ -8,11 +8,24 @@ Clever Dashboard is a collection of PHP dashboards and maintenance scripts serve
 | --- | --- |
 | `/` | Landing page linking to the available dashboards and administration tools. |
 | `/football-stats/` | League tables, fixtures, comparisons, team trackers, simulations, regional leagues, World Cup, and Nations League views. |
-| `/irc-dashboard/` | Read-only aggregate reporting for a The Lounge/IRC SQLite log database. |
+| `/irc-dashboard/` | Read-only activity and queue reporting for a The Lounge/IRC SQLite log database. |
 | `/youtube-dashboard/` | Channel upload history, trends, gaps, locations, and search. |
-| `/admin/` | Session-protected database and log administration pages. |
+| `/admin/` | Account and football administration; the log viewer needs separate web-server protection. |
 | `/account/` | Account setup, registration, login, preferences, and saved simulated results. |
 | `/CMRegister/` | Legacy plain-text registration/login endpoints backed by shared accounts. |
+
+## Documentation
+
+| Area | Guide |
+| --- | --- |
+| Accounts and preferences | [Account setup and storage](account/README.md) |
+| Administration | [Permissions, configuration and diagnostics](admin/README.md) |
+| Shared libraries | [Module responsibilities and persistence](lib/README.md) |
+| Football | [Setup and data workflows](football-stats/README.md), [tab routing](football-stats/tabs/README.md), [competition rules](football-stats/config/README.md) |
+| IRC | [Log schema, configuration and maintenance](irc-dashboard/README.md) |
+| YouTube | [RSS fetcher, storage and data limitations](youtube-dashboard/README.md) |
+| Tests | [Account/admin checks](tests/README.md), [football PHP/Node.js checks](football-stats/tests/README.md) |
+| Legacy clients | [Plain-text registration/login endpoints](CMRegister/README.md) |
 
 ## Requirements
 
@@ -114,14 +127,16 @@ There is no repository-wide build step. Useful checks are:
 find . -name '*.php' -print0 | xargs -0 -n1 php -l
 
 # Run all standalone PHP regression tests (stop on the first failure)
-for test in tests/*-test.php football-stats/tests/*-test.php; do
-    php "$test" || break
-done
+(
+    set -eu
+    for test in tests/*-test.php football-stats/tests/*-test.php; do php "$test"; done
+)
 
 # Run browser-logic regression tests with Node.js
-for test in football-stats/tests/*-test.js; do
-    node "$test" || break
-done
+(
+    set -eu
+    for test in football-stats/tests/*-test.js; do node "$test"; done
+)
 ```
 
 Node.js is needed only for the JavaScript regression tests.
@@ -132,5 +147,5 @@ Python importers contact third-party services and may require credentials and ne
 
 - Replace all example passwords and move secrets to environment variables or non-versioned configuration before deployment.
 - Treat database files and imported logs as private operational data.
-- Keep the IRC dashboard's database connection read-only and expose only aggregate results.
+- Keep the IRC dashboard connection read-only; review rendered nicknames and message details before exposing log-derived pages.
 - Protect `/admin/`, debug utilities, importers, and setup scripts at the web-server level.
