@@ -79,3 +79,10 @@ php youtube-dashboard/tests/fetcher-test.php
 
 The tests use an in-memory database and fixture feeds without contacting YouTube.
 Syntax-check changed PHP and verify populated and empty views locally.
+
+The legacy Python fetcher validates channel IDs (`UC` plus 22 ID characters)
+and case-sensitive 11-character video IDs. It skips entries with missing or
+invalid video IDs or a different channel ID, and rejects feeds with a mismatched
+channel ID without updating check metadata. Run its offline regression tests
+with `python -m unittest discover -s youtube-dashboard/tests` (requires
+`python-dateutil`; RSS requests are mocked).
