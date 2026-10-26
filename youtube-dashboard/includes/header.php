@@ -1,26 +1,33 @@
+<?php
+$navigation = ['timeline' => 'Upload timeline', 'channels' => 'Channels', 'analytics' => 'Analytics', 'gaps' => 'Upload gaps', 'locations' => 'Locations', 'frequency' => 'Frequency', 'trends' => 'Trends', 'search' => 'Search videos'];
+$lastChecked = getValue("SELECT MIN(last_checked) FROM channels");
+$checkedTimestamp = $lastChecked ? strtotime($lastChecked . (preg_match('/(?:Z|[+-]\d{2}:\d{2})$/', $lastChecked) ? '' : ' UTC')) : false;
+$isStale = !$checkedTimestamp || time() - $checkedTimestamp > 86400;
+?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>YouTube RSS Analytics Dashboard</title>
-    <meta http-equiv="refresh" content="300">
+    <meta charset="utf-8">
+    <title><?= $navigation[$tab] ?> · YouTube Monitor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-    <div class="header">
-        <h1>📺 YouTube RSS Analytics Dashboard</h1>
-        <div class="subtitle">RSS Feed Monitoring • No API Quota • Auto-refresh every 5 min • <?= date('Y-m-d H:i:s T') ?></div>
-        <div class="tabs">
-            <a href="?tab=timeline" class="tab <?= $tab == 'timeline' ? 'active' : '' ?>">📅 Upload Timeline</a>
-            <a href="?tab=channels" class="tab <?= $tab == 'channels' ? 'active' : '' ?>">📺 Channel Overview</a>
-            <a href="?tab=analytics" class="tab <?= $tab == 'analytics' ? 'active' : '' ?>">📊 Analytics</a>
-            <a href="?tab=gaps" class="tab <?= $tab == 'gaps' ? 'active' : '' ?>">⏱️ Upload Gaps</a>
-            <a href="?tab=locations" class="tab <?= $tab == 'locations' ? 'active' : '' ?>">🌍 Location Tracking</a>
-            <a href="?tab=frequency" class="tab <?= $tab == 'frequency' ? 'active' : '' ?>">📈 Upload Frequency</a>
-            <a href="?tab=trends" class="tab <?= $tab == 'trends' ? 'active' : '' ?>">📉 Historical Trends</a>
-            <a href="?tab=search" class="tab <?= $tab == 'search' ? 'active' : '' ?>">🔍 Search Videos</a>
-        </div>
-    </div>
-    
-    <div class="container">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="header">
+        <div class="brand"><span class="brand-icon" aria-hidden="true">▶</span><div><h1>YouTube Monitor</h1><p class="subtitle">Your channels. Every upload. One place.</p></div></div>
+        <a class="back-link" href="../">← All dashboards</a>
+    </header>
+    <div class="app-layout">
+    <aside class="sidebar">
+        <p class="nav-label">WORKSPACE</p>
+        <nav class="tabs" aria-label="Dashboard views">
+        <?php foreach ($navigation as $key => $label): ?>
+            <a href="?tab=<?= $key ?>" class="tab <?= $tab === $key ? 'active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>><?= $label ?></a>
+        <?php endforeach; ?>
+        </nav>
+        <div class="source-note"><strong>Powered by public RSS</strong><p>Recent uploads, cached locally. No API key required.</p></div>
+    </aside>
+    <main id="main-content" class="container">
+        <div class="feed-status <?= $isStale ? 'stale' : '' ?>"><span><strong><?= $isStale ? 'Feed check overdue' : 'Feeds checked recently' ?></strong> · <?= $checkedTimestamp ? 'Oldest channel check: ' . date('j M Y, H:i T', $checkedTimestamp) : 'No recorded feed checks' ?></span><span>Refresh imports with the scheduled fetcher</span></div>
