@@ -7,3 +7,6 @@ football-stats/world-cup-stats.sqlite3
 data/*.sqlite3
 data/*.sqlite3-shm
 data/*.sqlite3-wal
+
+youtube-dashboard/fetch-settings.json
+youtube-dashboard/.fetch.lock
