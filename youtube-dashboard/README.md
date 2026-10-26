@@ -1,8 +1,8 @@
 # YouTube upload dashboard
 
-A PHP/SQLite dashboard backed by cached public YouTube RSS uploads. It monitors
-upload dates, gaps, title-based locations, search and trends. No YouTube API key
-is used, and the fetcher is separate from web requests.
+A PHP/SQLite dashboard backed by cached public YouTube RSS uploads and optional
+YouTube Data API backfilling. It monitors upload dates, gaps, title-based locations,
+search and trends.
 
 ## Setup and first fetch
 
@@ -50,7 +50,8 @@ Run `php /absolute/path/to/youtube-dashboard/fetch-youtube.php` to insert unseen
 video IDs and update channel check metadata. Use that command in cron or another
 scheduler. `run-fetcher.bat` runs the PHP fetcher beside the batch file and creates
 its log directory; ensure `php` is on PATH (or use its full executable path).
-The fetcher is CLI-only and never runs during web requests. It applies connection
+Direct access to the fetch script is CLI-only. Administrators can also run the
+shared importer from the protected YouTube admin panel. It applies connection
 and request timeouts and returns exit code 1 if any channel fails. A failed channel
 is rolled back and its last successful check time is preserved; other channels
 continue importing. Successful empty feeds still update check metadata.
@@ -63,10 +64,36 @@ Invalid IDs reject the feed before any database changes.
 RSS exposes recent uploads, not full channel history. Entries are imported oldest
 first so gaps can use earlier entries in the same feed. Gaps use elapsed whole
 days against the previous locally recorded upload. Missing history can affect
-them; existing gaps are not rebuilt on refresh. The original `fetch-youtube.py`
+them; whenever new videos are inserted, gaps for that channel are rebuilt from
+the locally stored history, including corrected predecessors after backfilling. The original `fetch-youtube.py`
 remains as a legacy reference and is no longer used by the documented workflow.
 Locations are simple title keyword matches, not verified filming
 locations. The dashboard does not measure views, watch time or algorithm impact.
+
+## API backfilling and admin fetch
+
+Enable YouTube Data API v3 for a Google Cloud project and set `YOUTUBE_API_KEY`
+in the PHP server environment (and cron environment for scheduled runs). Allow
+HTTPS to `www.googleapis.com` and `www.youtube.com`. Never put the key in source
+or a public JSON file. Restrict the key to YouTube Data API v3.
+
+In **Admin → YouTube**, select start and end dates, then choose **Save date range**
+or **Save and run fetch now**. Dates include both entire days in UTC. The default
+is the last 30 days through today until a range is saved. Saved ranges remain
+fixed and apply to both admin and CLI runs. Back up `fetch-settings.json`; the
+YouTube directory must be writable by PHP to save it and create the fetch lock.
+Without an API key, CLI runs continue with RSS only; the admin run button is disabled.
+
+The importer paginates the channel uploads playlist and filters by the video's
+publication date, fetching public history beyond RSS's recent entries. It scans
+all pages because playlist ordering is not a safe publication-date cutoff; large
+histories take longer and use more API quota even for a narrow date range. Private
+and deleted entries are skipped. Existing video IDs are deduplicated across RSS,
+API and reruns. An API failure leaves that source's channel data unchanged; RSS
+imports can still succeed. Results and failures are displayed after the run.
+A shared nonblocking file lock prevents concurrent CLI/admin fetches. The admin
+run uses a synchronous request: configure the web server/proxy request timeout
+for large histories, or use the CLI command. Ordinary dashboard loads do not fetch.
 
 ## Troubleshooting and maintenance
 
@@ -80,6 +107,7 @@ For UI changes see [includes](includes/README.md), [assets](assets/README.md) an
 
 ```sh
 php youtube-dashboard/tests/fetcher-test.php
+php youtube-dashboard/tests/api-fetcher-test.php
 ```
 
 The tests use an in-memory database and fixture feeds without contacting YouTube.

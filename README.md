@@ -57,7 +57,9 @@ php youtube-dashboard/fetch-youtube.php
 ```
 
 It reads the shared database path and channel list from
-`youtube-dashboard/config.php`. RSS feeds supply recent uploads, so this fetcher
+`youtube-dashboard/config.php`. Optional API backfilling and an admin fetch button
+are documented in [the YouTube guide](youtube-dashboard/README.md#api-backfilling-and-admin-fetch).
+RSS feeds supply recent uploads, so the RSS source
 does not backfill a channel’s complete history.
 
 For IRC, set `$dbPath` in `irc-dashboard/config.php` to an existing The Lounge

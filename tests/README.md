@@ -23,6 +23,7 @@ and returns a nonzero status. The subshell above stops at the first failure.
 | Test | Behavior checked |
 | --- | --- |
 | `account-system-test.php` | Registration validation, role defaults, preferences, sign-in cookies, revocation and account lifecycle. |
+| `admin-youtube-test.php` | YouTube fetch controls, CSRF fields and API key visibility. |
 | `admin-page-test.php` | Account administration remains usable when the football database cannot open. |
 | `admin-competition-rules-test.php` | Rules panel output and editable settings. |
 | `movement-preferences-test.php` | Per-account/per-mode movement preferences. |
@@ -36,5 +37,6 @@ Football rendering, provider-sync fixtures and browser-logic checks live in
 find . -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
-The repository has no dedicated IRC or YouTube automated test suites. Their
-README files describe manual checks and data setup separately.
+YouTube importer regression checks are documented in
+[`youtube-dashboard/README.md`](../youtube-dashboard/README.md). IRC manual checks
+and data setup are described in its README.
