@@ -5,7 +5,6 @@ implementation, which reads the shared dashboard configuration.
 """
 
 import feedparser
-import re
 import sqlite3
 import json
 from pathlib import Path
@@ -57,29 +56,15 @@ def calculate_gap(channel_id, published_date, db):
 
 def fetch_channel(channel_name, channel_id, db):
     """Fetch videos from RSS feed"""
-    if not isinstance(channel_id, str) or not re.fullmatch(r'UC[A-Za-z0-9_-]{22}', channel_id):
-        print(f"   ❌ Invalid YouTube channel ID: {channel_id!r}")
-        return 0
-
     rss_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
     print(f"\n📺 {channel_name}")
     
     try:
         feed = feedparser.parse(rss_url)
-        feed_channel_id = feed.get('feed', {}).get('yt_channelid')
-        if feed_channel_id is not None and feed_channel_id != channel_id:
-            print("   ❌ RSS feed channel ID does not match the requested channel")
-            return 0
         new_videos = 0
         
         for entry in feed.entries:
-            video_id = entry.get('yt_videoid')
-            if not isinstance(video_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{11}', video_id):
-                print("   ⚠️ Skipping entry with missing or invalid YouTube video ID")
-                continue
-            if entry.get('yt_channelid', channel_id) != channel_id:
-                print("   ⚠️ Skipping entry from a different YouTube channel")
-                continue
+            video_id = entry.yt_videoid
             title = entry.title
             published = entry.published
             url = entry.link
