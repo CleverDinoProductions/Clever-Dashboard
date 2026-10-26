@@ -73,6 +73,25 @@ $caseFeed = feed([
 check(youtubeImportFeed($caseDb, 'Test', TEST_CHANNEL, $caseFeed) === 2, 'Case-distinct IDs imported');
 check(youtubeImportFeed($caseDb, 'Test', TEST_CHANNEL, $caseFeed) === 0, 'Case-distinct IDs deduplicated on rerun');
 $caseDb->close();
+// Reconstruct the ID fields from the supplied Theme Park Worldwide RSS sample.
+// Feed-level IDs omit UC, while entries carry the full channel ID.
+$sampleChannel = 'UCwqDAwhG1JCxTNr6HnB7gnQ';
+$sampleFeed = str_replace(TEST_CHANNEL, $sampleChannel,
+    feed([['DIJPPH00n6g', 'Fairground Frights 2026 Vlog', '2026-10-26T09:11:41+00:00']]));
+$sampleFeed = str_replace('<yt:channelId>' . $sampleChannel . '</yt:channelId><entry>',
+    '<yt:channelId>' . substr($sampleChannel, 2) . '</yt:channelId><entry>', $sampleFeed);
+$sampleDb = youtubeInitDb(':memory:');
+check(youtubeImportFeed($sampleDb, 'Theme Park Worldwide', $sampleChannel, $sampleFeed) === 1, 'Prefixless feed channel ID imports');
+check($sampleDb->querySingle('SELECT channel_id FROM videos') === $sampleChannel, 'Stored channel ID retains UC');
+check(youtubeImportFeed($sampleDb, 'Theme Park Worldwide', $sampleChannel, $sampleFeed) === 0, 'Realistic RSS rerun is idempotent');
+foreach ([str_replace('wqDAwhG1JCxTNr6HnB7gnQ', 'WqDAwhG1JCxTNr6HnB7gnQ', $sampleFeed),
+    str_replace('wqDAwhG1JCxTNr6HnB7gnQ', 'bbbbbbbbbbbbbbbbbbbbbb', $sampleFeed)] as $bad) {
+    $rejected = false;
+    try { youtubeParseFeed($bad, $sampleChannel); }
+    catch (RuntimeException $error) { $rejected = true; }
+    check($rejected, 'Prefixless channel IDs must still match exactly');
+}
+$sampleDb->close();
 
 check(youtubeImportFeed($db, 'Test', TEST_CHANNEL, feed([])) === 0, 'Valid empty feed');
 // Force a write failure after the video insertion to verify transaction rollback.
