@@ -12,9 +12,6 @@ define('VIDEOS_PER_PAGE', 100);
 define('CRITICAL_GAP_DAYS', 14);
 define('WARNING_GAP_DAYS', 7);
 
-// Channels to monitor (also used by Python)
-$CHANNELS = [
-    'Family Fun Pack' => 'UCvthuVsurPaVz2a7_4LepGg',
-    "Theme Park Worldwide (TPWW)" => 'UCwqDAwhG1JCxTNr6HnB7gnQ',
-];
-?>
+// Shared channel settings, editable in the administration panel.
+require_once dirname(__DIR__) . '/lib/youtube-settings.php';
+$CHANNELS = clever_youtube_channels();

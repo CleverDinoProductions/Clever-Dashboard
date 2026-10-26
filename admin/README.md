@@ -22,6 +22,7 @@ access. Data Operators use update controls in the football dashboard.
 
 Use `/admin/admin.php?section=SECTION`:
 
+- `youtube`: administrators manage the shared PHP/Python monitored channel list.
 - `users` and `groups`: manage accounts, status, memberships and group capabilities.
 - `teams`: edit display names, common names, nicknames, short codes and colours.
 - `deductions`: maintain positive points deductions by competition, season and team.

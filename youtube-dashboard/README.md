@@ -25,10 +25,17 @@ above is for local use; use a persistent installation path for a scheduled job.
 
 ## Configuration and database
 
-`config.php` defines PHP's `DB_PATH`, channel list, timezone and display constants.
-The Python fetcher's `DB_PATH`, `CHANNELS` and `LOCATIONS` are independent values:
-it does not parse `config.php`. Keep channel IDs/names and database targets aligned
-when changing either file. Some views also contain literal display thresholds;
+Administrators can add, rename or remove monitored channels at
+`/admin/admin.php?section=youtube`, using one `Channel name | Channel ID` per line.
+PHP's `config.php` and the Python fetcher both read `channels.json` beside this
+file. The directory must be writable by PHP to save changes atomically, and the
+fetcher must be able to read the file. An empty list stops fetching; removing a
+channel preserves previously imported videos. Changes apply on the next fetcher
+run. Back up `channels.json` along with your database.
+
+`config.php` defines PHP's `DB_PATH`, timezone and display constants. The Python
+fetcher's `DB_PATH` and `LOCATIONS` remain independent settings.
+Some views also contain literal display thresholds;
 check the relevant tab when changing warning/gap settings.
 
 PHP defaults to `youtube-dashboard.sqlite3` beside `config.php`. Python uses that
