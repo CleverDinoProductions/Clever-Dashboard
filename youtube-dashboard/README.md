@@ -6,57 +6,61 @@ is used, and the fetcher is separate from web requests.
 
 ## Setup and first fetch
 
-Requirements: PHP 8 with SQLite3, Python 3 with `feedparser` and `python-dateutil`,
-and network access to YouTube RSS feeds for imports. From the repository root:
+Requirements: PHP 8 with SQLite3, SimpleXML and cURL extensions, and network
+access to YouTube RSS feeds for imports. No Python packages are required.
+From the repository root:
 
 ```sh
-python3 -m venv /tmp/clever-youtube-venv
-/tmp/clever-youtube-venv/bin/pip install feedparser python-dateutil
-cd youtube-dashboard
-php setup-db.php
-/tmp/clever-youtube-venv/bin/python fetch-youtube.py
-cd ..
+php youtube-dashboard/setup-db.php
+php youtube-dashboard/fetch-youtube.php
 php -S localhost:8000
 ```
 
-Open <http://localhost:8000/youtube-dashboard/>. The default tab is `timeline`;
-see [tab routes](tabs/README.md) for all views. The temporary virtual environment
-above is for local use; use a persistent installation path for a scheduled job.
+Open <http://localhost:8000/youtube-dashboard/>. The default tab is `timeline`, with channel and 7/30/90-day filters, result counts
+and an empty state. Summary cards describe the whole library, independent of
+filters. The feed status shows the oldest recorded channel check and flags checks
+older than 24 hours; page render time is displayed separately. Page reloads do not
+run the fetcher, and forms are not interrupted by automatic page refreshes.
+
+See [tab routes](tabs/README.md) for the other views.
 
 ## Configuration and database
 
 Administrators can add, rename or remove monitored channels at
 `/admin/admin.php?section=youtube`, using one `Channel name | Channel ID` per line.
-PHP's `config.php` and the Python fetcher both read `channels.json` beside this
-file. The directory must be writable by PHP to save changes atomically, and the
-fetcher must be able to read the file. An empty list stops fetching; removing a
-channel preserves previously imported videos. Changes apply on the next fetcher
-run. Back up `channels.json` along with your database.
+`config.php`, the PHP fetcher and the legacy Python fetcher share `channels.json`.
+The directory must be writable by PHP to save changes atomically, and fetchers
+must be able to read the file. An empty list stops fetching; removing a channel
+preserves previously imported videos. Changes apply on the next fetcher run.
+Back up `channels.json` along with your database.
 
-`config.php` defines PHP's `DB_PATH`, timezone and display constants. The Python
-fetcher's `DB_PATH` and `LOCATIONS` remain independent settings.
-Some views also contain literal display thresholds;
-check the relevant tab when changing warning/gap settings.
+`config.php` defines the shared `DB_PATH`, timezone and display constants used by
+PHP, including the fetcher. The database path is anchored to this directory, so
+the PHP fetcher can run from any working directory. Location keywords are defined
+in `fetch-youtube.php`.
 
-PHP defaults to `youtube-dashboard.sqlite3` beside `config.php`. Python uses that
-filename relative to its working directory, so run it from this directory.
 `setup-db.php` creates `videos`, `channels`, `upload_gaps` and lookup indexes.
-The fetcher can create its own basic schema, but the PHP setup adds the indexes.
+The PHP fetcher also creates this schema and its indexes when needed.
 `includes/db.php` opens SQLite3 with a five-second busy timeout and WAL mode;
 the PHP process needs database and directory write access.
 
 ## Refreshing and interpreting data
 
-Rerun `fetch-youtube.py` from this directory to insert unseen video IDs and update
-channel check metadata. Schedule that same working directory/interpreter pair
-with your scheduler. `run-fetcher.bat` is a Windows example with a hard-coded
-XAMPP path and `logs/fetch.log` output; update the path and create its log directory
-before using it.
+Run `php /absolute/path/to/youtube-dashboard/fetch-youtube.php` to insert unseen
+video IDs and update channel check metadata. Use that command in cron or another
+scheduler. `run-fetcher.bat` runs the PHP fetcher beside the batch file and creates
+its log directory; ensure `php` is on PATH (or use its full executable path).
+The fetcher is CLI-only and never runs during web requests. It applies connection
+and request timeouts and returns exit code 1 if any channel fails. A failed channel
+is rolled back and its last successful check time is preserved; other channels
+continue importing. Successful empty feeds still update check metadata.
 
-RSS exposes recent uploads, not full channel history. Gaps are calculated against
-older videos already in the local database when a new row is inserted; missing
-history and arrival order can affect them, and existing gaps are not rebuilt on
-every refresh. Locations are simple title keyword matches, not verified filming
+RSS exposes recent uploads, not full channel history. Entries are imported oldest
+first so gaps can use earlier entries in the same feed. Gaps use elapsed whole
+days against the previous locally recorded upload. Missing history can affect
+them; existing gaps are not rebuilt on refresh. The original `fetch-youtube.py`
+remains as a legacy reference and is no longer used by the documented workflow.
+Locations are simple title keyword matches, not verified filming
 locations. The dashboard does not measure views, watch time or algorithm impact.
 
 ## Troubleshooting and maintenance
@@ -67,5 +71,11 @@ missing, check the configured channel IDs, feed access and fetcher output.
 restricted in deployed installations. Back up the database before manual repairs.
 
 For UI changes see [includes](includes/README.md), [assets](assets/README.md) and
-[tabs](tabs/README.md). There is no dedicated automated YouTube test suite;
-syntax-check changed PHP and verify populated and empty views locally.
+[tabs](tabs/README.md). Run the offline fetcher regression checks with:
+
+```sh
+php youtube-dashboard/tests/fetcher-test.php
+```
+
+The tests use an in-memory database and fixture feeds without contacting YouTube.
+Syntax-check changed PHP and verify populated and empty views locally.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-YouTube RSS Dashboard - Video Fetcher
-Matches your football-stats structure
+Legacy YouTube RSS fetcher. Use `php fetch-youtube.php` for the maintained
+implementation, which reads the shared dashboard configuration.
 """
 
 import feedparser

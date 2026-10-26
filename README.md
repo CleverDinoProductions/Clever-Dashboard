@@ -32,7 +32,7 @@ Clever Dashboard is a collection of PHP dashboards and maintenance scripts serve
 - PHP 8 with both PDO SQLite (`pdo_sqlite`) and SQLite3 (`sqlite3`) extensions
 - SQLite 3
 - Python 3 for import and synchronization jobs
-- The Python packages used by a selected fetcher (notably `requests`, `feedparser`, and `python-dateutil`)
+- The Python packages used by a selected fetcher (for example `requests`)
 
 ## Local setup
 
@@ -49,18 +49,16 @@ Clever Dashboard is a collection of PHP dashboards and maintenance scripts serve
 
 ### YouTube and IRC data
 
-The YouTube fetcher uses `feedparser` and `python-dateutil`. Run it from
-`youtube-dashboard/` because its SQLite path is relative to the working directory:
+The YouTube fetcher uses PHP with SQLite3, SimpleXML and cURL. Run it from any
+working directory:
 
 ```sh
-python3 -m pip install feedparser python-dateutil
-cd youtube-dashboard
-python3 fetch-youtube.py
+php youtube-dashboard/fetch-youtube.php
 ```
 
-Keep the channel lists in `youtube-dashboard/config.php` and `fetch-youtube.py`
-in sync; the Python script does not read the PHP configuration. RSS feeds supply
-recent uploads, so this fetcher does not backfill a channel’s complete history.
+It reads the shared database path and channel list from
+`youtube-dashboard/config.php`. RSS feeds supply recent uploads, so this fetcher
+does not backfill a channel’s complete history.
 
 For IRC, set `$dbPath` in `irc-dashboard/config.php` to an existing The Lounge
 SQLite log database readable by PHP. Dashboard queries enforce SQLite

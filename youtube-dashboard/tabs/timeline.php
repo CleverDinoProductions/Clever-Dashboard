@@ -1,4 +1,19 @@
 <?php
+$channel = is_string($_GET['channel'] ?? null) ? $_GET['channel'] : '';
+$period = is_string($_GET['period'] ?? null) && in_array($_GET['period'], ['7', '30', '90'], true) ? $_GET['period'] : '';
+$where = [];
+$params = [];
+if ($channel !== '') {
+    $where[] = 'v.channel_name = :channel';
+    $params[':channel'] = $channel;
+}
+if ($period !== '') {
+    $where[] = "julianday(v.published_date) >= julianday('now', :period)";
+    $params[':period'] = '-' . $period . ' days';
+}
+$conditions = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+$matchingCount = getValue("SELECT COUNT(*) FROM videos v $conditions", $params);
+$channelOptions = query("SELECT DISTINCT channel_name FROM videos ORDER BY channel_name");
 $videos = query("
     SELECT 
         v.video_id,
@@ -10,46 +25,63 @@ $videos = query("
         g.gap_days
     FROM videos v
     LEFT JOIN upload_gaps g ON v.video_id = g.video_id
-    ORDER BY v.published_date DESC
+    $conditions
+    ORDER BY julianday(v.published_date) DESC
     LIMIT 50
-");
+", $params);
 ?>
 
 <div class="content-area">
-    <h2>📅 Upload Timeline</h2>
-    <p class="tab-description">Recent video uploads across all monitored channels</p>
+    <h2>Upload timeline</h2>
+    <p class="tab-description">Keep up with the latest uploads across your monitored channels.</p>
     
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM videos") ?></div>
-            <div class="stat-label">Total Videos</div>
+            <div class="stat-label">Videos in library</div>
         </div>
         <div class="stat-card">
             <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM channels") ?></div>
-            <div class="stat-label">Channels</div>
+            <div class="stat-label">Tracked channels</div>
         </div>
         <div class="stat-card">
             <div class="stat-value"><?= round(getValue("SELECT AVG(gap_days) FROM upload_gaps") ?? 0, 1) ?></div>
             <div class="stat-label">Avg Gap (days)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM upload_gaps WHERE gap_days > 14") ?></div>
-            <div class="stat-label">Critical Gaps</div>
+            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM upload_gaps WHERE gap_days > " . (int) CRITICAL_GAP_DAYS) ?></div>
+            <div class="stat-label">Gaps over <?= CRITICAL_GAP_DAYS ?> days</div>
         </div>
     </div>
     
+    <form class="timeline-filters" method="get">
+        <input type="hidden" name="tab" value="timeline">
+        <label>Channel<select name="channel"><option value="">All channels</option>
+            <?php while ($option = $channelOptions->fetchArray(SQLITE3_ASSOC)): ?>
+            <option value="<?= htmlspecialchars($option['channel_name']) ?>" <?= $channel === $option['channel_name'] ? 'selected' : '' ?>><?= htmlspecialchars($option['channel_name']) ?></option>
+            <?php endwhile; ?>
+        </select></label>
+        <label>Published<select name="period"><option value="">All time</option>
+            <?php foreach (['7', '30', '90'] as $days): ?><option value="<?= $days ?>" <?= $period === $days ? 'selected' : '' ?>>Last <?= $days ?> days</option><?php endforeach; ?>
+        </select></label>
+        <button type="submit">Apply filters</button><a href="?tab=timeline">Reset</a>
+    </form>
+    <div class="results-heading"><h3>Recent uploads</h3><span>Showing <?= min(50, $matchingCount) ?> of <?= number_format($matchingCount) ?> uploads · newest first</span></div>
+    <?php if (!$matchingCount): ?>
+        <div class="empty-state"><h3>No uploads found</h3><p>Try another channel or a wider date range. If your database is empty, run the RSS fetcher first.</p><a href="?tab=timeline">Clear filters</a></div>
+    <?php endif; ?>
     <div class="video-timeline">
         <?php while ($video = $videos->fetchArray(SQLITE3_ASSOC)): ?>
             <?php
             $gap_class = '';
             $gap_alert = '';
             if ($video['gap_days']) {
-                if ($video['gap_days'] > 14) {
+                if ($video['gap_days'] > CRITICAL_GAP_DAYS) {
                     $gap_class = 'gap-critical';
-                    $gap_alert = "⚠️ {$video['gap_days']} day gap - ALGORITHM DANGER!";
-                } elseif ($video['gap_days'] > 7) {
+                    $gap_alert = "{$video['gap_days']} days since the previous recorded upload";
+                } elseif ($video['gap_days'] > WARNING_GAP_DAYS) {
                     $gap_class = 'gap-warning';
-                    $gap_alert = "⚠️ {$video['gap_days']} day gap";
+                    $gap_alert = "{$video['gap_days']} days since the previous recorded upload";
                 }
             }
             
@@ -63,7 +95,7 @@ $videos = query("
                 
                 <div class="video-header">
                     <span class="channel-badge"><?= htmlspecialchars($video['channel_name']) ?></span>
-                    <time class="timestamp">
+                    <time class="timestamp" datetime="<?= date('c', $timestamp) ?>">
                         <?= date('D, M j, Y', $timestamp) ?> at <?= date('g:i A', $timestamp) ?>
                     </time>
                 </div>
