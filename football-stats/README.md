@@ -1,39 +1,59 @@
 # Football Stats Dashboard
 
-This PHP and SQLite application presents English football and World Cup data through tables, match lists, matchweek comparisons, block analysis, team trackers, what-if tools, and simulations. Python and PHP maintenance scripts fetch or rebuild the underlying data.
+This PHP and SQLite application presents English football, World Cup, and Nations League data through tables, match lists, matchweek comparisons, block analysis, team trackers, what-if tools, and simulations. Python and PHP maintenance scripts fetch or rebuild the underlying data.
 
 ## Supported views
 
 - 2025/26 Division One, Premier League, Championship, League One, League Two, and National League views
+- Tier 6–8 regional leagues in both 2025/26 and 2026/27
 - Regular and deep-dive tables, matches, snapshot and season comparisons
+- Rules Across Seasons lab and league-specific custom-rule team groups
 - Four-team block analysis and live block movement
 - Team trackers, what-if projections, and season simulations
 - Custom-rule tables with per-team points deductions and deterministic outcomes for unplayed fixtures
 - Playoff views for supported lower divisions
 - World Cup groups, knockout bracket, standings, predictions, and simulation
+- Nations League edition selection, calculated group standings, fixtures, format, finals, and playoffs
 
 See [`tabs/README.md`](tabs/README.md) for the view layout and [`includes/README.md`](includes/README.md) for shared rendering components.
 
 ## Requirements
 
-- PHP 8 with PDO SQLite
-- Python 3
+- PHP 8 with PDO SQLite and SQLite3
+- Python 3.10+ for `sync-matches.py`
 - SQLite 3
-- `requests` for the Python API clients
+- `requests` for legacy Python API clients; `sync-matches.py` uses the standard library
 
 ## Setup
 
 From the repository root:
 
 ```sh
-# Create the core schema when starting with an empty database
-php football-stats/setup-db.php
+# Create the core schema in the football application directory
+cd football-stats
+php setup-db.php
+cd ..
 
 # Serve the whole repository
 php -S localhost:8000
 ```
 
-Then open <http://localhost:8000/football-stats/>. `config.php` expects `football-stats.sqlite3` and `world-cup-stats.sqlite3` in this directory. Database files are runtime data and should not be treated as source.
+Then open <http://localhost:8000/football-stats/>. The setup script creates only
+core tables; it does not import fixtures or create all provider-specific live
+tables. Import the competitions you need before expecting populated views.
+
+`config.php` resolves the dashboard connections as follows:
+
+| Connection | Environment override | Default lookup order |
+| --- | --- | --- |
+| English football and Nations League | `CLEVER_FOOTBALL_DB` | `football-stats.sqlite3`, then bundled `football-stats.db` |
+| World Cup | `CLEVER_WORLD_CUP_DB` | `world-cup-stats.sqlite3`, then the selected football database |
+
+Set overrides to absolute paths for deployments using external databases.
+`setup-db.php` and `fetch-englishfootball.php` use a working-directory-relative
+`football-stats.sqlite3`; `sync-matches.py` writes that filename beside its script.
+These tools do not follow `CLEVER_FOOTBALL_DB`. Ensure imports and the dashboard
+use the same file. Back up runtime databases before making changes.
 
 ## Updating match data
 
@@ -47,7 +67,8 @@ export API_FOOTBALL_KEY='...'
 python3 football-stats/sync-matches.py PL 2025-2026
 ```
 
-At least one provider variable is required. Rows are merged by competition, season, clubs, and date rather than replacing the other provider's data. The command then reconstructs matchweek 0 and completed-matchweek snapshots.
+At least one provider variable is required. National League (`NL`) needs
+`API_FOOTBALL_KEY`, as football-data.org is not mapped for that competition. Rows are merged by competition, season, clubs, and date rather than replacing the other provider's data. The command then reconstructs matchweek 0 and completed-matchweek snapshots.
 
 Other utilities include `backfill-mw0.php`, `populate-sample-data.php`, `update-el-data.php`, `update-wc-data.php`, and the `fetch-*` scripts. Back up a populated database before running a mutating utility.
 
@@ -58,10 +79,10 @@ football-stats/
 ├── index.php              # Season/competition/tab router
 ├── config.php             # SQLite connections
 ├── config/                # Competition rules
-├── assets/                # Dashboard styles
+├── assets/                # Dashboard styles and browser scripts
 ├── includes/              # Shared renderers and simulation helpers
-├── tabs/                  # Competition and World Cup views
-├── tests/                 # Standalone PHP regression tests
+├── tabs/                  # League and international competition views
+├── tests/                 # Standalone PHP and Node.js regression tests
 ├── setup-db.php           # Core schema setup
 └── sync-matches.py        # Multi-provider match merger
 ```
@@ -71,17 +92,19 @@ football-stats/
 Run the standalone regression scripts from the repository root:
 
 ```sh
-php football-stats/tests/competition-rules-test.php
-php football-stats/tests/simulation-config-test.php
-php football-stats/tests/table-view-movement-test.php
-php football-stats/tests/table-view-team-crests-test.php
+for test in tests/*-test.php football-stats/tests/*-test.php; do
+    php "$test" || break
+done
+for test in football-stats/tests/*-test.js; do
+    node "$test" || break
+done
 ```
 
 ## Security
 
 Do not commit API credentials. Move provider tokens out of legacy scripts and into environment variables before deployment, restrict setup/debug scripts from public access, and back up SQLite files before schema or import operations.
 
-### Admin competition rules
+## Admin competition rules
 
 Open **Admin → Competition rules**, choose a league, enter a season such as
 `2026-2027`, and click **Load rules**. Leave the season blank to edit league

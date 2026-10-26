@@ -12,4 +12,6 @@ These PHP files provide the World Cup section of the Football Stats Dashboard. O
 
 ---
 
-The main router allow-lists each view. World Cup data uses the separate `world-cup-stats.sqlite3` connection configured in `football-stats/config.php`.
+The main router allow-lists each view. World Cup data uses `CLEVER_WORLD_CUP_DB` when set, otherwise an existing
+`world-cup-stats.sqlite3`, falling back to the selected football database.
+See [`config.php`](../../config.php) and the [database setup guide](../../README.md#setup).
