@@ -26,10 +26,18 @@ See [tab routes](tabs/README.md) for the other views.
 
 ## Configuration and database
 
-`config.php` defines the shared `DB_PATH`, channel list, timezone and display
-constants used by PHP, including the fetcher. The database path is anchored to
-this directory, so the fetcher can run from any working directory. Location
-keywords are defined in `fetch-youtube.php`.
+Administrators can add, rename or remove monitored channels at
+`/admin/admin.php?section=youtube`, using one `Channel name | Channel ID` per line.
+`config.php`, the PHP fetcher and the legacy Python fetcher share `channels.json`.
+The directory must be writable by PHP to save changes atomically, and fetchers
+must be able to read the file. An empty list stops fetching; removing a channel
+preserves previously imported videos. Changes apply on the next fetcher run.
+Back up `channels.json` along with your database.
+
+`config.php` defines the shared `DB_PATH`, timezone and display constants used by
+PHP, including the fetcher. The database path is anchored to this directory, so
+the PHP fetcher can run from any working directory. Location keywords are defined
+in `fetch-youtube.php`.
 
 `setup-db.php` creates `videos`, `channels`, `upload_gaps` and lookup indexes.
 The PHP fetcher also creates this schema and its indexes when needed.
