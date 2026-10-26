@@ -41,7 +41,11 @@ the PHP process needs database and directory write access.
 ## Refreshing and interpreting data
 
 Rerun `fetch-youtube.py` from this directory to insert unseen video IDs and update
-channel check metadata. Schedule that same working directory/interpreter pair
+channel check metadata. The fetcher validates channel IDs (`UC` plus 22 ID
+characters) and case-sensitive 11-character video IDs. Entries with invalid or
+missing video IDs or a different channel ID are skipped; a mismatched feed
+channel ID rejects the feed without updating check metadata.
+Schedule that same working directory/interpreter pair
 with your scheduler. `run-fetcher.bat` is a Windows example with a hard-coded
 XAMPP path and `logs/fetch.log` output; update the path and create its log directory
 before using it.
@@ -60,5 +64,7 @@ missing, check the configured channel IDs, feed access and fetcher output.
 restricted in deployed installations. Back up the database before manual repairs.
 
 For UI changes see [includes](includes/README.md), [assets](assets/README.md) and
-[tabs](tabs/README.md). There is no dedicated automated YouTube test suite;
-syntax-check changed PHP and verify populated and empty views locally.
+[tabs](tabs/README.md). Run offline importer ID regression tests from the repository
+root with `python -m unittest discover -s youtube-dashboard/tests` (requires
+`python-dateutil`; RSS requests are mocked). For PHP changes, syntax-check changed
+files and verify populated and empty views locally.
