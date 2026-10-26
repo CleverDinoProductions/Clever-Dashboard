@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-YouTube RSS Dashboard - Video Fetcher
-Matches your football-stats structure
+Legacy YouTube RSS fetcher. Use `php fetch-youtube.php` for the maintained
+implementation, which reads the shared dashboard configuration.
 """
 
 import feedparser
 import re
 import sqlite3
+import json
+from pathlib import Path
 from datetime import datetime
 from dateutil import parser as date_parser
 
 # Configuration
 DB_PATH = 'youtube-dashboard.sqlite3'
 
-#use config.php CHANNELS values
-CHANNELS = {
-    'Family Fun Pack': 'UCvthuVsurPaVz2a7_4LepGg',
-    'Theme Park Worldwide (TPWW)': 'UCwqDAwhG1JCxTNr6HnB7gnQ',
-}
+# Shared with config.php and the admin panel; independent of working directory.
+with Path(__file__).with_name('channels.json').open(encoding='utf-8') as channel_file:
+    CHANNELS = json.load(channel_file)
 
 LOCATIONS = {
     'UK': ['UK', 'England', 'British', 'London', 'Hull'],
