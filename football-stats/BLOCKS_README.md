@@ -4,7 +4,7 @@ The block views divide a league table into consecutive four-team position bands.
 
 ## Available views
 
-Each supported English competition has the following 2025/26 views:
+The original six league directories provide the following 2025/26 views:
 
 - `blocks-overview.php` — introduction and summary of the position bands.
 - `blocks-dynamic.php` — live block analysis based on the current table.
@@ -23,6 +23,15 @@ Block tabs use the standard football router parameters. For example:
 ```
 
 Change `league` to `division-one`, `championship`, `league-one`, `league-two`, or `national-league` for another configured competition.
+
+## Regional divisions
+
+Tier 6–8 divisions expose the same block route keys in both selectable seasons.
+Their shared implementation, `tabs/regional/2025-2026/blocks.php`, uses configured
+promotion, playoff, and relegation zones to form five bands. These bands have
+variable sizes rather than fixed four-team ranges. The live view adds games left
+and projected points, using the selected season’s configured games per club.
+`tabs/shared/regional.php` dispatches every regional block route to this file.
 
 ## Implementation
 

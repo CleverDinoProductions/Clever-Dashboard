@@ -2,12 +2,12 @@
 
 These PHP views power the Championship section selected with `?tab=2025-2026&league=championship`.
 
-
 ## Views
 
 - `table.php` and `table2.php` — regular and deep-dive league tables.
 - `matches.php` — match list and results.
 - `compare.php` and `compare-seasons.php` — matchweek and season comparisons.
+- `cross-season` — Rules Across Seasons route, implemented by the shared [`cross-season.php`](../../shared/cross-season.php).
 - `blocks-overview.php`, `blocks-dynamic.php`, and `blocks-1.php` through `blocks-5.php` — block analysis.
 - `team-tracker.php`, `team-tracker-2.php`, and `team-tracker-3.php` — alternate team-focused views.
 - `whatifs.php` and `simulation.php` — projections and simulations.
@@ -17,3 +17,6 @@ These PHP views power the Championship section selected with `?tab=2025-2026&lea
 ---
 
 When adding a routed view, register an explicit key and file path in `football-stats/index.php`.
+
+The deep-dive table uses `subtab=table-2`; other view keys are listed in the
+[tab routing guide](../../README.md#routing).

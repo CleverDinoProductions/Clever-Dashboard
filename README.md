@@ -7,15 +7,16 @@ Clever Dashboard is a collection of PHP dashboards and maintenance scripts serve
 | Path | Purpose |
 | --- | --- |
 | `/` | Landing page linking to the available dashboards and administration tools. |
-| `/football-stats/` | League tables, fixtures, comparisons, team trackers, simulations, and World Cup views. |
+| `/football-stats/` | League tables, fixtures, comparisons, team trackers, simulations, regional leagues, World Cup, and Nations League views. |
 | `/irc-dashboard/` | Read-only aggregate reporting for a The Lounge/IRC SQLite log database. |
 | `/youtube-dashboard/` | Channel upload history, trends, gaps, locations, and search. |
 | `/admin/` | Session-protected database and log administration pages. |
-| `/CMRegister/` | Registration/login processing used by the site. |
+| `/account/` | Account setup, registration, login, preferences, and saved simulated results. |
+| `/CMRegister/` | Legacy plain-text registration/login endpoints backed by shared accounts. |
 
 ## Requirements
 
-- PHP 8 with the PDO SQLite extension
+- PHP 8 with both PDO SQLite (`pdo_sqlite`) and SQLite3 (`sqlite3`) extensions
 - SQLite 3
 - Python 3 for import and synchronization jobs
 - The Python packages used by a selected fetcher (notably `requests`, `feedparser`, and `python-dateutil`)
@@ -32,6 +33,26 @@ Clever Dashboard is a collection of PHP dashboards and maintenance scripts serve
    ```
 
 5. Open <http://localhost:8000>. Sub-applications can also be opened directly, for example <http://localhost:8000/football-stats/>.
+
+### YouTube and IRC data
+
+The YouTube fetcher uses `feedparser` and `python-dateutil`. Run it from
+`youtube-dashboard/` because its SQLite path is relative to the working directory:
+
+```sh
+python3 -m pip install feedparser python-dateutil
+cd youtube-dashboard
+python3 fetch-youtube.py
+```
+
+Keep the channel lists in `youtube-dashboard/config.php` and `fetch-youtube.py`
+in sync; the Python script does not read the PHP configuration. RSS feeds supply
+recent uploads, so this fetcher does not backfill a channel’s complete history.
+
+For IRC, set `$dbPath` in `irc-dashboard/config.php` to an existing The Lounge
+SQLite log database readable by PHP. Dashboard queries enforce SQLite
+`query_only` mode. Backfill and import scripts are separate maintenance tools;
+review their paths and target database before running them.
 
 ### Accounts and administration
 
@@ -75,7 +96,10 @@ The built-in PHP server is intended for local development only. In production, c
 ├── index.php                 # Site landing page
 ├── config.php                # Root administration session configuration
 ├── admin/                    # Administration interface
-├── CMRegister/               # Registration/login handlers
+├── account/                  # Account setup, sign-in, and preferences
+├── lib/                      # Shared authentication, settings, and saved results
+├── tests/                    # Account, admin, and shared-feature regression tests
+├── CMRegister/               # Legacy login compatibility
 ├── football-stats/           # Football analytics application and importers
 ├── irc-dashboard/            # IRC aggregate analytics application
 └── youtube-dashboard/        # YouTube monitoring application and fetcher
@@ -89,16 +113,18 @@ There is no repository-wide build step. Useful checks are:
 # Syntax-check all PHP files
 find . -name '*.php' -print0 | xargs -0 -n1 php -l
 
-# Run the football regression tests
-php football-stats/tests/competition-rules-test.php
-php football-stats/tests/league-table-rendering-test.php
-php football-stats/tests/table2-metrics-test.php
-php football-stats/tests/table-view-movement-test.php
-php football-stats/tests/table-view-team-crests-test.php
-php football-stats/tests/database-config-test.php
-php tests/account-system-test.php
-php tests/admin-page-test.php
+# Run all standalone PHP regression tests (stop on the first failure)
+for test in tests/*-test.php football-stats/tests/*-test.php; do
+    php "$test" || break
+done
+
+# Run browser-logic regression tests with Node.js
+for test in football-stats/tests/*-test.js; do
+    node "$test" || break
+done
 ```
+
+Node.js is needed only for the JavaScript regression tests.
 
 Python importers contact third-party services and may require credentials and network access. Review their configuration before running them.
 
