@@ -38,3 +38,11 @@ codes are defined in `lib/english-pyramid.php` at the repository root.
 
 See [Nations League setup](nations-league/README.md) for edition and data-sync
 options and [block analysis](../BLOCKS_README.md) for regional block behavior.
+
+## Detailed guides
+
+- [Regional division setup and shared implementations](regional/README.md).
+- [Shared dispatcher and cross-season rules lab](shared/README.md).
+- [League One](league-one/README.md), [League Two](league-two/README.md) and
+  [National League](national-league/README.md) view references.
+- [World Cup](world-cup/README.md) and [Nations League](nations-league/README.md).

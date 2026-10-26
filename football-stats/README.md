@@ -89,15 +89,15 @@ football-stats/
 
 ## Tests
 
+See the [test guide](tests/README.md) for coverage and requirements.
 Run the standalone regression scripts from the repository root:
 
 ```sh
-for test in tests/*-test.php football-stats/tests/*-test.php; do
-    php "$test" || break
-done
-for test in football-stats/tests/*-test.js; do
-    node "$test" || break
-done
+(
+    set -eu
+    for test in tests/*-test.php football-stats/tests/*-test.php; do php "$test"; done
+    for test in football-stats/tests/*-test.js; do node "$test"; done
+)
 ```
 
 ## Security
@@ -114,8 +114,9 @@ members cannot. Saving and resetting use the existing CSRF protection.
 The editor supports Champions League, Europa League, Conference League,
 automatic promotion, promotion playoffs, relegation, and custom zones. Each zone
 has a label, inclusive position range, and colour. Add or remove rows as needed;
-removing every row saves an explicitly empty zone list. Position ranges cannot
-overlap or exceed the configured club count. The table's left border uses league
+removing every row saves an explicitly empty zone list. Position ranges may overlap but cannot exceed the configured club count.
+Row colour and row edge preferences independently choose which matching zone
+controls each display property; every configured zone still counts in simulations. The table's left border uses league
 defaults; its fill and right border use the selected season's rules. Legends use
 the same labels, ranges, and colours.
 
