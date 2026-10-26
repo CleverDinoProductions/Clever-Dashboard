@@ -44,8 +44,16 @@ function youtubeDetectLocation(string $title): ?string
     return null;
 }
 
+function youtubeValidateChannelId(string $channelId): void
+{
+    if (!preg_match('/^UC[A-Za-z0-9_-]{22}$/D', $channelId)) {
+        throw new RuntimeException('Invalid YouTube channel ID');
+    }
+}
+
 function youtubeDownloadFeed(string $channelId): string
 {
+    youtubeValidateChannelId($channelId);
     $curl = curl_init('https://www.youtube.com/feeds/videos.xml?channel_id=' . rawurlencode($channelId));
     curl_setopt_array($curl, [
         CURLOPT_RETURNTRANSFER => true,
@@ -67,6 +75,7 @@ function youtubeDownloadFeed(string $channelId): string
 /** Parse and validate the whole feed before changing channel data. */
 function youtubeParseFeed(string $body, string $channelId): array
 {
+    youtubeValidateChannelId($channelId);
     $previous = libxml_use_internal_errors(true);
     try {
         $xml = simplexml_load_string($body, SimpleXMLElement::class, LIBXML_NONET);
@@ -81,6 +90,9 @@ function youtubeParseFeed(string $body, string $channelId): array
         $entries = [];
         foreach ($atom->entry as $entry) {
             $yt = $entry->children('http://www.youtube.com/xml/schemas/2015');
+            if ((string) $yt->channelId !== $channelId) {
+                throw new RuntimeException('Entry channel does not match the configured channel');
+            }
             $id = (string) $yt->videoId;
             $title = (string) $entry->title;
             $published = (string) $entry->published;

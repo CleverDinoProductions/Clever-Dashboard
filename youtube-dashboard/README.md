@@ -54,6 +54,10 @@ The fetcher is CLI-only and never runs during web requests. It applies connectio
 and request timeouts and returns exit code 1 if any channel fails. A failed channel
 is rolled back and its last successful check time is preserved; other channels
 continue importing. Successful empty feeds still update check metadata.
+Configured channel IDs must start with `UC` and contain 24 ID characters in
+total. The feed and every entry must match that channel ID exactly. Video IDs
+must contain 11 letters, digits, underscores or hyphens and are case sensitive.
+Invalid IDs reject the feed before any database changes.
 
 RSS exposes recent uploads, not full channel history. Entries are imported oldest
 first so gaps can use earlier entries in the same feed. Gaps use elapsed whole
@@ -79,10 +83,3 @@ php youtube-dashboard/tests/fetcher-test.php
 
 The tests use an in-memory database and fixture feeds without contacting YouTube.
 Syntax-check changed PHP and verify populated and empty views locally.
-
-The legacy Python fetcher validates channel IDs (`UC` plus 22 ID characters)
-and case-sensitive 11-character video IDs. It skips entries with missing or
-invalid video IDs or a different channel ID, and rejects feeds with a mismatched
-channel ID without updating check metadata. Run its offline regression tests
-with `python -m unittest discover -s youtube-dashboard/tests` (requires
-`python-dateutil`; RSS requests are mocked).
