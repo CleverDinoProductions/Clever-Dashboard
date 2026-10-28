@@ -24,13 +24,13 @@ if ($search_query) {
     <h2>🔍 Search Videos</h2>
     <p class="tab-description">Search across all tracked videos by title or channel name</p>
     
-    <form method="GET" action="" style="margin: 30px 0;">
+    <form method="GET" action="" class="search-form">
         <input type="hidden" name="tab" value="search">
-        <div style="display: flex; gap: 10px; max-width: 600px;">
+        <div class="search-controls">
             <input type="text" name="q" value="<?= htmlspecialchars($search_query) ?>" 
                    placeholder="Search video titles or channel names..." 
-                   style="flex: 1; padding: 12px; border-radius: 6px; border: 2px solid #667eea; font-size: 16px;">
-            <button type="submit" style="padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+                   aria-label="Search video titles or channel names">
+            <button type="submit">
                 Search
             </button>
         </div>
@@ -63,12 +63,12 @@ if ($search_query) {
         </div>
         
         <?php if ($count == 0): ?>
-            <p style="text-align: center; padding: 40px; color: #666;">No results found for "<?= htmlspecialchars($search_query) ?>"</p>
+            <p class="search-summary">No results found for "<?= htmlspecialchars($search_query) ?>"</p>
         <?php else: ?>
-            <p style="text-align: center; padding: 20px; color: #666;">Found <?= $count ?> result(s)</p>
+            <p class="search-summary">Found <?= $count ?> result(s)</p>
         <?php endif; ?>
         
     <?php elseif ($search_query): ?>
-        <p style="text-align: center; padding: 40px; color: #666;">No results found</p>
+        <p class="search-summary">No results found</p>
     <?php endif; ?>
 </div>
