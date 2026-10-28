@@ -43,5 +43,16 @@ Secure on HTTPS. The database stores a token hash; logout revokes the current
 browser token. Account deletion, disabling or a password change invalidates
 persistent sign-ins. Do not delete the account database to reset a single user.
 
+Pages that start an account session send explicit `Cache-Control: no-store`
+headers, even when the host disables PHP's session cache limiter. A stale sign-in
+submission is rejected with HTTP 419 and a fresh form; credentials are processed
+only after a valid token is submitted. Empty or malformed tokens are rejected.
+
+If sign-in repeatedly reports an expired session, check that all dashboard links
+use the same HTTPS origin. Secure cookies cannot be used on HTTP. Configure the
+web server to redirect HTTP to HTTPS once TLS is available, and exclude account
+and other session-specific pages from reverse-proxy/CDN caching. Also verify that
+PHP's session storage directory is writable and shared across PHP workers.
+
 For roles and user management see [administration](../admin/README.md).
 For regression commands see [shared tests](../tests/README.md).

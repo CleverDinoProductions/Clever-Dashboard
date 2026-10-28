@@ -40,3 +40,14 @@ find . -name '*.php' -print0 | xargs -0 -n1 php -l
 YouTube importer regression checks are documented in
 [`youtube-dashboard/README.md`](../youtube-dashboard/README.md). IRC manual checks
 and data setup are described in its README.
+
+The HTTP sign-in regression test also requires Python 3 and permission to start
+PHP's built-in server on a temporary loopback port:
+
+```sh
+python3 tests/login-session-test.py
+```
+
+It uses a temporary account database and session directory. It checks login return
+routes, session persistence, cache headers with PHP's cache limiter disabled,
+and recovery from stale/missing tokens and deleted sessions.
