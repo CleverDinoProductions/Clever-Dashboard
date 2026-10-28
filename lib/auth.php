@@ -49,6 +49,13 @@ function clever_restore_login(): ?int
 
 function clever_start_session(): void
 {
+    // Session-specific pages and CSRF forms must never be served from a cache,
+    // including when PHP's session cache limiter is disabled by the host.
+    if (!headers_sent()) {
+        header('Cache-Control: no-store, private, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+    }
     if (session_status() === PHP_SESSION_NONE) {
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
@@ -313,11 +320,19 @@ function clever_csrf_token(): string
     return $_SESSION['clever_csrf'];
 }
 
-function clever_verify_csrf(): void
+function clever_csrf_is_valid(): bool
 {
     clever_start_session();
-    $provided = (string)($_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
-    if (!hash_equals((string)($_SESSION['clever_csrf'] ?? ''), $provided)) {
+    $expected = $_SESSION['clever_csrf'] ?? null;
+    $provided = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+    return is_string($expected) && $expected !== ''
+        && is_string($provided) && $provided !== ''
+        && hash_equals($expected, $provided);
+}
+
+function clever_verify_csrf(): void
+{
+    if (!clever_csrf_is_valid()) {
         http_response_code(419);
         exit('Your session expired. Please go back and try again.');
     }
