@@ -1,0 +1,37 @@
+/* Football palette applied to every YouTube view, including legacy cards. */
+body { padding: 0; }
+.container { max-width: 1400px; padding: 30px 20px; }
+.content-area { background: #2c2f33; border: 1px solid var(--line); border-radius: 8px; padding: 24px; }
+.content-area h2 { color: #fff; padding-bottom: 14px; border-bottom: 2px solid var(--gold); font-size: 26px; }
+.content-area h3, .channel-card h3 { color: #fff; border-color: var(--line); }
+.tab-description, .timestamp, .gap-dates, .last-upload, .stat-label, .stat-item .stat-label, .video-id, .channel-id small { color: var(--muted); }
+.stat-card, .video-card, .channel-card, .gap-item, .analytics-table, .empty-state, .timeline-filters { background: #23272a; border-color: var(--line); border-radius: 8px; }
+.stat-card { border-left: 4px solid var(--accent); }
+.stat-value, .stat-item .stat-value { color: var(--gold); }
+.stat-item, .last-upload { background: #2c2f33; }
+.video-title a, .gap-video-title a { color: #fff; }
+.video-title a:hover, .gap-video-title a:hover { color: var(--gold); }
+.channel-badge, .channel-name { background: #40444b; color: #fff; }
+.stat-box, .analytics-table h3, .data-table th { background: #1a237e; color: #fff; }
+.data-table td { color: var(--ink); border-color: var(--line); }
+.data-table tr:hover { background: #36393f; }
+.channel-id, .gap-dates { border-color: var(--line); }
+.hour-bar { background: linear-gradient(135deg, #5865f2, #4752c4); min-width: max-content; max-width: 100%; }
+.feed-status { background: #213c31; color: #b3e7c9; border-color: #3c6952; }
+.feed-status.stale, .gap-alert { background: #3e321d; color: #ffe0a1; border-color: #806630; }
+.video-card.gap-warning, .gap-item.moderate { background: #302c23; border-left-color: #e4ad47; }
+.video-card.gap-critical, .gap-item.severe { background: #39282b; border-left: 4px solid #f48686; }
+.gap-days { color: #ffabab; }
+.location-badge { background: #254432; color: #b3e7c9; }
+input, select { background: #202225; color: var(--ink); border: 1px solid #72767d; border-radius: 6px; padding: 10px 12px; }
+button { background: linear-gradient(135deg, #5865f2, #4752c4); }
+.search-form { margin: 30px 0; }
+.search-controls { display: flex; flex-wrap: wrap; gap: 10px; max-width: 650px; }
+.search-controls input { flex: 1 1 220px; }
+.search-summary { text-align: center; padding: 24px; color: var(--muted); }
+.main-footer { color: var(--muted); border-color: var(--line); }
+.chart-container { background: #fff; border-radius: 8px; padding: 16px; }
+::selection { background: #4752c4; color: #fff; }
+::-webkit-scrollbar-thumb { background: #5865f2; }
+@media (max-width: 700px) { .container { padding: 20px 16px; } .content-area { padding: 16px; } .stats-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); } .channel-stats { grid-template-columns: 1fr; } }
+@media print { body, .content-area, .video-card, .channel-card, .gap-item, .stat-card { background: #fff; color: #111; } .pill-nav, .dashboard-account-bar, .site-header { display: none; } }

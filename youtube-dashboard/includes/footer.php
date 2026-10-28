@@ -3,6 +3,5 @@
             <p>Page rendered <?= date('j M Y, H:i T') ?>. Reloading this page does not fetch new uploads.</p>
         </footer>
     </main>
-    </div>
 </body>
 </html>
