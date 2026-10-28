@@ -16,10 +16,24 @@ php youtube-dashboard/fetch-youtube.php
 php -S localhost:8000
 ```
 
-Open <http://localhost:8000/youtube-dashboard/>. The default tab is `timeline`, with channel and 7/30/90-day filters, result counts
-and an empty state. Summary cards describe the whole library, independent of
-filters. The feed status shows the oldest recorded channel check and flags checks
-older than 24 hours; page render time is displayed separately. Page reloads do not
+Open <http://localhost:8000/youtube-dashboard/>. Every tab has shared channel-ID
+and 7/30/90-day filters. The selection stays active in sidebar navigation and
+applies to video lists, aggregates and their denominators. Channel check status
+is independent of publication dates; gap predecessors may fall before the period.
+Channel choices include archived video channels, and equal display names stay
+separate. Reset clears the selection for the current tab.
+
+Timeline pages contain 50 uploads with newer/older navigation. Tags shows title
+hashtags and rule-based topics (food, travel, walking, transport, live, shorts,
+review, guide and history), excludes known location labels and the importer's
+location keywords, and supports clicking a tag to filter its latest videos.
+These labels are derived from cached titles, not YouTube metadata tags; RSS does
+not provide those. No schema migration or extra network calls are needed.
+
+The upload calendar provides daily UTC counts with month navigation. Feed health
+shows last successful checks and latest cached uploads per selected channel.
+All tab publication times are UTC. Footer counts explicitly cover the whole cache.
+The feed status flags successful checks older than 24 hours. Page reloads do not
 run the fetcher, and forms are not interrupted by automatic page refreshes.
 
 See [tab routes](tabs/README.md) for the other views.
@@ -106,6 +120,9 @@ For UI changes see [includes](includes/README.md), [assets](assets/README.md) an
 [tabs](tabs/README.md). Run the offline fetcher regression checks with:
 
 ```sh
+php youtube-dashboard/tests/dashboard-test.php
+php youtube-dashboard/tests/dashboard-test.php empty
+php youtube-dashboard/tests/dashboard-test.php unknown
 php youtube-dashboard/tests/fetcher-test.php
 php youtube-dashboard/tests/api-fetcher-test.php
 ```

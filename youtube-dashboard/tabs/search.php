@@ -1,8 +1,8 @@
 <?php
-$search_query = isset($_GET['q']) ? $_GET['q'] : '';
+$search_query = dashboard_input('q');
 $results = null;
 
-if ($search_query) {
+if ($search_query !== '') {
     $results = query("
         SELECT 
             v.title,
@@ -11,9 +11,9 @@ if ($search_query) {
             v.detected_location,
             v.url,
             g.gap_days
-        FROM videos v
-        LEFT JOIN upload_gaps g ON v.video_id = g.video_id
-        WHERE v.title LIKE :query OR v.channel_name LIKE :query
+        FROM dashboard_videos v
+        LEFT JOIN dashboard_upload_gaps g ON v.video_id = g.video_id
+        WHERE (v.title LIKE :query OR v.channel_name LIKE :query)
         ORDER BY v.published_date DESC
         LIMIT 100
     ", [':query' => '%' . $search_query . '%']);
@@ -26,6 +26,7 @@ if ($search_query) {
     
     <form method="GET" action="" style="margin: 30px 0;">
         <input type="hidden" name="tab" value="search">
+        <?php dashboard_hidden_filters(); ?>
         <div style="display: flex; gap: 10px; max-width: 600px;">
             <input type="text" name="q" value="<?= htmlspecialchars($search_query) ?>" 
                    placeholder="Search video titles or channel names..." 
@@ -36,7 +37,7 @@ if ($search_query) {
         </div>
     </form>
     
-    <?php if ($search_query && $results): ?>
+    <?php if ($search_query !== '' && $results): ?>
         <h3>Search Results for "<?= htmlspecialchars($search_query) ?>"</h3>
         
         <div class="video-timeline">
@@ -65,10 +66,10 @@ if ($search_query) {
         <?php if ($count == 0): ?>
             <p style="text-align: center; padding: 40px; color: #666;">No results found for "<?= htmlspecialchars($search_query) ?>"</p>
         <?php else: ?>
-            <p style="text-align: center; padding: 20px; color: #666;">Found <?= $count ?> result(s)</p>
+            <p style="text-align: center; padding: 20px; color: #666;">Showing <?= $count ?> result(s), up to 100 newest matches</p>
         <?php endif; ?>
         
-    <?php elseif ($search_query): ?>
+    <?php elseif ($search_query !== ''): ?>
         <p style="text-align: center; padding: 40px; color: #666;">No results found</p>
     <?php endif; ?>
 </div>

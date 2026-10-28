@@ -14,3 +14,7 @@ application tables; use [setup](../README.md#setup-and-first-fetch) first. WAL m
 requires a writable database directory as well as access to the database itself.
 Bind search input rather than interpolating it into SQL, and escape returned text
 when rendering HTML. Update navigation alongside the router when adding a view.
+
+`filters.php` sets up request-local scoped read views and shared filter controls;
+`tags.php` derives and deduplicates title hashtags/topics while excluding known
+location keywords. Neither changes persistent data.

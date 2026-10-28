@@ -1,19 +1,9 @@
 <?php
-$channel = is_string($_GET['channel'] ?? null) ? $_GET['channel'] : '';
-$period = is_string($_GET['period'] ?? null) && in_array($_GET['period'], ['7', '30', '90'], true) ? $_GET['period'] : '';
-$where = [];
+$conditions = '';
 $params = [];
-if ($channel !== '') {
-    $where[] = 'v.channel_name = :channel';
-    $params[':channel'] = $channel;
-}
-if ($period !== '') {
-    $where[] = "julianday(v.published_date) >= julianday('now', :period)";
-    $params[':period'] = '-' . $period . ' days';
-}
-$conditions = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-$matchingCount = getValue("SELECT COUNT(*) FROM videos v $conditions", $params);
-$channelOptions = query("SELECT DISTINCT channel_name FROM videos ORDER BY channel_name");
+$matchingCount = getValue("SELECT COUNT(*) FROM dashboard_videos v $conditions", $params);
+$page = max(1, min((int) ceil(max(1, $matchingCount) / 50), (int) dashboard_input('page')));
+$offset = ($page - 1) * 50;
 $videos = query("
     SELECT 
         v.video_id,
@@ -23,11 +13,11 @@ $videos = query("
         v.detected_location,
         v.url,
         g.gap_days
-    FROM videos v
-    LEFT JOIN upload_gaps g ON v.video_id = g.video_id
+    FROM dashboard_videos v
+    LEFT JOIN dashboard_upload_gaps g ON v.video_id = g.video_id
     $conditions
     ORDER BY julianday(v.published_date) DESC
-    LIMIT 50
+    LIMIT 50 OFFSET $offset
 ", $params);
 ?>
 
@@ -37,36 +27,24 @@ $videos = query("
     
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM videos") ?></div>
-            <div class="stat-label">Videos in library</div>
+            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM dashboard_videos") ?></div>
+            <div class="stat-label">Videos in selection</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM channels") ?></div>
-            <div class="stat-label">Tracked channels</div>
+            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM dashboard_channels") ?></div>
+            <div class="stat-label">Channels in selection</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= round(getValue("SELECT AVG(gap_days) FROM upload_gaps") ?? 0, 1) ?></div>
+            <div class="stat-value"><?= round(getValue("SELECT AVG(gap_days) FROM dashboard_upload_gaps") ?? 0, 1) ?></div>
             <div class="stat-label">Avg Gap (days)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM upload_gaps WHERE gap_days > " . (int) CRITICAL_GAP_DAYS) ?></div>
+            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM dashboard_upload_gaps WHERE gap_days > " . (int) CRITICAL_GAP_DAYS) ?></div>
             <div class="stat-label">Gaps over <?= CRITICAL_GAP_DAYS ?> days</div>
         </div>
     </div>
     
-    <form class="timeline-filters" method="get">
-        <input type="hidden" name="tab" value="timeline">
-        <label>Channel<select name="channel"><option value="">All channels</option>
-            <?php while ($option = $channelOptions->fetchArray(SQLITE3_ASSOC)): ?>
-            <option value="<?= htmlspecialchars($option['channel_name']) ?>" <?= $channel === $option['channel_name'] ? 'selected' : '' ?>><?= htmlspecialchars($option['channel_name']) ?></option>
-            <?php endwhile; ?>
-        </select></label>
-        <label>Published<select name="period"><option value="">All time</option>
-            <?php foreach (['7', '30', '90'] as $days): ?><option value="<?= $days ?>" <?= $period === $days ? 'selected' : '' ?>>Last <?= $days ?> days</option><?php endforeach; ?>
-        </select></label>
-        <button type="submit">Apply filters</button><a href="?tab=timeline">Reset</a>
-    </form>
-    <div class="results-heading"><h3>Recent uploads</h3><span>Showing <?= min(50, $matchingCount) ?> of <?= number_format($matchingCount) ?> uploads · newest first</span></div>
+    <div class="results-heading"><h3>Recent uploads</h3><span>Showing <?= min(50, max(0, $matchingCount - $offset)) ?> of <?= number_format($matchingCount) ?> uploads · page <?= $page ?> · newest first</span></div>
     <?php if (!$matchingCount): ?>
         <div class="empty-state"><h3>No uploads found</h3><p>Try another channel or a wider date range. If your database is empty, run the RSS fetcher first.</p><a href="?tab=timeline">Clear filters</a></div>
     <?php endif; ?>
@@ -118,3 +96,8 @@ $videos = query("
         <?php endwhile; ?>
     </div>
 </div>
+
+<nav class="results-heading" aria-label="Upload pages">
+<?php if ($page > 1): ?><a href="<?= dashboard_url(['tab' => 'timeline', 'page' => $page - 1]) ?>">← Newer uploads</a><?php endif; ?>
+<?php if ($offset + 50 < $matchingCount): ?><a href="<?= dashboard_url(['tab' => 'timeline', 'page' => $page + 1]) ?>">Older uploads →</a><?php endif; ?>
+</nav>

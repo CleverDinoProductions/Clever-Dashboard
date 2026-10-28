@@ -7,8 +7,8 @@ $gaps = query("
         v.title,
         v.channel_name,
         v.url
-    FROM upload_gaps g
-    JOIN videos v ON g.video_id = v.video_id
+    FROM dashboard_upload_gaps g
+    JOIN dashboard_videos v ON g.video_id = v.video_id
     ORDER BY g.gap_days DESC
     LIMIT 50
 ");
@@ -16,23 +16,23 @@ $gaps = query("
 
 <div class="content-area">
     <h2>⏱️ Upload Gap Analysis</h2>
-    <p class="tab-description">Tracking upload gaps that could impact algorithm performance</p>
+    <p class="tab-description">Tracking upload gaps that between locally recorded uploads</p>
     
     <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM upload_gaps WHERE gap_days > 14") ?></div>
+            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM dashboard_upload_gaps WHERE gap_days > 14") ?></div>
             <div class="stat-label">Critical Gaps (&gt;14d)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM upload_gaps WHERE gap_days > 7 AND gap_days <= 14") ?></div>
-            <div class="stat-label">Warning Gaps (7-14d)</div>
+            <div class="stat-value"><?= getValue("SELECT COUNT(*) FROM dashboard_upload_gaps WHERE gap_days > 7 AND gap_days <= 14") ?></div>
+            <div class="stat-label">Warning Gaps (&gt;7–14d)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= getValue("SELECT MAX(gap_days) FROM upload_gaps") ?></div>
+            <div class="stat-value"><?= getValue("SELECT MAX(gap_days) FROM dashboard_upload_gaps") ?></div>
             <div class="stat-label">Longest Gap (days)</div>
         </div>
         <div class="stat-card">
-            <div class="stat-value"><?= round(getValue("SELECT AVG(gap_days) FROM upload_gaps") ?? 0, 1) ?></div>
+            <div class="stat-value"><?= round(getValue("SELECT AVG(gap_days) FROM dashboard_upload_gaps") ?? 0, 1) ?></div>
             <div class="stat-label">Average Gap</div>
         </div>
     </div>
