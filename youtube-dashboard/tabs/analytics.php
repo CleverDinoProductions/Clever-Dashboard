@@ -1,7 +1,7 @@
 <?php
-$total_videos = getValue("SELECT COUNT(*) FROM videos");
-$total_channels = getValue("SELECT COUNT(*) FROM channels");
-$avg_gap = getValue("SELECT AVG(gap_days) FROM upload_gaps");
+$total_videos = getValue("SELECT COUNT(*) FROM dashboard_videos");
+$total_channels = getValue("SELECT COUNT(*) FROM dashboard_channels");
+$avg_gap = getValue("SELECT AVG(gap_days) FROM dashboard_upload_gaps");
 
 $frequency = query("
     SELECT 
@@ -9,9 +9,9 @@ $frequency = query("
         COUNT(*) as video_count,
         AVG(g.gap_days) as avg_gap,
         MAX(g.gap_days) as max_gap
-    FROM videos v
-    LEFT JOIN upload_gaps g ON v.video_id = g.video_id
-    GROUP BY channel_name
+    FROM dashboard_videos v
+    LEFT JOIN dashboard_upload_gaps g ON v.video_id = g.video_id
+    GROUP BY v.channel_id
     ORDER BY video_count DESC
 ");
 
@@ -19,7 +19,7 @@ $locations = query("
     SELECT 
         detected_location,
         COUNT(*) as count
-    FROM videos
+    FROM dashboard_videos
     WHERE detected_location IS NOT NULL
     GROUP BY detected_location
     ORDER BY count DESC
@@ -28,7 +28,7 @@ $locations = query("
 
 <div class="content-area">
     <h2>📊 Dashboard Analytics</h2>
-    <p class="tab-description">Overall statistics and performance metrics</p>
+    <p class="tab-description">Statistics for the selected cached uploads</p>
     
     <div class="stats-grid">
         <div class="stat-box">
@@ -47,7 +47,7 @@ $locations = query("
         </div>
         
         <div class="stat-box">
-            <div class="stat-number"><?= getValue("SELECT COUNT(DISTINCT detected_location) FROM videos WHERE detected_location IS NOT NULL") ?></div>
+            <div class="stat-number"><?= getValue("SELECT COUNT(DISTINCT detected_location) FROM dashboard_videos WHERE detected_location IS NOT NULL") ?></div>
             <div class="stat-label">Locations Detected</div>
         </div>
     </div>

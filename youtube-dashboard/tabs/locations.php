@@ -5,7 +5,7 @@ $location_stats = query("
         COUNT(*) as video_count,
         MIN(published_date) as first_video,
         MAX(published_date) as last_video
-    FROM videos
+    FROM dashboard_videos
     WHERE detected_location IS NOT NULL
     GROUP BY detected_location
     ORDER BY video_count DESC
@@ -18,7 +18,7 @@ $recent_by_location = query("
         channel_name,
         published_date,
         url
-    FROM videos
+    FROM dashboard_videos
     WHERE detected_location IS NOT NULL
     ORDER BY published_date DESC
     LIMIT 30
@@ -31,7 +31,7 @@ $recent_by_location = query("
     
     <div class="stats-grid">
         <?php 
-        $top_locations = query("SELECT detected_location, COUNT(*) as count FROM videos WHERE detected_location IS NOT NULL GROUP BY detected_location ORDER BY count DESC LIMIT 4");
+        $top_locations = query("SELECT detected_location, COUNT(*) as count FROM dashboard_videos WHERE detected_location IS NOT NULL GROUP BY detected_location ORDER BY count DESC LIMIT 4");
         while ($loc = $top_locations->fetchArray(SQLITE3_ASSOC)):
         ?>
             <div class="stat-card">

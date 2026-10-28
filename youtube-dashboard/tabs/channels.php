@@ -7,9 +7,9 @@ $channels = query("
         COUNT(v.video_id) as video_count,
         MAX(v.published_date) as last_upload,
         AVG(g.gap_days) as avg_gap
-    FROM channels c
-    LEFT JOIN videos v ON c.channel_id = v.channel_id
-    LEFT JOIN upload_gaps g ON v.video_id = g.video_id
+    FROM dashboard_channels c
+    LEFT JOIN dashboard_videos v ON c.channel_id = v.channel_id
+    LEFT JOIN dashboard_upload_gaps g ON v.video_id = g.video_id
     GROUP BY c.channel_id
     ORDER BY last_upload DESC
 ");
@@ -25,7 +25,7 @@ $channels = query("
             $hours_ago = $channel['last_upload'] 
                 ? round((time() - strtotime($channel['last_upload'])) / 3600, 1)
                 : null;
-            $status = !$hours_ago || $hours_ago > 72 ? 'inactive' : 'active';
+            $status = $hours_ago === null || $hours_ago > 72 ? 'inactive' : 'active';
             ?>
             
             <div class="channel-card status-<?= $status ?>">
@@ -38,7 +38,7 @@ $channels = query("
                     </div>
                     
                     <div class="stat-item">
-                        <span class="stat-value"><?= $hours_ago ? $hours_ago . 'h' : 'N/A' ?></span>
+                        <span class="stat-value"><?= $hours_ago !== null ? $hours_ago . 'h' : 'N/A' ?></span>
                         <span class="stat-label">Last Upload</span>
                     </div>
                     
@@ -55,7 +55,7 @@ $channels = query("
                 <?php endif; ?>
                 
                 <div class="channel-id">
-                    <small>ID: <?= htmlspecialchars($channel['channel_id']) ?></small>
+                    <a href="<?= dashboard_url(['tab' => 'timeline', 'channel' => $channel['channel_id']]) ?>">View uploads</a><br><small>ID: <?= htmlspecialchars($channel['channel_id']) ?></small>
                 </div>
             </div>
         <?php endwhile; ?>

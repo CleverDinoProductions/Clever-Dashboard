@@ -4,8 +4,8 @@ $monthly_trends = query("
         strftime('%Y-%m', published_date) as month,
         COUNT(*) as video_count,
         AVG(g.gap_days) as avg_gap
-    FROM videos v
-    LEFT JOIN upload_gaps g ON v.video_id = g.video_id
+    FROM dashboard_videos v
+    LEFT JOIN dashboard_upload_gaps g ON v.video_id = g.video_id
     GROUP BY month
     ORDER BY month DESC
     LIMIT 12

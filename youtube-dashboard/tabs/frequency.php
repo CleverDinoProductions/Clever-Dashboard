@@ -6,9 +6,9 @@ $frequency = query("
         AVG(g.gap_days) as avg_gap,
         MIN(g.gap_days) as min_gap,
         MAX(g.gap_days) as max_gap
-    FROM videos v
-    LEFT JOIN upload_gaps g ON v.video_id = g.video_id
-    GROUP BY channel_name
+    FROM dashboard_videos v
+    LEFT JOIN dashboard_upload_gaps g ON v.video_id = g.video_id
+    GROUP BY v.channel_id
     ORDER BY total_videos DESC
 ");
 
@@ -24,7 +24,7 @@ $day_frequency = query("
             WHEN 6 THEN 'Saturday'
         END as day_name,
         COUNT(*) as upload_count
-    FROM videos
+    FROM dashboard_videos
     GROUP BY strftime('%w', published_date)
     ORDER BY CAST(strftime('%w', published_date) AS INTEGER)
 ");
@@ -33,7 +33,7 @@ $hour_frequency = query("
     SELECT 
         CAST(strftime('%H', published_date) AS INTEGER) as hour,
         COUNT(*) as upload_count
-    FROM videos
+    FROM dashboard_videos
     GROUP BY hour
     ORDER BY hour
 ");
@@ -78,7 +78,7 @@ $hour_frequency = query("
         </thead>
         <tbody>
             <?php 
-            $total = getValue("SELECT COUNT(*) FROM videos");
+            $total = getValue("SELECT COUNT(*) FROM dashboard_videos");
             while ($day = $day_frequency->fetchArray(SQLITE3_ASSOC)): 
             ?>
                 <tr>
@@ -93,7 +93,7 @@ $hour_frequency = query("
     <h3>🕐 Uploads by Hour (UTC)</h3>
     <div class="hour-heatmap">
         <?php 
-        $max_count = getValue("SELECT MAX(cnt) FROM (SELECT COUNT(*) as cnt FROM videos GROUP BY strftime('%H', published_date))");
+        $max_count = getValue("SELECT MAX(cnt) FROM (SELECT COUNT(*) as cnt FROM dashboard_videos GROUP BY strftime('%H', published_date))");
         while ($hour = $hour_frequency->fetchArray(SQLITE3_ASSOC)): 
         ?>
             <div class="hour-bar" style="width: <?= $max_count > 0 ? ($hour['upload_count'] / $max_count * 100) : 0 ?>%">

@@ -3,6 +3,7 @@ date_default_timezone_set('UTC');
 
 // YouTube Dashboard Router
 require_once 'config.php';
+date_default_timezone_set('UTC');
 require_once 'includes/db.php';  // ✅ Load DB functions FIRST
 
 // Get current tab (default: timeline)
@@ -17,6 +18,7 @@ $valid_tabs = [
     'locations', 
     'frequency', 
     'trends', 
+    'tags', 'calendar', 'health',
     'search'
 ];
 
@@ -24,6 +26,7 @@ if (!in_array($tab, $valid_tabs)) {
     $tab = 'timeline';
 }
 
+require_once 'includes/filters.php';
 require_once 'includes/header.php';
 
 // Load the selected tab

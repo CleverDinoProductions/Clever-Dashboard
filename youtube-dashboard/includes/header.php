@@ -1,6 +1,6 @@
 <?php
-$navigation = ['timeline' => 'Upload timeline', 'channels' => 'Channels', 'analytics' => 'Analytics', 'gaps' => 'Upload gaps', 'locations' => 'Locations', 'frequency' => 'Frequency', 'trends' => 'Trends', 'search' => 'Search videos'];
-$lastChecked = getValue("SELECT MIN(last_checked) FROM channels");
+$navigation = ['timeline' => 'Upload timeline', 'channels' => 'Channels', 'analytics' => 'Analytics', 'gaps' => 'Upload gaps', 'locations' => 'Locations', 'frequency' => 'Frequency', 'trends' => 'Trends', 'tags' => 'Tags', 'calendar' => 'Upload calendar', 'health' => 'Feed health', 'search' => 'Search videos'];
+$lastChecked = getValue("SELECT MIN(last_checked) FROM dashboard_channels");
 $checkedTimestamp = $lastChecked ? strtotime($lastChecked . (preg_match('/(?:Z|[+-]\d{2}:\d{2})$/', $lastChecked) ? '' : ' UTC')) : false;
 $isStale = !$checkedTimestamp || time() - $checkedTimestamp > 86400;
 ?>
@@ -30,8 +30,10 @@ $isStale = !$checkedTimestamp || time() - $checkedTimestamp > 86400;
     </nav>
     <nav class="pill-nav sub-pills" aria-label="YouTube views">
         <?php foreach ($navigation as $key => $label): ?>
-            <a href="?tab=<?= $key ?>" class="pill-tab <?= $tab === $key ? 'active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>><?= $label ?></a>
+            <a href="<?= dashboard_url(['tab' => $key]) ?>" class="pill-tab <?= $tab === $key ? 'active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>><?= $label ?></a>
         <?php endforeach; ?>
     </nav>
     <main id="main-content" class="container">
         <div class="feed-status <?= $isStale ? 'stale' : '' ?>"><span><strong><?= $isStale ? 'Feed check overdue' : 'Feeds checked recently' ?></strong> · <?= $checkedTimestamp ? 'Oldest channel check: ' . date('j M Y, H:i T', $checkedTimestamp) : 'No recorded feed checks' ?></span><span>Refresh imports with the scheduled fetcher</span></div>
+
+<?php dashboard_filters(); ?>

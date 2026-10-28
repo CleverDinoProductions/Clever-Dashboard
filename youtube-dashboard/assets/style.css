@@ -761,3 +761,13 @@ button { font: inherit; background: var(--accent); color: white; border: 0; bord
 @media (max-width: 700px) { .header { padding: 18px; } .back-link { display: none; } .app-layout { display: block; } .sidebar { padding: 12px; border-right: 0; border-bottom: 1px solid var(--line); } .nav-label, .source-note { display: none; } .tabs { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; } .tab { white-space: nowrap; padding: 10px 13px; } .container { padding: 20px 16px; } .content-area { padding: 0; } .stat-card { padding: 16px; } .stat-value { font-size: 28px; } .video-card { padding: 18px; } .video-header { gap: 8px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media print { .sidebar, .feed-status, .timeline-filters, .skip-link { display: none; } .app-layout { display: block; } .container { padding: 0; } }
+.filter-note { flex-basis: 100%; color: var(--muted); font-size: 12px; margin: 0; }
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+.tag-cloud a { text-decoration: none; padding: 8px 12px; }
+.tag-cloud [aria-current] { outline: 2px solid var(--accent); }
+.upload-calendar { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin-top: 20px; }
+.calendar-day { display: flex; flex-direction: column; min-height: 85px; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: white; }
+.calendar-day span { font-size: 12px; color: var(--muted); }
+.has-uploads { background: #edf5ef; border-color: #a3c7ae; }
+.data-table { display: block; overflow-x: auto; max-width: 100%; }
+@media (max-width: 700px) { .calendar-day { padding: 4px; min-height: 60px; } .calendar-day span { font-size: 10px; } .upload-calendar { gap: 2px; font-size: 12px; } }
