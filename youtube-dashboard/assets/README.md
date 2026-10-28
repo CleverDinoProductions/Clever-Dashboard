@@ -10,3 +10,7 @@ focus styles and readable status colours. Data thresholds live in configuration
 and tab queries; changing CSS does not change warning calculations.
 
 See [view routes](../tabs/README.md) for the pages to check.
+
+The header also loads `/assets/dashboard-shell.css` for the shared Football-style
+blue/gold header and pill navigation, followed by `football-theme.css` for dark
+YouTube cards, tables, filters and statuses. Keep these layers in that order.
