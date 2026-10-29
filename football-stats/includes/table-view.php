@@ -2425,29 +2425,35 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 'win' => 'Wins',
                                 'draw' => 'Draws',
                                 'loss' => 'Losses',
-                                'win,draw' => 'Wins and Draws',
-                                'win,loss' => 'Wins and Losses',
-                                'draw,loss' => 'Draws and Losses',
+                                'win,draw' => 'Undefeated (Wins and Draws)',
+                                'win,loss' => 'Without draws (Wins and Losses)',
+                                'draw,loss' => 'Victoryless (Draws and Losses)',
+                                'shutout' => 'Shutouts',
+                                'scoreless' => 'Without goal',
                                 'team' => 'Team',
                                 'home' => 'Home (Team A)',
                                 'home_win' => 'Home Wins (Team A)',
                                 'home_draw' => 'Home Draws (Team A)',
                                 'home_loss' => 'Home Losses (Team A)',
-                                'home_win,draw' => 'Home Wins and Draws (Team A)',
-                                'home_win,loss' => 'Home Wins and Losses (Team A)',
-                                'home_draw,loss' => 'Home Draws and Losses (Team A)',
+                                'home_win,draw' => 'Home Undefeated (Team A)',
+                                'home_win,loss' => 'Home Without draws (Team A)',
+                                'home_draw,loss' => 'Home Victoryless (Team A)',
+                                'home_shutout' => 'Home Shutouts (Team A)',
+                                'home_scoreless' => 'Home Without goal (Team A)',
                                 'away' => 'Away (Team B)',
                                 'away_win' => 'Away Wins (Team B)',
                                 'away_draw' => 'Away Draws (Team B)',
                                 'away_loss' => 'Away Losses (Team B)',
-                                'away_win,draw' => 'Away Wins and Draws (Team B)',
-                                'away_win,loss' => 'Away Wins and Losses (Team B)',
-                                'away_draw,loss' => 'Away Draws and Losses (Team B)',
+                                'away_win,draw' => 'Away Undefeated (Team B)',
+                                'away_win,loss' => 'Away Without draws (Team B)',
+                                'away_draw,loss' => 'Away Victoryless (Team B)',
+                                'away_shutout' => 'Away Shutouts (Team B)',
+                                'away_scoreless' => 'Away Without goal (Team B)',
                             ];
                             $customRuleSections = [
-                                'Team' => ['win', 'draw', 'loss', 'win,draw', 'win,loss', 'draw,loss', 'team'],
-                                'Home' => ['home', 'home_win', 'home_draw', 'home_loss', 'home_win,draw', 'home_win,loss', 'home_draw,loss'],
-                                'Away' => ['away', 'away_win', 'away_draw', 'away_loss', 'away_win,draw', 'away_win,loss', 'away_draw,loss'],
+                                'Team' => ['win', 'draw', 'loss', 'win,draw', 'win,loss', 'draw,loss', 'shutout', 'scoreless', 'team'],
+                                'Home' => ['home', 'home_win', 'home_draw', 'home_loss', 'home_win,draw', 'home_win,loss', 'home_draw,loss', 'home_shutout', 'home_scoreless'],
+                                'Away' => ['away', 'away_win', 'away_draw', 'away_loss', 'away_win,draw', 'away_win,loss', 'away_draw,loss', 'away_shutout', 'away_scoreless'],
                             ];
                             ?>
                             <p class="custom-rule-help">1. Choose results below. 2. Adjust outcomes or points. 3. Review your changes and recalculate. Team presets select clubs present in this season. Typical top half is an editable list of regulars; current half uses this season’s unmodified current or final table.</p>
@@ -2585,7 +2591,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                             <label for="<?php echo $filterIdPrefix; ?>-outcome">Result</label>
                                             <select id="<?php echo $filterIdPrefix; ?>-outcome" data-result-filter-outcome>
                                                 <option value="all">Every result</option><option value="win">Wins only</option><option value="draw">Draws only</option><option value="loss">Losses only</option>
-                                                <option value="win,draw">Wins and draws</option><option value="win,loss">Wins and losses</option><option value="draw,loss">Draws and losses</option>
+                                                <option value="win,draw">Undefeated (wins and draws)</option><option value="win,loss">Without draws (wins and losses)</option><option value="draw,loss">Victoryless (draws and losses)</option>
+                                                <option value="shutout">Shutouts</option><option value="scoreless">Without goal</option>
                                             </select>
                                         </span>
                                         <button type="button" data-result-filter-action="<?php echo $filterAction; ?>"><?php echo htmlspecialchars($filterSection['button'], ENT_QUOTES, 'UTF-8'); ?></button>
@@ -2745,8 +2752,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                     ?>
                                     <div class="custom-match-option">
                                         <span><?php echo htmlspecialchars("{$match['home_team']} {$match['home_goals']}-{$match['away_goals']} {$match['away_team']}", ENT_QUOTES, 'UTF-8'); ?></span>
-                                        <label class="custom-match-result"><input type="checkbox" value="h<?php echo $matchId; ?>" data-result-side="home" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-opponent="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $homeResult; ?>" <?php echo isset($excludedLookup['h' . $matchId]) ? '' : 'checked'; ?>> Team A</label>
-                                        <label class="custom-match-result"><input type="checkbox" value="a<?php echo $matchId; ?>" data-result-side="away" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-opponent="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $awayResult; ?>" <?php echo isset($excludedLookup['a' . $matchId]) ? '' : 'checked'; ?>> Team B</label>
+                                        <label class="custom-match-result"><input type="checkbox" value="h<?php echo $matchId; ?>" data-result-side="home" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-opponent="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $homeResult; ?>" data-goals-for="<?php echo $homeGoals; ?>" data-goals-against="<?php echo $awayGoals; ?>" <?php echo isset($excludedLookup['h' . $matchId]) ? '' : 'checked'; ?>> Team A</label>
+                                        <label class="custom-match-result"><input type="checkbox" value="a<?php echo $matchId; ?>" data-result-side="away" data-matchweek="<?php echo $matchweek; ?>" data-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-opponent="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-result="<?php echo $awayResult; ?>" data-goals-for="<?php echo $awayGoals; ?>" data-goals-against="<?php echo $homeGoals; ?>" <?php echo isset($excludedLookup['a' . $matchId]) ? '' : 'checked'; ?>> Team B</label>
                                         <select class="custom-match-outcome" data-outcome-match="<?php echo $matchId; ?>" data-fixture-status="played" data-matchweek="<?php echo $matchweek; ?>" data-home-team="<?php echo htmlspecialchars($match['home_team'], ENT_QUOTES, 'UTF-8'); ?>" data-away-team="<?php echo htmlspecialchars($match['away_team'], ENT_QUOTES, 'UTF-8'); ?>" data-home-result="<?php echo $homeResult; ?>" data-away-result="<?php echo $awayResult; ?>" data-actual-outcome="<?php echo $actualOutcome; ?>" aria-label="What-if outcome for <?php echo htmlspecialchars($match['home_team'] . ' versus ' . $match['away_team'], ENT_QUOTES, 'UTF-8'); ?>">
                                             <option value="actual"<?php echo $selectedOutcome === 'actual' ? ' selected' : ''; ?>>Actual: <?php echo ucfirst($actualOutcome); ?></option>
                                             <option value="home"<?php echo $selectedOutcome === 'home' ? ' selected' : ''; ?>>Team A wins</option>
@@ -3069,6 +3076,17 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 updateSelectionStatus();
                             });
                         });
+                        function matchesResultRule(box, rule) {
+                            var parts = rule.split('_');
+                            if (parts[0] === 'home' || parts[0] === 'away') {
+                                if (box.dataset.resultSide !== parts[0]) return false;
+                                rule = parts[1] || 'all';
+                            }
+                            if (rule === 'all' || rule === 'team') return true;
+                            if (rule === 'shutout') return box.dataset.goalsAgainst === '0';
+                            if (rule === 'scoreless') return box.dataset.goalsFor === '0';
+                            return rule.split(',').indexOf(box.dataset.result) !== -1;
+                        }
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-team-rule]'), function (select) {
                             select.addEventListener('change', function () {
                                 var teams = selectedTeamValues(this);
@@ -3077,19 +3095,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 if (!teams.length) return;
                                 boxes.forEach(function (box) {
                                     var isSelectedTeam = teams.indexOf(box.dataset.team) !== -1;
-                                    var isHomeResult = box.dataset.resultSide === 'home';
-                                    var isAwayResult = box.dataset.resultSide === 'away';
-                                    var ruleParts = result.split('_');
-                                    var ruleSide = ruleParts[0];
-                                    var sideResult = ruleParts[1] || '';
-                                    var teamMatches = isSelectedTeam;
-                                    var matchesRule = (result === 'team' && teamMatches)
-                                        || (result === 'home' && teamMatches && isHomeResult)
-                                        || (result === 'away' && teamMatches && isAwayResult)
-                                        || (ruleSide === 'home' && sideResult !== '' && teamMatches && isHomeResult && sideResult.split(',').indexOf(box.dataset.result) !== -1)
-                                        || (ruleSide === 'away' && sideResult !== '' && teamMatches && isAwayResult && sideResult.split(',').indexOf(box.dataset.result) !== -1)
-                                        || (ruleParts.length === 1 && result !== 'team' && result !== 'home' && result !== 'away'
-                                            && teamMatches && result.split(',').indexOf(box.dataset.result) !== -1);
+                                    var matchesRule = isSelectedTeam && matchesResultRule(box, result);
                                     if (matchesRule) box.checked = include;
                                 });
                                 updateSelectionStatus();
@@ -3103,14 +3109,13 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 var matchweek = section.querySelector('[data-result-filter-matchweek]').value;
                                 var venue = section.querySelector('[data-result-filter-venue]').value;
                                 var outcome = section.querySelector('[data-result-filter-outcome]').value;
-                                var outcomes = outcome.split(',');
                                 var includeOnly = this.dataset.resultFilterAction === 'only';
                                 boxes.forEach(function (box) {
                                     var matches = (!selectedTeams.length || selectedTeams.indexOf(box.dataset.team) !== -1)
                                         && (!selectedOpponents.length || selectedOpponents.indexOf(box.dataset.opponent) !== -1)
                                         && (matchweek === 'all' || box.dataset.matchweek === matchweek)
                                         && (venue === 'all' || box.dataset.resultSide === venue)
-                                        && (outcome === 'all' || outcomes.indexOf(box.dataset.result) !== -1);
+                                        && matchesResultRule(box, outcome);
                                     box.checked = includeOnly ? matches : !matches;
                                 });
                                 updateSelectionStatus();
