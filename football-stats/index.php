@@ -195,6 +195,16 @@ foreach (['2025-2026', '2026-2027'] as $season) {
     }
 }
 
+// Own Table is shared directly across every registered English league and season.
+foreach ($seasonLeagueConfigs as &$ownSeasonConfig) {
+    foreach ($ownSeasonConfig as &$ownLeagueConfig) {
+        $ownLeagueConfig['tabs']['own-table'] = ['label'=>'Own Table', 'icon'=>'☑️', 'file'=>'tabs/shared/own-table.php'];
+        $ownLeagueConfig['tabs']['calendar-year'] = ['label'=>'Calendar Year', 'icon'=>'🗓️', 'file'=>'tabs/shared/calendar-year.php'];
+    }
+    unset($ownLeagueConfig);
+}
+unset($ownSeasonConfig);
+
 $worldCupTabs = [
     'groups' => ['label' => 'Groups', 'icon' => '🔢', 'file' => 'tabs/world-cup/groups.php'],
     'knockout' => ['label' => 'Knockout Stage', 'icon' => '⚔️', 'file' => 'tabs/world-cup/knockout.php'],
