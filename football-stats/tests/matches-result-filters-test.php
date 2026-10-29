@@ -20,6 +20,25 @@ check_result_filter([1,2,3,4],$ids(football_stats_matches_result_filter_request(
 check_result_filter([1,3],$ids(football_stats_matches_result_filter_request(['mf_mode'=>'only','mf_result'=>'win'])),'Future fixtures cannot match played outcomes.');
 check_result_filter([],$ids(football_stats_matches_result_filter_request(['mf_mode'=>'exclude'])),'Excluding unrestricted matching results removes everything.');
 check_result_filter('',football_stats_matches_result_filter_request(['mf_mode'=>['bad']])['mode'],'Reject malformed mode.');
+check_result_filter('all',football_stats_matches_result_filter_request(['mf_result'=>['shutout']])['result'],'Reject malformed result.');
+check_result_filter('all',football_stats_matches_result_filter_request(['mf_result'=>'invalid'])['result'],'Reject unknown result.');
+foreach (['win,draw'=>[1,2], 'win,loss'=>[1,3], 'draw,loss'=>[2,3], 'shutout'=>[1], 'scoreless'=>[3]] as $result=>$expected) {
+    $newFilter=football_stats_matches_result_filter_request(['mf_mode'=>'only','mf_teams'=>['Leeds'],'mf_result'=>$result]);
+    check_result_filter($result,$newFilter['result'],'Accept new result category.');
+    check_result_filter($expected,$ids($newFilter),'Evaluate category from selected team perspective.');
+    check_result_filter(array_values(array_diff([1,2,3,4],$expected)),$ids(array_replace($newFilter,['mode'=>'exclude'])),'Exclude must invert new categories, including future fixtures.');
+}
+$goalFilter=football_stats_matches_result_filter_request(['mf_mode'=>'only','mf_teams'=>['Arsenal'],'mf_opponents'=>['Leeds'],'mf_result'=>'scoreless','mf_venue'=>'away','mf_week'=>1]);
+check_result_filter([1],$ids($goalFilter),'Goal filters combine with opponent, away venue and matchweek.');
+check_result_filter([],$ids(array_replace($goalFilter,['venue'=>'home'])),'Goal filters respect venue.');
+check_result_filter([],$ids(array_replace($goalFilter,['week'=>2])),'Goal filters respect matchweek.');
+$scorelessDraw=[['id'=>5,'home_team'=>'Leeds','away_team'=>'Arsenal','home_goals'=>0,'away_goals'=>0,'matchweek'=>4]];
+foreach (['shutout','scoreless'] as $result) {
+    foreach (['home','away'] as $venue) {
+        $drawFilter=football_stats_matches_result_filter_request(['mf_mode'=>'only','mf_result'=>$result,'mf_venue'=>$venue]);
+        check_result_filter([5],array_column(football_stats_filter_match_results($scorelessDraw,$drawFilter),'id'),'A scoreless draw matches both goal filters from either venue.');
+    }
+}
 $_GET=['mf_mode'=>'only','mf_teams'=>['Leeds','Chelsea'],'mf_opponents'=>['Arsenal'],'mf_week'=>2,'mf_venue'=>'away','mf_result'=>'draw'];
 parse_str(ltrim(football_stats_build_table_view_url('2025-2026','premier-league','matches',['snapshot_season'=>'2026-2027']),'?'),$url);
 check_result_filter(['Leeds','Chelsea'],$url['mf_teams'],'Navigation preserves multi-team values.');
@@ -28,6 +47,12 @@ $context=['groups'=>clever_team_groups([]),'roster'=>['Leeds','Arsenal','Chelsea
 ob_start();football_stats_render_matches_result_filters($context,'2025-2026','premier-league','matches');$html=ob_get_clean();
 check_result_filter(true,str_contains($html,'Include only matching results')&&str_contains($html,'Include everything but matching results'),'Render both screenshot panels.');
 check_result_filter(true,str_contains($html,'data-matches-team-search')&&str_contains($html,'Outside Big 9'),'Render search and group presets.');
+foreach (['win,draw','win,loss','draw,loss','shutout','scoreless'] as $result) {
+    $_GET=['mf_mode'=>'only','mf_result'=>$result];
+    ob_start();football_stats_render_matches_result_filters($context,'2025-2026','premier-league','matches');$resultHtml=ob_get_clean();
+    check_result_filter(2,substr_count($resultHtml,'value="'.$result.'"'),'Both panels offer each new category.');
+    check_result_filter(true,str_contains($resultHtml,'value="'.$result.'" selected'),'Active panel retains the selected category.');
+}
 // Previously the first submit button sent mf_refresh and bypassed all filtering.
 $_GET=['mf_mode'=>'only','mf_teams'=>['Leeds'],'mf_result'=>'win','mf_refresh'=>'1'];
 check_result_filter([1],array_column(football_stats_filter_matches_by_team_group($matches,$context),'id'),'Old refresh URLs must still apply submitted filter fields.');

@@ -8,6 +8,21 @@ function football_stats_matches_list_week(array $query)
     return $week === false ? '' : $week;
 }
 
+function football_stats_matches_result_filter_options(): array
+{
+    return [
+        'all' => 'Every result',
+        'win' => 'Wins only',
+        'win,draw' => 'Undefeated (wins and draws)',
+        'draw' => 'Draws only',
+        'win,loss' => 'Without draws (wins and losses)',
+        'draw,loss' => 'Victoryless (draws and losses)',
+        'loss' => 'Losses only',
+        'shutout' => 'Shutouts',
+        'scoreless' => 'Without goal',
+    ];
+}
+
 function football_stats_matches_result_filter_request(array $query): array
 {
     $list = static fn($key) => isset($query[$key]) && is_array($query[$key]) ? array_values(array_filter($query[$key], 'is_string')) : [];
@@ -16,7 +31,7 @@ function football_stats_matches_result_filter_request(array $query): array
         'teams' => $list('mf_teams'), 'opponents' => $list('mf_opponents'),
         'week' => isset($query['mf_week']) && is_scalar($query['mf_week']) ? max(0,(int)$query['mf_week']) : 0,
         'venue' => in_array($query['mf_venue'] ?? null, ['home','away'], true) ? $query['mf_venue'] : 'all',
-        'result' => in_array($query['mf_result'] ?? null, ['win','draw','loss'], true) ? $query['mf_result'] : 'all',
+        'result' => in_array($query['mf_result'] ?? null, array_keys(football_stats_matches_result_filter_options()), true) ? $query['mf_result'] : 'all',
     ];
 }
 
@@ -37,7 +52,12 @@ function football_stats_filter_match_results(array $matches, array $filter): arr
                     if ($m['home_goals'] === null || $m['away_goals'] === null) continue;
                     $for = (int)$m[$side.'_goals']; $against = (int)$m[$other.'_goals'];
                     $result = $for > $against ? 'win' : ($for === $against ? 'draw' : 'loss');
-                    if ($result !== $filter['result']) continue;
+                    $matchesResult = match ($filter['result']) {
+                        'shutout' => $against === 0,
+                        'scoreless' => $for === 0,
+                        default => in_array($result, explode(',', $filter['result']), true),
+                    };
+                    if (!$matchesResult) continue;
                 }
                 $matching = true; break;
             }
@@ -73,7 +93,7 @@ function football_stats_render_matches_result_filters(array $context, $tab, $lea
     <?php endforeach; ?>
     <label class="matches-filter-row">Matchweek<select name="mf_week"><option value="0">All matchweeks</option><?php foreach($context['weeks'] as $week): ?><option value="<?= (int)$week ?>" <?= $active&&$filter['week']===(int)$week?'selected':'' ?>>MW<?= (int)$week ?></option><?php endforeach; ?></select></label>
     <label class="matches-filter-row">Venue<select name="mf_venue"><?php foreach(['all'=>'Home or away','home'=>'Home only','away'=>'Away only'] as $key=>$name): ?><option value="<?= $key ?>" <?= $active&&$filter['venue']===$key?'selected':'' ?>><?= $name ?></option><?php endforeach; ?></select></label>
-    <label class="matches-filter-row">Result<select name="mf_result"><?php foreach(['all'=>'Every result','win'=>'Wins only','draw'=>'Draws only','loss'=>'Losses only'] as $key=>$name): ?><option value="<?= $key ?>" <?= $active&&$filter['result']===$key?'selected':'' ?>><?= $name ?></option><?php endforeach; ?></select></label>
+    <label class="matches-filter-row">Result<select name="mf_result"><?php foreach(football_stats_matches_result_filter_options() as $key=>$name): ?><option value="<?= $key ?>" <?= $active&&$filter['result']===$key?'selected':'' ?>><?= $name ?></option><?php endforeach; ?></select></label>
     <label class="matches-filter-row">Group standings basis<select name="matches_standings_basis"><option value="season" <?= $context['basis']==='season'?'selected':'' ?>>Current / final season table</option><option value="matchweek" <?= $context['basis']==='matchweek'?'selected':'' ?>>After selected matchweek</option></select></label>
     <label class="matches-filter-row">Snapshot matchweek<select name="matchweek"><option value="">Choose snapshot week</option><?php foreach($context['weeks'] as $week): ?><option value="<?= (int)$week ?>" <?= $context['matchweek']===(int)$week?'selected':'' ?>>MW<?= (int)$week ?></option><?php endforeach; ?></select></label>
     <p>Snapshot controls set group preset membership. After changing the basis or snapshot week, apply filters to update preset membership, then choose a current-half preset. Checked teams remain explicit selections until you choose a preset again.</p>
