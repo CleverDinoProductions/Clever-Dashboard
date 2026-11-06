@@ -1,4 +1,5 @@
 <?php
+/** Per-account storage and validation for named football result scenarios and their URL state. */
 require_once __DIR__ . '/auth.php';
 
 function clever_result_keys(): array

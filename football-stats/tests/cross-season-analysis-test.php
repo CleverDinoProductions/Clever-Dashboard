@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for cross season analysis; assertions fail the process when behavior changes. */
 require_once __DIR__.'/../includes/cross-season-analysis.php';
 function check_analysis($expected,$actual,$message) { if($expected!==$actual) throw new RuntimeException($message.' '.var_export($actual,true)); }
 function fixture($id,$date,$home,$away,$hg,$ag,$week=1) { return ['id'=>$id,'match_date'=>substr($date,0,10),'match_timestamp'=>$date,'home_team'=>$home,'away_team'=>$away,'home_goals'=>$hg,'away_goals'=>$ag,'matchweek'=>$week]; }

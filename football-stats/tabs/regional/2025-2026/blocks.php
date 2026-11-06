@@ -1,4 +1,5 @@
 <?php
+/** regional/2025-2026: Uses configured promotion and relegation cut lines for regional block analysis. */
 // Regional block cut lines follow the configured promotion and relegation zones.
 $tableView = football_stats_get_table_view_combined($db, $regionalCode, $regionalTable, $currentMainTab);
 $rules = football_stats_get_competition_rules($regionalCode, $tableView['active_season_label'], $db);

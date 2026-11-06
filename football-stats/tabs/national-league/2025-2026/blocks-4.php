@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Renders position block 4 and its team analysis for the selected standings. */
 /**
  * Block 4: Relegation Battle (Positions 19-22)
  * The Danger Zone

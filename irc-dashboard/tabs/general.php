@@ -1,4 +1,5 @@
 <?php
+/** Summarizes message activity across the IRC log database. */
 // GENERAL STATS TAB - Logic & View
 
 // Total messages today across all channels

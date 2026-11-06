@@ -1,4 +1,5 @@
 <?php
+/** regional/2025-2026: Renders the competition playoff bracket and available results. */
 $h=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');
 $season=$currentMainTab;
 if (is_string($_GET['snapshot_season'] ?? null) && preg_match('/^\d{4}-\d{4}$/D',$_GET['snapshot_season'])) $season=$_GET['snapshot_season'];

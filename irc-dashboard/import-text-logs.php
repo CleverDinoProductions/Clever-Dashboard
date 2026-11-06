@@ -1,4 +1,5 @@
 <?php
+/** Imports channel text logs into SQLite to fill a configured period missing from the database. */
 // Import missing data from ALL channel text logs into SQLite
 
 $dbpath = 'E:\\thelounge\\logs\\DinoDude.sqlite3';

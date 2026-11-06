@@ -1,4 +1,5 @@
 <?php
+/** Resolves and persists competition rules, including season-specific overrides and scoring settings. */
 
 declare(strict_types=1);
 

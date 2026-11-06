@@ -1,4 +1,5 @@
 <?php
+/** Renders historical successful invitations with hierarchical drill-down. */
 // ============================================================================
 // INVITATION HISTORY TAB - Complete Hierarchical Drill-Down
 // ============================================================================

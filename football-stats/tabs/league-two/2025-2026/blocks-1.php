@@ -1,4 +1,5 @@
 <?php
+/** league-two/2025-2026: Renders position block 1 and its team analysis for the selected standings. */
 /**
  * Block 1: Auto Promotion (Positions 1-3)
  * Automatic promotion to League One

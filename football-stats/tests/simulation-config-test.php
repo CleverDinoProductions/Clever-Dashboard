@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for simulation config; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/simulation-config.php';
 require_once __DIR__ . '/../includes/match-projection-widget.php';
 function simulation_assert(bool $condition, string $message): void {

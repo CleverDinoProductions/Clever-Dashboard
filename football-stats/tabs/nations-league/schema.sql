@@ -1,4 +1,5 @@
 -- Created automatically by the Nations League sync in fetch-worldfootball.php.
+-- Created automatically by the Nations League sync in fetch-worldfootball.php.
 CREATE TABLE IF NOT EXISTS nl_standings (
     tournament TEXT NOT NULL,
     league TEXT NOT NULL,

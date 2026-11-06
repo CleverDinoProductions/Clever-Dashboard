@@ -1,4 +1,5 @@
 <?php
+/** Creates the initial local football SQLite schema; the database path is relative to the working directory. */
 $db = new PDO('sqlite:football-stats.sqlite3');
 
 // Create tables

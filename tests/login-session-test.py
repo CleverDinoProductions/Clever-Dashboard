@@ -1,3 +1,4 @@
+# Standalone regression checks for login session; assertions fail the process when behavior changes.
 """Exercise sign-in over HTTP with isolated account and session storage.
 
 Run with Python 3 and PHP 8 (PDO SQLite): python3 tests/login-session-test.py

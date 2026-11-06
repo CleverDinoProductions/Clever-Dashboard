@@ -1,4 +1,5 @@
 <?php
+/** shared: Resolves regional competition metadata before dispatching its selected view. */
 require_once dirname(__DIR__, 3) . '/lib/english-pyramid.php';
 $regional = clever_regional_competitions()[$currentLeague];
 $regionalCode = $regional['code'];

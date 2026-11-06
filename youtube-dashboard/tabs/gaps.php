@@ -1,4 +1,5 @@
 <?php
+/** Lists the longest intervals between consecutive cached uploads. */
 $gaps = query("
     SELECT 
         g.gap_days,

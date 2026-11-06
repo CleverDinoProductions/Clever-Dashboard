@@ -1,4 +1,5 @@
 <?php
+/** shared: Selects a calendar year and renders standings based on actual fixture dates. */
 require_once __DIR__ . '/../../includes/table-view.php';
 require_once __DIR__ . '/../../includes/calendar-year.php';
 require_once dirname(__DIR__, 3) . '/lib/english-pyramid.php';

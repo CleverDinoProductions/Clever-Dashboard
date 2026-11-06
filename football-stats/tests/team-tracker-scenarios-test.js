@@ -1,3 +1,4 @@
+/* Standalone regression checks for team tracker scenarios; assertions fail the process when behavior changes. */
 const assert = require('node:assert/strict');
 const calculate = require('../assets/team-tracker.js');
 const scoring = {win:3, draw:1, loss:0};

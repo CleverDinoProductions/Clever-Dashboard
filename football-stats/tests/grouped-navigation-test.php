@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for grouped navigation; assertions fail the process when behavior changes. */
 require_once __DIR__.'/../includes/table-view.php';
 require_once __DIR__.'/../includes/grouped-navigation.php';
 function build_tab_url($tab,$league=null,$subtab=null,array $params=[]){return '?'.http_build_query(array_merge(['tab'=>$tab,'league'=>$league,'subtab'=>$subtab],$params));}

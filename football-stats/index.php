@@ -1,4 +1,5 @@
 <?php
+/** Football request router: selects competition, season and view and prepares shared dashboard context. */
 // Include database configuration
 require_once 'config.php';
 require_once __DIR__ . '/includes/nations-league.php';

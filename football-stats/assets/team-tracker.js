@@ -1,3 +1,4 @@
+/* Validates win/draw/loss scenarios and updates tracker calculators; exports the calculation for Node tests. */
 (function () {
     'use strict';
     function calculate(points, remaining, wins, draws, losses, scoring) {

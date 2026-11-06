@@ -1,4 +1,5 @@
 <?php
+/** Builds a mini league from scored fixtures involving only the selected clubs. */
 /** A mini league counts only scored fixtures with both clubs selected. */
 function football_stats_own_table(array $matches, array $clubs, string $from = '', string $to = '', array $points = ['win'=>3,'draw'=>1,'loss'=>0]): array
 {

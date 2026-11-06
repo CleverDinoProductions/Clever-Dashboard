@@ -1,4 +1,5 @@
 <?php
+/** Tracks interview queues and staff activity over the selected timeframe. */
 // INTERVIEW TRACKER TAB - Optimized fast loading with smart staff detection
 
 $timeframe = $_GET['timeframe'] ?? '7';

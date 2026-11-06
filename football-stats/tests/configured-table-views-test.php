@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for configured table views; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/table-view.php';
 set_error_handler(static function ($severity, $message, $file, $line) {
     throw new ErrorException($message, 0, $severity, $file, $line);

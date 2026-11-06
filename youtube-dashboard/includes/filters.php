@@ -1,4 +1,5 @@
 <?php
+/** Builds request-local filtered SQLite views so tabs share channel and time-period selection. */
 // Request-local read views. Importers continue using the original persistent tables.
 function dashboard_input($key) {
     return is_string($_GET[$key] ?? null) ? trim($_GET[$key]) : '';

@@ -1,4 +1,5 @@
 <?php
+/** Paginates cached uploads in publication order using the active filters. */
 $conditions = '';
 $params = [];
 $matchingCount = getValue("SELECT COUNT(*) FROM dashboard_videos v $conditions", $params);

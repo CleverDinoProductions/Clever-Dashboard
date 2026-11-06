@@ -1,4 +1,5 @@
 <?php
+/** division-one/2025-2026: Renders position block 5 and its team analysis for the selected standings. */
 /**
  * Block 5: Relegation Zone (Positions 18-20)
  * The drop zone - heading to the Championship

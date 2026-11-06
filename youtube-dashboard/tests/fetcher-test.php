@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for fetcher; assertions fail the process when behavior changes. */
 require __DIR__ . '/../fetch-youtube.php';
 
 const TEST_CHANNEL = 'UCaaaaaaaaaaaaaaaaaaaaaa';

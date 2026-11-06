@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Renders the competition playoff bracket and available results. */
 // National League Playoffs Tab — bracket format, two-legged semi-finals + final
 
 $competitionCode = 'NL';

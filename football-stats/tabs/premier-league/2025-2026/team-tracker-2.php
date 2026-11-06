@@ -1,4 +1,5 @@
 <?php
+/** premier-league/2025-2026: Prepares selected-team standings and renders the alternate tracker dashboard. */
 // TEAM TRACKER DASHBOARD (Premier League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 

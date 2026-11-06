@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for calendar year; assertions fail the process when behavior changes. */
 require_once __DIR__.'/../includes/calendar-year.php';
 function annual_check($condition,$message) { if (!$condition) throw new RuntimeException($message); }
 function annual_match($home,$away,$hg,$ag,$date,$season='2025-2026',$week=1) { return ['home_team'=>$home,'away_team'=>$away,'home_goals'=>$hg,'away_goals'=>$ag,'match_date'=>$date,'season_label'=>$season,'matchweek'=>$week]; }

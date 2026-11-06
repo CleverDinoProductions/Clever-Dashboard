@@ -1,4 +1,5 @@
 <?php
+/** Landing page linking the football, IRC and YouTube dashboards with account navigation. */
 require_once __DIR__ . '/lib/auth.php';
 $siteUser = clever_current_user();
 ?>

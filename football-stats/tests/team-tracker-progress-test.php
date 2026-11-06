@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for team tracker progress; assertions fail the process when behavior changes. */
 // Exercise the shared panel without a database or live standings.
 function render_tracker_progress($played, $points, $total = 38, $scoring = null)
 {

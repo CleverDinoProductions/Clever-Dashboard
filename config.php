@@ -1,4 +1,5 @@
 <?php
+/** Legacy session-based administration configuration and login handling. */
 // Secure this file!
 session_start();
 

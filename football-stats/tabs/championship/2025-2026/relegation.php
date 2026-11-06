@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Renders the battle around the relegation positions. */
 /**
  * Relegation Battle - Bottom 4 Teams
  */

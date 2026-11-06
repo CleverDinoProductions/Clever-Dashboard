@@ -1,4 +1,5 @@
 <?php
+/** Calculates and renders match outlook targets using configured competition zones. */
 /** Derive outlook targets from typed Admin zones, independently of their labels. */
 function match_projection_parse(array $simulation, array $zones): ?array
 {

@@ -1,4 +1,5 @@
 <?php
+/** Admin panel for editing competition and season rules; inherits the parent request context. */
 // Included only after admin.php checks authentication, football permissions and CSRF.
 if (!isset($currentUser) || (empty($currentUser['is_admin']) && empty($currentUser['can_manage_football']))) {
     http_response_code(403);

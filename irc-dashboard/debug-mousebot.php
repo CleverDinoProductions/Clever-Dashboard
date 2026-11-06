@@ -1,4 +1,5 @@
 <?php
+/** Prints recent MouseBot message text and hex bytes to diagnose queue-event parsing. */
 require_once 'config.php';
 
 header('Content-Type: text/plain; charset=utf-8');

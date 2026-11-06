@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for team groups; assertions fail the process when behavior changes. */
 require_once dirname(__DIR__) . '/lib/football-settings.php';
 function group_assert(bool $condition, string $message): void {
     if (!$condition) throw new RuntimeException($message);

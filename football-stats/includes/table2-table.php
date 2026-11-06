@@ -1,4 +1,5 @@
 <?php
+/** Renders extended standings metrics against the configured comparison targets. */
 require_once __DIR__ . '/table2-metrics.php';
 $escapeTable2 = static fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 $table2Targets = [$competitionRules['comparison_target_one'], $competitionRules['comparison_target_two']];

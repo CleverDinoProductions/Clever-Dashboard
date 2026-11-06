@@ -1,4 +1,5 @@
 <?php
+/** Team metadata and aliases used to resolve names returned by football data providers. */
 /**
  * Team metadata for all EFL/National League tiers.
  * Keys cover all name variants used by SportsDB so lookups work regardless

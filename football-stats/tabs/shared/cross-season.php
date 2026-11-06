@@ -1,4 +1,5 @@
 <?php
+/** shared: Selects a team and seasons for shared historical result analysis. */
 require_once __DIR__ . '/../../includes/cross-season-analysis.php';
 $competition = clever_regional_league_codes()[$currentLeague] ?? ['premier-league'=>'PL','championship'=>'ELC','league-one'=>'L1','league-two'=>'L2','national-league'=>'NL','division-one'=>'D1'][$currentLeague];
 $h=static fn($v)=>htmlspecialchars((string)$v, ENT_QUOTES,'UTF-8');

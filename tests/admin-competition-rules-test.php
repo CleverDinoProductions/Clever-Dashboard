@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for admin competition rules; assertions fail the process when behavior changes. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once dirname(__DIR__) . '/lib/football-settings.php';
 function admin_rules_assert(bool $condition, string $message): void {

@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Queries and renders team comparisons within this competition. */
 // Championship 2025/26 Compare Tab
 require_once __DIR__ . '/../../../includes/header.php';
 require_once __DIR__ . '/../../../config.php';

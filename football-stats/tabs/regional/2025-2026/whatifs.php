@@ -1,4 +1,5 @@
 <?php
+/** regional/2025-2026: Recalculates standings for hypothetical results and displays their effect on positions. */
 require_once __DIR__ . '/../../../includes/table-view.php';
 
 $tableView = football_stats_get_table_view($db, $regionalCode, $regionalTable, $currentMainTab ?? '2025-2026');

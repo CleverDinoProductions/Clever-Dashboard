@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for team tracker analysis; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/team-tracker-analysis.php';
 require_once __DIR__ . '/../includes/team-tracker-helpers.php';
 function check_tracker($condition, $message) { if (!$condition) throw new RuntimeException($message); }

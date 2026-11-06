@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Renders the playoff-position battle for this competition. */
 /**
  * Playoff Battle - Teams 3rd to 6th
  */

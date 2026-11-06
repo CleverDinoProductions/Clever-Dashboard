@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Renders position block 5 and its team analysis for the selected standings. */
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);

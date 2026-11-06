@@ -1,4 +1,5 @@
 <?php
+/** Resolves the SportsDB API key without executing a legacy import script. */
 /** Reuse the existing English fetcher's key without executing its import. */
 function football_stats_sportsdb_api_key(?string $legacyKey = null): string
 {

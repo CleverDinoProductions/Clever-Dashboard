@@ -1,4 +1,5 @@
 <?php
+/** Compares upload frequency and gaps between channels. */
 $frequency = query("
     SELECT 
         channel_name,

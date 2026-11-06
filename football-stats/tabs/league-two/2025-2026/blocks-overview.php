@@ -1,4 +1,5 @@
 <?php
+/** league-two/2025-2026: Renders an overview of the position-block analysis for the selected standings. */
 /**
  * Blocks Overview - League Two Blocks Framework
  * Comprehensive overview showing all 5 blocks with live data

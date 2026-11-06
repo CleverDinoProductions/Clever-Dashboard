@@ -1,4 +1,5 @@
 <?php
+/** Validates public registration submissions and creates a shared member account. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 clever_start_session();
 $errors = [];

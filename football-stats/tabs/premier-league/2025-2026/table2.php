@@ -1,4 +1,5 @@
 <?php
+/** premier-league/2025-2026: Loads the selected standings and renders extended comparison metrics. */
 require_once __DIR__ . '/../../../includes/table-view.php';
 
 $tableView = football_stats_get_table_view_combined($db, 'PL', 'league_table_PL', $currentMainTab ?? '2025-2026');

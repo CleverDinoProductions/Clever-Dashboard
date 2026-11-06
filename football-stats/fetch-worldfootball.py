@@ -1,3 +1,4 @@
+# Imports Premier League and World Cup provider data into the local football database.
 import requests
 import sqlite3
 import time

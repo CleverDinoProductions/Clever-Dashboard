@@ -1,4 +1,5 @@
 <?php
+/** Renders historical interview activity with hierarchical drill-down. */
 // ============================================================================
 // INTERVIEW HISTORY TAB - Complete Hierarchical Drill-Down
 // ============================================================================

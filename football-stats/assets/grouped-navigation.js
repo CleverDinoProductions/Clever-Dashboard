@@ -1,3 +1,4 @@
+/* Manages pinned links and expanded navigation groups in browser-local storage. */
 (function(){
 'use strict';
 const root=document.querySelector('[data-grouped-navigation]');if(!root)return;

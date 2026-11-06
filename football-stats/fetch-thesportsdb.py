@@ -1,3 +1,4 @@
+# Imports Premier League and Championship standings from TheSportsDB into local SQLite tables.
 import requests
 import sqlite3
 import time

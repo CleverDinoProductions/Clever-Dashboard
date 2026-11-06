@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for custom rules team filter; assertions fail the process when behavior changes. */
 
 $source = file_get_contents(__DIR__ . '/../includes/table-view.php');
 

@@ -1,4 +1,5 @@
 <?php
+/** Bundled Transfermarkt all-time points ranking snapshots, source URLs and competition-specific club order. */
 
 declare(strict_types=1);
 

@@ -1,4 +1,5 @@
 <?php
+/** Locates the configured IRC network log directory and prints diagnostic log information. */
 $log_base_path = 'E:\\thelounge\\logs\\DinoDude';
 
 // Find MAM folder

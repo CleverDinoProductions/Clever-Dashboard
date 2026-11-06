@@ -1,4 +1,5 @@
 <?php
+/** Counts successful invitation events inferred from MouseBot welcome actions. */
 // INVITATIONS TAB - Track MouseBot Welcome Actions (Successful Invites)
 
 $timeframe = $_GET['timeframe'] ?? '30'; // days

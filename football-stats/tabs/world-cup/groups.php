@@ -1,4 +1,5 @@
 <?php
+/** world-cup: Renders World Cup standings grouped by group name. */
 // Fetch World Cup group standings (12 groups for 2026)
 $stmt = $world_cup_db->query("SELECT DISTINCT group_name FROM wc_groups ORDER BY group_name");
 $groups = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<?php /* Opens the irc-dashboard page shell and renders navigation using the active request context. */ ?><!DOCTYPE html>
 <html>
 <head>
     <title>MAM IRC Analytics Dashboard</title>

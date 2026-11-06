@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Legacy RSS importer; the maintained PHP fetcher uses the shared dashboard configuration.
 """
 Legacy YouTube RSS fetcher. Use `php fetch-youtube.php` for the maintained
 implementation, which reads the shared dashboard configuration.

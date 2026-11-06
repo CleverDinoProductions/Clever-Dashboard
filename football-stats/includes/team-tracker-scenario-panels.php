@@ -1,4 +1,5 @@
 <?php
+/** Renders win/draw/loss combinations and their gaps to the tracker points targets. */
 $renderLegacyScenarios = static function ($games, $rows, $target) use ($team, $analysis) {
 ?>
 <div class="tt-scroll" tabindex="0" role="region" aria-label="Result combinations"><table><thead><tr><th scope="col">W–D–L</th><th scope="col">Added points</th><th scope="col">Total points</th><th scope="col">Target gap</th></tr></thead><tbody>

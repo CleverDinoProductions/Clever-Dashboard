@@ -1,4 +1,5 @@
 <?php
+/** league-two/2025-2026: Renders position block 2 and its team analysis for the selected standings. */
 /**
  * Block 2: Playoff Contenders (Positions 4-7)
  * Playoff spots for promotion to League One

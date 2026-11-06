@@ -1,4 +1,5 @@
 <?php
+/** shared: Handles club/date selection and renders a mini league from matching fixtures. */
 require_once __DIR__ . '/../../includes/table-view.php';
 require_once __DIR__ . '/../../includes/own-table.php';
 require_once dirname(__DIR__, 3) . '/lib/english-pyramid.php';

@@ -1,4 +1,5 @@
 <?php
+/** Rules which change by competition and season.  Keep these out of the views: the number of clubs (and therefore matchweeks/cut lines) is not universal. */
 
 /**
  * Rules which change by competition and season.  Keep these out of the views:

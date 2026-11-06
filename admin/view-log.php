@@ -1,4 +1,5 @@
 <?php
+/** Displays recent update-log entries and serves polling responses; access protection belongs to the web server. */
 // Protected by your parent directory's .htaccess rule
 $log_path = '/var/log/update-stats.log';
 

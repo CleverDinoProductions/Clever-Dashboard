@@ -1,4 +1,5 @@
 <?php
+/** Administrator panel for channel configuration, API settings and YouTube import controls. */
 // Panel component: access is restricted to administrators by admin.php.
 if (!isset($isAccountAdmin) || !$isAccountAdmin) {
     http_response_code(403);

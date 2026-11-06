@@ -1,4 +1,5 @@
 <?php
+/** Parses result and custom-scoring filters shared by fixture lists and standings calculations. */
 /** Custom-rules style selectors for fixture lists. */
 /** The list's week scopes fixtures; panel weeks and snapshot weeks are independent. */
 function football_stats_matches_list_week(array $query)

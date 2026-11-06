@@ -1,4 +1,5 @@
 <?php
+/** Sample Data Population Script Use this to populate the database with sample Premier League data for testing */
 /**
  * Sample Data Population Script
  * Use this to populate the database with sample Premier League data for testing

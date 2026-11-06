@@ -1,4 +1,5 @@
 <?php
+/** Synchronizes historical English league seasons from TheSportsDB, including pre-1992 league names. */
 /**
  * fetch-englishfootball.php
  * Syncs all available historical English football seasons from TheSportsDB.

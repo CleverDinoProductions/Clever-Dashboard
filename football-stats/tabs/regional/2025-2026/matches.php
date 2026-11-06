@@ -1,4 +1,5 @@
 <?php
+/** regional/2025-2026: Queries and renders fixtures with the selected competition and result filters. */
 // Regional league Matches Tab
 
 

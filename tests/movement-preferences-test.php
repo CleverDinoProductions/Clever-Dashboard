@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for movement preferences; assertions fail the process when behavior changes. */
 $path=tempnam(sys_get_temp_dir(),'movement-');putenv('CLEVER_ACCOUNTS_DB='.$path);
 require_once dirname(__DIR__).'/lib/auth.php';
 require_once dirname(__DIR__).'/football-stats/includes/table-view.php';

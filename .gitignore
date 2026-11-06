@@ -1,3 +1,4 @@
+# Local environments, generated caches, runtime databases and private fetch settings.
 football-stats/venv/
 football-stats/__pycache__/
 kiwiirc/

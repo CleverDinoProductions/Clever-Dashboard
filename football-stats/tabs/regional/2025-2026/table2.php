@@ -1,4 +1,5 @@
 <?php
+/** regional/2025-2026: Loads the selected standings and renders extended comparison metrics. */
 require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 
 $tableView = football_stats_get_table_view_combined($db, $regionalCode, $regionalTable, $currentMainTab ?? '2025-2026');

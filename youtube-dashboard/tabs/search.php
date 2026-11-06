@@ -1,4 +1,5 @@
 <?php
+/** Searches cached video records using the shared dashboard filters. */
 $search_query = dashboard_input('q');
 $results = null;
 

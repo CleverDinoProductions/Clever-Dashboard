@@ -1,4 +1,5 @@
 <?php
+/** Legacy plain-text registration endpoint: validates submitted fields and creates a shared member account. */
 /** Legacy plain-text registration endpoint backed by the shared SQLite accounts. */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store');

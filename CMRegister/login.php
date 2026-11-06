@@ -1,4 +1,5 @@
 <?php
+/** Legacy plain-text login endpoint: accepts Name/Pass fields and authenticates against shared accounts. */
 /** Legacy plain-text login endpoint backed by the shared SQLite accounts. */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store');

@@ -1,4 +1,5 @@
 <?php
+/** Catalog of regional English divisions and their codes, tiers and provider identifiers. */
 
 declare(strict_types=1);
 

@@ -1,4 +1,5 @@
 <?php
+/** Renders prepared standings with escaped team labels and shared table styling. */
 $escapeStandings = static fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/standings-table-styles.php';
 ?>

@@ -1,4 +1,5 @@
 <?php
+/** Permission-gated administration entry point for accounts, football settings and data actions. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once dirname(__DIR__) . '/lib/youtube-settings.php';
 require_once dirname(__DIR__) . '/lib/football-settings.php';

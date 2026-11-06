@@ -1,4 +1,5 @@
 <?php
+/** Prepares one standings snapshot and shared analysis for the competition-specific tracker panels. */
 require_once __DIR__ . '/team-tracker-helpers.php';
 require_once __DIR__ . '/team-tracker-analysis.php';
 $tableView = football_stats_get_table_view_combined($db, $trackerCode, $trackerTable, $currentMainTab ?? '2025-2026');

@@ -1,4 +1,5 @@
 <?php
+/** Prints IRC SQLite table definitions and sample data for schema inspection. */
 $db_path = 'E:/thelounge/logs/DinoDude.sqlite3';
 $db = new PDO("sqlite:$db_path");
 

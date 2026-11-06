@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Merges fixtures from multiple football APIs and rebuilds affected standings snapshots.
 """Merge fixtures from multiple APIs and rebuild all affected table snapshots.
 
 TheSportsDB remains useful for history, but it occasionally omits fixtures.  This

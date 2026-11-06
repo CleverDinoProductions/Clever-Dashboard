@@ -1,4 +1,5 @@
 <?php
+/** IRC dashboard entry point: prepares request filters and dispatches the selected reporting tab. */
 date_default_timezone_set('UTC');
 // Main Dashboard Router
 require_once 'config.php';

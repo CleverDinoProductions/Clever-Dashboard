@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for nations league sync; assertions fail the process when behavior changes. */
 require_once __DIR__.'/../includes/nations-league-sync.php';
 require_once __DIR__.'/../includes/sportsdb-config.php';
 function sync_check(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }

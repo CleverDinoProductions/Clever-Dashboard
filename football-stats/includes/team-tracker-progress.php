@@ -1,4 +1,5 @@
 <?php
+/** Renders played/remaining games and points progress from the selected standings snapshot. */
 // Uses the selected table snapshot, never a separate live-data query.
 $trackerPlayed = max(0, (int)$games_played);
 $trackerRemaining = max(0, $trackerTotalGames - $trackerPlayed);

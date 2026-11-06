@@ -1,4 +1,4 @@
-        </main>
+<?php /* Closes the football-stats page shell and renders its footer. */ ?>        </main>
 
         <footer>
             <div class="site-footer">

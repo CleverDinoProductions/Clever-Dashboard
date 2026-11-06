@@ -1,4 +1,5 @@
 <?php
+/** Creates the YouTube cache tables and indexes using the configured database path. */
 // Setup YouTube Dashboard Database
 require_once 'config.php';
 

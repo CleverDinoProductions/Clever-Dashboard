@@ -1,4 +1,5 @@
 <?php
+/** Normalizes provider data and synchronizes Nations League fixtures and standings. */
 require_once __DIR__ . '/nations-league.php';
 
 function football_stats_nations_team(string $name): string

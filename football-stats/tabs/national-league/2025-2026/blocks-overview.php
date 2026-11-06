@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Renders an overview of the position-block analysis for the selected standings. */
 /**
  * Blocks Overview - National League Blocks Framework
  * Comprehensive overview showing all 5 blocks with live data

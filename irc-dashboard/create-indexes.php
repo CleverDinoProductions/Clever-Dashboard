@@ -1,4 +1,5 @@
 <?php
+/** One-time maintenance script adding indexes used by IRC activity and queue queries. */
 // create-indexes.php - Run once to optimize database performance
 
 require_once 'config.php'; // Your existing config that sets up $db

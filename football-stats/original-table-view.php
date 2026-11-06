@@ -1,4 +1,5 @@
 <?php
+/** Legacy standings implementation retained alongside the current shared table-view helpers. */
 
 require_once __DIR__ . '/table-view-date-helper.php';
 

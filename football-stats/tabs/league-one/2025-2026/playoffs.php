@@ -1,4 +1,5 @@
 <?php
+/** league-one/2025-2026: Renders the competition playoff bracket and available results. */
 // League One Playoffs Tab — bracket format, two-legged semi-finals + final
 
 $competitionCode = 'L1';

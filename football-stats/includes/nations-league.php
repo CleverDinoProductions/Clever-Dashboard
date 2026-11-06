@@ -1,4 +1,5 @@
 <?php
+/** Defines Nations League editions, groups and routes independently of domestic league seasons. */
 /** UEFA Nations League editions and routes, independent of domestic seasons. */
 function football_stats_nations_league_editions(): array
 {

@@ -1,4 +1,5 @@
 <?php
+/** world-cup: Prepares competition inputs and renders projected tournament or league outcomes. */
 /**
  * World Cup 2026 – Monte Carlo Tournament Simulation
  *

@@ -1,4 +1,5 @@
 <?php
+/** league-two/2025-2026: Renders the competition playoff bracket and available results. */
 // League Two Playoffs Tab — bracket format, two-legged semi-finals + final
 
 $competitionCode = 'L2';

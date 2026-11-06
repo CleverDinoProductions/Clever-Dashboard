@@ -1,4 +1,5 @@
 <?php
+/** league-one/2025-2026: Loads the selected standings and renders extended comparison metrics. */
 require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 
 $tableView = football_stats_get_table_view_combined($db, 'L1', 'league_table_L1', $currentMainTab ?? '2025-2026');
