@@ -27,6 +27,7 @@ function football_database_path(string $environmentVariable, array $candidates):
     return $candidates[0];
 }
 
+// Opens the chosen SQLite database and configures exception reporting for callers.
 function football_open_database(string $path): PDO
 {
     $connection = new PDO('sqlite:' . $path);

@@ -5,6 +5,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/competition-settings.php';
 require_once __DIR__ . '/transfermarkt-rankings.php';
 
+// Reuses the configured football connection, falling back to an existing canonical or legacy SQLite
+// file.
 function clever_football_db(): PDO
 {
     static $db;
@@ -23,6 +25,8 @@ function clever_football_db(): PDO
     return $db;
 }
 
+// Creates configuration tables and upgrades older columns used by team metadata, deductions and
+// competition overrides.
 function clever_migrate_football_settings(PDO $db): void
 {
     $db->exec(<<<'SQL'
@@ -66,12 +70,14 @@ SQL);
     foreach ($defaults as $key => $value) $stmt->execute([$key, $value]);
 }
 
+// Ensures the settings schema exists, then returns all dashboard values keyed by setting name.
 function clever_dashboard_settings(PDO $db): array
 {
     clever_migrate_football_settings($db);
     return $db->query('SELECT setting_key, setting_value FROM dashboard_settings')->fetchAll(PDO::FETCH_KEY_PAIR);
 }
 
+// Copies bundled team metadata once with INSERT OR IGNORE so administrator edits are preserved.
 function clever_seed_team_metadata(PDO $db, array $sets): void
 {
     $seeded = $db->query("SELECT setting_value FROM dashboard_settings WHERE setting_key = 'team_metadata_seeded'")->fetchColumn();
@@ -85,6 +91,7 @@ function clever_seed_team_metadata(PDO $db, array $sets): void
     $db->exec("INSERT INTO dashboard_settings (setting_key, setting_value) VALUES ('team_metadata_seeded', '1') ON CONFLICT(setting_key) DO UPDATE SET setting_value='1'");
 }
 
+// Returns one competition's team metadata keyed by provider team name for direct display lookups.
 function clever_team_metadata(PDO $db, string $competitionCode): array
 {
     $stmt = $db->prepare('SELECT team_name, display_name AS name, common_name, nickname, short_code AS short, color FROM team_metadata WHERE competition_code = ? ORDER BY team_name');
@@ -98,6 +105,8 @@ function clever_team_metadata(PDO $db, string $competitionCode): array
     return $teams;
 }
 
+// Slices verified all-time points rankings into default groups; uncovered competitions receive empty
+// lists.
 function clever_team_group_defaults(string $competitionCode = 'PL'): array
 {
     $ranked = clever_transfermarkt_rankings()[$competitionCode]['teams'] ?? [];
@@ -111,6 +120,8 @@ function clever_team_group_defaults(string $competitionCode = 'PL'): array
     ];
 }
 
+// Splits comma/newline lists, validates names and removes case-insensitive duplicates while retaining
+// display spelling.
 function clever_parse_team_group(string $value): array
 {
     $teams = [];
@@ -126,6 +137,8 @@ function clever_parse_team_group(string $value): array
     return array_values($teams);
 }
 
+// Overlays stored competition-specific lists on defaults; legacy unscoped settings apply only to the
+// Premier League.
 function clever_team_groups(array $settings, string $competitionCode = 'PL'): array
 {
     $groups = clever_team_group_defaults($competitionCode);
@@ -140,6 +153,7 @@ function clever_team_groups(array $settings, string $competitionCode = 'PL'): ar
     return $groups;
 }
 
+// Validates every group list and stores newline-separated lists under competition-scoped keys.
 function clever_save_team_groups(PDO $db, array $values, string $competitionCode = 'PL'): void
 {
     if (!isset(clever_competitions()[$competitionCode])) throw new InvalidArgumentException('Select a valid league.');

@@ -511,6 +511,8 @@ foreach ($matchup_counts as $lvl => $pairs) {
 // ── Display helpers ───────────────────────────────────────────────────────────
 function wc_esc(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 
+// Formats a probability in the 0-to-1 range as a percentage label, preserving tiny and near-certain
+// values.
 function wc_pct(float $v): string {
     $pct = $v * 100;
     if ($pct <= 0)     return '0%';
@@ -519,6 +521,7 @@ function wc_pct(float $v): string {
     return number_format($pct, 1) . '%';
 }
 
+// Maps advancement probability thresholds to the display's confidence colors.
 function wc_pct_color(float $v): string {
     if ($v >= 0.50) return '#43b581';
     if ($v >= 0.15) return '#faa61a';
@@ -526,6 +529,7 @@ function wc_pct_color(float $v): string {
     return '#444';
 }
 
+// Builds a World Cup simulation link with the requested number of trials.
 function wc_sim_url(int $n_sims): string {
     return '?' . http_build_query(['tab' => 'world-cup', 'subtab' => 'simulation', 'n_sims' => $n_sims]);
 }
@@ -920,6 +924,7 @@ $round_labels = [
     var results = document.getElementById('wc-team-path-results');
     if (!select || !results) return;
 
+    // Renders a selected team's precomputed likely knockout path or the appropriate empty-state message.
     function renderPath(team) {
         var steps = (window.__wcTeamPaths || {})[team];
         if (!team || !steps || steps.length === 0) {

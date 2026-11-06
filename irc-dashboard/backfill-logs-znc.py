@@ -103,6 +103,7 @@ def process_daily_log(db, log_file, channel_name, network_uuid, date):
     
     return count
 
+# Finds the network identity and imports dated ZNC channel logs into the existing log database.
 def main():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()

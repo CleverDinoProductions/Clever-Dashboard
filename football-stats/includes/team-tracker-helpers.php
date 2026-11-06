@@ -2,6 +2,7 @@
 /** Shared team presentation and scenario helpers for the tracker views. */
 
 if (!function_exists('football_stats_get_team_colors')) {
+    // Returns primary/secondary colors for known team aliases, with a fallback for unrecognized names.
     function football_stats_get_team_colors($teamName) {
         $map = [
             // Premier League
@@ -139,6 +140,7 @@ if (!function_exists('football_stats_get_team_colors')) {
 }
 
 if (!function_exists('football_stats_get_best_text_color')) {
+    // Compares candidate team colors against the background luminance to choose readable tracker text.
     function football_stats_get_best_text_color($primary, $secondary, $bg = '#2e3136') {
         $lum = function($hex) {
             $hex = ltrim($hex, '#');
@@ -161,6 +163,8 @@ if (!function_exists('football_stats_get_best_text_color')) {
 }
 
 if (!function_exists('football_stats_get_tracker_team')) {
+    // Selects a roster row from tracker_team, the supplied favorite/default, or the available standings
+    // fallback.
     function football_stats_get_tracker_team($standings, $defaultTeamName = null) {
         $requestedTeam = isset($_GET['tracker_team']) && is_string($_GET['tracker_team']) ? trim($_GET['tracker_team']) : null;
 
@@ -191,6 +195,7 @@ if (!function_exists('football_stats_get_tracker_team')) {
 }
 
 if (!function_exists('football_stats_render_team_selector')) {
+    // Emits a team picker whose navigation preserves snapshot, match and custom-result context.
     function football_stats_render_team_selector($standings, $selectedTeamName) {
         $baseParams = [];
         // Keep the table snapshot intact when changing teams. In particular,

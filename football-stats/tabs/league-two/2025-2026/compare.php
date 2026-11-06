@@ -21,6 +21,7 @@ $mw2 = isset($_GET['mw2']) ? (int)$_GET['mw2'] : (count($matchweeks) > 0 ? (int)
 $view1 = isset($_GET['view1']) ? $_GET['view1'] : 'snapshot';
 $view2 = isset($_GET['view2']) ? $_GET['view2'] : 'live';
 
+// Loads comparison standings for the requested table selection used by this league's compare view.
 function get_table($db, $competition_code, $season, $view, $mw, $live_table) {
     if ($view === 'live') {
         $stmt = $db->query("SELECT * FROM $live_table ORDER BY position ASC");

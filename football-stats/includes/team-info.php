@@ -213,6 +213,8 @@ try {
 }
 
 if (!function_exists('getTeamInfo')) {
+    // Looks up exact metadata first, then partial name matches, before returning fallback team display
+    // details.
     function getTeamInfo(string $team_name, array $team_info): array {
         if (isset($team_info[$team_name])) {
             return $team_info[$team_name];

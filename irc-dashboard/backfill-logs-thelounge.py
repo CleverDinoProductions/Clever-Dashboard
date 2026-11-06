@@ -156,6 +156,7 @@ def process_log_file(db, log_file, channel_name, network_uuid):
     return count
 
 
+# Checks configured storage, locates network/channel logs and imports historical The Lounge events.
 def main():
     if not os.path.exists(DB_PATH):
         print(f"❌ Database not found: {DB_PATH}")

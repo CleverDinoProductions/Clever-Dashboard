@@ -36,6 +36,8 @@ function match_projection_parse(array $simulation, array $zones): ?array
     return ['targets' => $targets, 'rows' => $rows, 'iterations' => (int)($simulation['n_sims'] ?? 0)];
 }
 
+// Emits the outlook widget from parsed simulation targets; produces no markup when no projection is
+// available.
 function match_projection_render(array $simulation, array $zones): void
 {
     $projection = match_projection_parse($simulation, $zones);

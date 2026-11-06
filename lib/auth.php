@@ -7,6 +7,7 @@ const CLEVER_SESSION_USER_ID = 'clever_user_id';
 const CLEVER_LOGIN_COOKIE = 'clever_login';
 const CLEVER_LOGIN_LIFETIME = 30 * 24 * 60 * 60;
 
+// Writes the persistent sign-in cookie and mirrors its value into this request's cookie array.
 function clever_login_cookie(string $value, int $expires): void
 {
     $params = session_get_cookie_params();
@@ -18,6 +19,8 @@ function clever_login_cookie(string $value, int $expires): void
     else $_COOKIE[CLEVER_LOGIN_COOKIE] = $value;
 }
 
+// Deletes the current browser's token hash from storage and expires its cookie; other browsers stay
+// signed in.
 function clever_revoke_login_cookie(): void
 {
     $token = $_COOKIE[CLEVER_LOGIN_COOKIE] ?? '';
@@ -28,6 +31,8 @@ function clever_revoke_login_cookie(): void
     clever_login_cookie('', time() - 42000);
 }
 
+// Returns the user ID from a valid persistent token, rotates the session ID, or clears an invalid cookie
+// and returns null.
 function clever_restore_login(): ?int
 {
     $token = $_COOKIE[CLEVER_LOGIN_COOKIE] ?? null;
@@ -36,6 +41,7 @@ function clever_restore_login(): ?int
         clever_login_cookie('', time() - 42000);
         return null;
     }
+    // Tokens retain the password hash from issuance, so changing the account password invalidates them.
     $stmt = clever_accounts_db()->prepare('SELECT t.user_id FROM login_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = ? AND t.expires_at > ? AND u.status = ? AND t.password_hash = u.password_hash');
     $stmt->execute([hash('sha256', $token), time(), 'active']);
     $id = $stmt->fetchColumn();
@@ -48,6 +54,8 @@ function clever_restore_login(): ?int
     return (int)$id;
 }
 
+// Starts a cookie-only session with HTTPS-aware cookie settings and disables caching of account-specific
+// pages.
 function clever_start_session(): void
 {
     // Session-specific pages and CSRF forms must never be served from a cache,
@@ -74,11 +82,14 @@ function clever_start_session(): void
     }
 }
 
+// Uses CLEVER_ACCOUNTS_DB when set, otherwise stores accounts under the repository's data directory.
 function clever_accounts_db_path(): string
 {
     return getenv('CLEVER_ACCOUNTS_DB') ?: dirname(__DIR__) . '/data/accounts.sqlite3';
 }
 
+// Reuses one PDO connection per request; creates the directory and applies account migrations on first
+// use.
 function clever_accounts_db(): PDO
 {
     static $db;
@@ -101,6 +112,8 @@ function clever_accounts_db(): PDO
     return $db;
 }
 
+// Creates missing account tables, adds older-schema permission columns and seeds built-in groups without
+// replacing them.
 function clever_migrate_accounts(PDO $db): void
 {
     $db->exec(<<<'SQL'
@@ -159,6 +172,8 @@ SQL);
     $db->exec("INSERT OR IGNORE INTO user_groups (name, description, is_admin, can_update_data) VALUES ('Data Operators', 'Users responsible for keeping dashboard data current', 0, 1)");
 }
 
+// Returns stored preferences merged with defaults so accounts without a preference row still have
+// complete settings.
 function clever_user_preferences(int $userId): array
 {
     $defaults = [
@@ -172,6 +187,8 @@ function clever_user_preferences(int $userId): array
     return $stored ? array_merge($defaults, $stored) : $defaults;
 }
 
+// Validates destination slugs, color and team length, then upserts and returns the normalized
+// preferences.
 function clever_save_user_preferences(int $userId, array $values): array
 {
     $preferences = [
@@ -204,6 +221,8 @@ SQL);
     return $preferences;
 }
 
+// Restores sign-in if needed and returns the active user with aggregated group permissions; invalid
+// accounts lose their tokens.
 function clever_current_user(): ?array
 {
     clever_start_session();
@@ -239,12 +258,16 @@ SQL);
     return $user;
 }
 
+// Checks the current account's effective administrator permission, restoring persistent sign-in if
+// necessary.
 function clever_is_admin(): bool
 {
     $user = clever_current_user();
     return $user !== null && $user['is_admin'];
 }
 
+// Verifies username/email credentials, rotates this browser's session and persistent token, and records
+// the login time.
 function clever_login(string $identity, string $password): bool
 {
     $identity = trim($identity);
@@ -262,6 +285,7 @@ function clever_login(string $identity, string $password): bool
     $token = bin2hex(random_bytes(32));
     $expires = time() + CLEVER_LOGIN_LIFETIME;
     clever_accounts_db()->prepare('DELETE FROM login_tokens WHERE expires_at <= ?')->execute([time()]);
+    // Store only the token's digest; the raw secret is sent to this browser in its HttpOnly cookie.
     clever_accounts_db()->prepare('INSERT INTO login_tokens (token_hash, user_id, password_hash, expires_at) VALUES (?, ?, ?, ?)')
         ->execute([hash('sha256', $token), $user['id'], $user['password_hash'], $expires]);
     clever_login_cookie($token, $expires);
@@ -272,6 +296,7 @@ function clever_login(string $identity, string $password): bool
     return true;
 }
 
+// Revokes this browser's persistent token, clears session data and expires the session cookie.
 function clever_logout(): void
 {
     clever_start_session();
@@ -291,6 +316,8 @@ function clever_logout(): void
     session_destroy();
 }
 
+// Returns the current account or ends the request with a login redirect that preserves the requested
+// destination.
 function clever_require_login(string $loginPath = '/account/login.php'): array
 {
     $user = clever_current_user();
@@ -302,6 +329,7 @@ function clever_require_login(string $loginPath = '/account/login.php'): array
     return $user;
 }
 
+// Returns the signed-in administrator or ends the request with a login redirect or HTTP 403.
 function clever_require_admin(): array
 {
     $user = clever_require_login();
@@ -312,6 +340,7 @@ function clever_require_admin(): array
     return $user;
 }
 
+// Creates a random token once per session and returns it for forms and authenticated AJAX requests.
 function clever_csrf_token(): string
 {
     clever_start_session();
@@ -321,6 +350,8 @@ function clever_csrf_token(): string
     return $_SESSION['clever_csrf'];
 }
 
+// Compares the submitted form/header token with the existing session token; does not create a missing
+// token.
 function clever_csrf_is_valid(): bool
 {
     clever_start_session();
@@ -331,6 +362,7 @@ function clever_csrf_is_valid(): bool
         && hash_equals($expected, $provided);
 }
 
+// Ends the request with HTTP 419 when the supplied token is missing or does not match the session.
 function clever_verify_csrf(): void
 {
     if (!clever_csrf_is_valid()) {
@@ -339,11 +371,15 @@ function clever_verify_csrf(): void
     }
 }
 
+// Accepts a leading-slash path unless it starts with //; otherwise returns the caller's fallback
+// destination.
 function clever_safe_return_path(string $path, string $fallback = '/'): string
 {
     return str_starts_with($path, '/') && !str_starts_with($path, '//') ? $path : $fallback;
 }
 
+// Returns user-facing validation errors for username, email and password; an empty array means the
+// fields passed.
 function clever_validate_registration(string $username, string $email, string $password): array
 {
     $errors = [];
@@ -359,6 +395,8 @@ function clever_validate_registration(string $username, string $email, string $p
     return $errors;
 }
 
+// Validates fields and creates the user plus group membership in one transaction; returns the new ID or
+// rolls back on failure.
 function clever_create_user(string $username, string $email, string $password, ?int $groupId = null): int
 {
     $db = clever_accounts_db();
@@ -392,12 +430,16 @@ function clever_create_user(string $username, string $email, string $password, ?
 function clever_movement_modes(): array {
     return ['by_matchweek','by_date','by_match','by_match_before','custom_matches'];
 }
+// Returns movement settings keyed by calculation mode, lazily creating their storage table for older
+// installations.
 function clever_movement_preferences(int $userId): array {
     $db=clever_accounts_db();
     $db->exec('CREATE TABLE IF NOT EXISTS user_movement_preferences (user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE, mode TEXT NOT NULL, comparison TEXT NOT NULL, style TEXT NOT NULL, direction TEXT NOT NULL, PRIMARY KEY(user_id,mode))');
     $stmt=$db->prepare('SELECT mode,comparison,style,direction FROM user_movement_preferences WHERE user_id=?');$stmt->execute([$userId]);
     $result=[];foreach($stmt->fetchAll() as $row)$result[$row['mode']]=['compare'=>$row['comparison'],'style'=>$row['style'],'direction'=>$row['direction']];return $result;
 }
+// Rejects unsupported mode/comparison/style/direction values and upserts settings for this account and
+// mode only.
 function clever_save_movement_preferences(int $userId,array $values): void {
     $mode=$values['movement_mode']??'';$compare=$values['movement_compare']??'';$style=$values['movement_style']??'';$direction=$values['movement_direction']??'';
     if(!in_array($mode,clever_movement_modes(),true)||!in_array($compare,['relevant','completed','custom_outcomes','custom_selection','off'],true)||!in_array($style,['detailed','compact','badge'],true)||!in_array($direction,['forward','reverse'],true))throw new InvalidArgumentException('Invalid movement preferences.');

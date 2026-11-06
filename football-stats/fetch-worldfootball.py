@@ -15,6 +15,8 @@ conn.row_factory = sqlite3.Row
 cursor = conn.cursor()
 
 
+# Derives the dashboard season key from provider start/end dates rather than relying on the current year
+# alone.
 def build_season_label(season_data):
     start_date = (season_data or {}).get('startDate')
     end_date = (season_data or {}).get('endDate')
@@ -30,6 +32,7 @@ def build_season_label(season_data):
     return f"{current_year}-{current_year + 1}"
 
 
+# Reads the competition's live-table pointer, season and matchweek from metadata storage.
 def get_live_table_metadata(db_cursor, competition_code):
     db_cursor.execute(
         """
@@ -42,11 +45,13 @@ def get_live_table_metadata(db_cursor, competition_code):
     return db_cursor.fetchone()
 
 
+# Returns live standings in position order; the caller supplies a trusted table identifier.
 def get_live_table_rows(db_cursor, live_table_name):
     db_cursor.execute(f"SELECT * FROM {live_table_name} ORDER BY position ASC")
     return db_cursor.fetchall()
 
 
+# Preserves the previous live standings before a season or matchweek change replaces them.
 def archive_live_table_if_needed(db_cursor, competition_code, live_table_name, incoming_season_label, incoming_matchweek, archived_at):
     metadata = get_live_table_metadata(db_cursor, competition_code)
     live_rows = get_live_table_rows(db_cursor, live_table_name)
@@ -127,6 +132,8 @@ def archive_live_table_if_needed(db_cursor, competition_code, live_table_name, i
     print(f"  · {competition_code}: archived {len(snapshot_rows)} rows for {existing_season_label} matchweek {existing_matchweek}")
 
 
+# Deletes the previous live rows and inserts the replacement provider standings using the caller's
+# transaction context.
 def replace_live_table(db_cursor, live_table_name, teams_data, updated_at):
     db_cursor.execute(f"DELETE FROM {live_table_name}")
     db_cursor.executemany(
@@ -135,6 +142,7 @@ def replace_live_table(db_cursor, live_table_name, teams_data, updated_at):
     )
 
 
+# Upserts the competition's active table, season, matchweek and update timestamp after replacement.
 def update_live_table_metadata(db_cursor, competition_code, live_table_name, season_label, matchweek, updated_at):
     db_cursor.execute(
         """
@@ -409,6 +417,7 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
     # Get all teams
     c.execute("SELECT DISTINCT home_team FROM matches WHERE competition_code = ? AND season_label = ? UNION SELECT DISTINCT away_team FROM matches WHERE competition_code = ? AND season_label = ?", (competition_code, season_label, competition_code, season_label))
     teams_list = [row[0] for row in c.fetchall()]
+    # Creates a zero-played team accumulator for historical standings reconstruction.
     def new_team_stats(name):
         return {
             'team_crest': '',
@@ -426,6 +435,7 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
         }
     teams = {name: new_team_stats(name) for name in teams_list}
     updated_at = int(time.time() * 1000)
+    # Mutates both teams' played, result, goal and points totals for one completed fixture.
     def update_standings(teams, match):
         _, home, away, home_goals, away_goals = match
         teams[home]['played'] += 1
@@ -449,11 +459,15 @@ def recalculate_snapshots_from_matches(db_conn, competition_code, season_label):
             teams[away]['drawn'] += 1
             teams[home]['points'] += 1
             teams[away]['points'] += 1
+    # Ranks accumulated teams by points, goal difference, goals scored and name, assigning one-based
+    # positions.
     def standings_snapshot(teams):
         sorted_teams = sorted(teams.values(), key=lambda t: (-t['points'], -t['gd'], -t['gf'], t['team_name']))
         for pos, team in enumerate(sorted_teams, 1):
             team['position'] = pos
         return sorted_teams
+    # Writes ranked dictionary-based team totals into the historical snapshot table for the supplied
+    # matchweek.
     def insert_snapshot(conn, matchweek, teams, updated_at, archived_at=None):
         c2 = conn.cursor()
         for team in standings_snapshot(teams):

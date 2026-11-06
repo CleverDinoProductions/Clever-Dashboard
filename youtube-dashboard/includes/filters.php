@@ -4,6 +4,7 @@
 function dashboard_input($key) {
     return is_string($_GET[$key] ?? null) ? trim($_GET[$key]) : '';
 }
+// Escapes a value for HTML text/attributes and substitutes invalid UTF-8 rather than dropping output.
 function dashboard_escape($value) {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
@@ -18,18 +19,23 @@ $db->exec("CREATE TEMP VIEW dashboard_channels AS SELECT * FROM main.channels
     WHERE dashboard_channel() = '' OR channel_id = dashboard_channel()");
 $db->exec("CREATE TEMP VIEW dashboard_upload_gaps AS SELECT g.* FROM main.upload_gaps g
     JOIN dashboard_videos v ON g.video_id = v.video_id");
+// Builds an HTML-escaped query URL that preserves current channel/period filters and applies the
+// requested changes.
 function dashboard_url($changes = []) {
     global $selectedChannel, $selectedPeriod;
     return dashboard_escape('?' . http_build_query(array_merge([
         'channel' => $selectedChannel, 'period' => $selectedPeriod
     ], $changes)));
 }
+// Emits hidden channel and period fields so tab-specific GET forms retain the shared filter context.
 function dashboard_hidden_filters() {
     global $selectedChannel, $selectedPeriod;
     foreach (['channel' => $selectedChannel, 'period' => $selectedPeriod] as $key => $value) {
         echo '<input type="hidden" name="' . $key . '" value="' . dashboard_escape($value) . '">';
     }
 }
+// Emits channel/period controls from cached channel identities while retaining applicable search, tag
+// and month selection.
 function dashboard_filters() {
     global $tab, $selectedChannel, $selectedPeriod;
     $options = query('SELECT channel_id, MAX(channel_name) AS channel_name FROM (SELECT channel_id, channel_name FROM channels UNION SELECT channel_id, channel_name FROM videos) GROUP BY channel_id ORDER BY channel_name');

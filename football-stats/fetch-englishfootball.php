@@ -122,6 +122,7 @@ $sort_league_table = function(array $a, array $b, string $a_name, string $b_name
 
 // --- 2. Core League Processing ---
 
+// Fetches available seasons for a league and persists their fixtures and table data into SQLite.
 function sync_league($db, $BASE_URL, $code, $id) {
     global $sort_league_table;
     echo "\n[Syncing $code (ID: $id)]\n";

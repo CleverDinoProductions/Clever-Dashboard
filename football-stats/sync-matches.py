@@ -24,12 +24,16 @@ API_FOOTBALL_IDS = {"PL": 39, "ELC": 40, "L1": 41, "L2": 42, "NL": 43}
 SOURCE_PRIORITY = {"thesportsdb": 10, "api-football": 20, "football-data.org": 30}
 
 
+# Fetches and decodes a JSON response with caller-supplied headers, a dashboard user agent and a
+# 30-second timeout.
 def request_json(url: str, headers: dict[str, str]) -> dict:
     request = urllib.request.Request(url, headers={**headers, "User-Agent": "Clever-Dashboard/1.0"})
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.load(response)
 
 
+# Normalizes football-data.org fixtures for a supported competition/season; unsupported competition codes
+# return no fixtures.
 def football_data(competition: str, season: str, token: str) -> list[dict]:
     code = FOOTBALL_DATA_CODES.get(competition)
     if not code:
@@ -52,6 +56,7 @@ def football_data(competition: str, season: str, token: str) -> list[dict]:
     return result
 
 
+# Normalizes API-Football fixtures for the competition/season using that provider's league IDs.
 def api_football(competition: str, season: str, token: str) -> list[dict]:
     league_id = API_FOOTBALL_IDS.get(competition)
     if not league_id:
@@ -72,11 +77,15 @@ def api_football(competition: str, season: str, token: str) -> list[dict]:
     return result
 
 
+# Extracts digits from provider round text and returns an integer, or None when no round number is
+# present.
 def _round_number(value) -> int | None:
     digits = "".join(character for character in str(value or "") if character.isdigit())
     return int(digits) if digits else None
 
 
+# Creates missing fixture storage and upgrades columns needed to merge provider IDs and rebuild
+# snapshots.
 def prepare_schema(db: sqlite3.Connection) -> None:
     columns = {row[1] for row in db.execute("PRAGMA table_info(matches)")}
     if not columns:
@@ -98,6 +107,8 @@ def prepare_schema(db: sqlite3.Connection) -> None:
         ON matches (competition_code, season_label, home_team, away_team, match_date)""")
 
 
+# Matches provider fixtures against stored records, inserts or updates valid fixtures and returns the
+# number changed.
 def merge_matches(db: sqlite3.Connection, competition: str, season: str, matches: list[dict]) -> int:
     changed = 0
     for match in matches:
@@ -106,6 +117,7 @@ def merge_matches(db: sqlite3.Connection, competition: str, season: str, matches
         date = match["timestamp"][:10]
         existing = db.execute("""SELECT id, source FROM matches WHERE competition_code=? AND season_label=?
             AND home_team=? AND away_team=? AND match_date=?""", (competition, season, match["home"], match["away"], date)).fetchone()
+        # A lower-priority provider must not overwrite the preferred source's fixture.
         if existing and SOURCE_PRIORITY.get(existing[1], 0) > SOURCE_PRIORITY.get(match["source"], 0):
             continue
         values = (match.get("matchweek"), date, match["timestamp"], match["home"], match["away"],
@@ -146,6 +158,8 @@ def rebuild_snapshots(db: sqlite3.Connection, competition: str, season: str) -> 
         insert_snapshot(db, competition, season, week, stats, crest, now)
 
 
+# Ranks short-list team accumulators by points, goal difference and goals scored, then writes the
+# selected matchweek snapshot.
 def insert_snapshot(db, competition, season, week, stats, crest, timestamp):
     ordered = sorted(stats, key=lambda team: (-stats[team][6], -(stats[team][4]-stats[team][5]), -stats[team][4], team))
     for position, team in enumerate(ordered, 1):
@@ -156,6 +170,8 @@ def insert_snapshot(db, competition, season, week, stats, crest, timestamp):
             position, p, w, d, loss, gf, ga, gf-ga, points, timestamp, timestamp))
 
 
+# Parses CLI configuration, merges enabled provider fixtures and rebuilds the selected season's
+# snapshots.
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("competition", choices=sorted(API_FOOTBALL_IDS))

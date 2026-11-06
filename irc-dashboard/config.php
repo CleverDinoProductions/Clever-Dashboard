@@ -21,6 +21,7 @@ function formatTimestamp($timestampMs) {
     return date('Y-m-d H:i:s', $timestampMs / 1000);
 }
 
+// Converts elapsed milliseconds into a rounded seconds/minutes/hours/days label for activity displays.
 function timeAgo($timestampMs) {
     $seconds = (time() * 1000 - $timestampMs) / 1000;
     if ($seconds < 60) return round($seconds) . 's ago';

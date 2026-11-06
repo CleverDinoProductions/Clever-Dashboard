@@ -154,6 +154,7 @@ $goldenAlive  = count(array_filter($bracket_sides, fn($r) => $r['bracket_side'] 
 // 3. RENDER HELPERS
 // ============================================================
 
+// Resolves recorded fixture details against bracket placeholders and returns normalized card data.
 function renderMatch(?int $matchId, string $defaultHome, string $defaultAway, array $data): array
 {
     if ($matchId !== null && isset($data[$matchId])) {
@@ -196,6 +197,8 @@ function renderMatch(?int $matchId, string $defaultHome, string $defaultAway, ar
     ];
 }
 
+// Returns the bracket-card HTML for one fixture, using placeholder teams until actual participants are
+// known.
 function matchCard(?int $matchId, string $defaultHome, string $defaultAway, array $data,
                    string $stageClass, string $label, string $date, string $note = ''): string
 {

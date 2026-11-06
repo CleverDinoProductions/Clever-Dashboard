@@ -5,11 +5,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/english-pyramid.php';
 
+// Maps supported domestic and regional competition codes to display names used by administration and
+// validation.
 function clever_competitions(): array
 {
     return ['PL' => 'Premier League', 'ELC' => 'Championship', 'L1' => 'League One', 'L2' => 'League Two', 'NL' => 'National League', 'D1' => 'Division One'] + array_column(clever_regional_competitions(), 'label', 'code');
 }
 
+// Defines the accepted zone keys and their default labels for rule-editing forms.
 function clever_competition_zone_types(): array
 {
     return ['title' => 'Title', 'champions-league' => 'Champions League', 'europa-league' => 'Europa League',
@@ -17,6 +20,7 @@ function clever_competition_zone_types(): array
         'playoffs' => 'Promotion playoffs', 'relegation' => 'Relegation', 'custom' => 'Other'];
 }
 
+// Provides each numeric rule's form label and inclusive validation bounds from a single shared catalog.
 function clever_competition_numeric_fields(): array
 {
     return ['team_count' => ['Clubs', 2, 100], 'regular_matchweeks' => ['Regular-season matchweeks', 4, 200],
@@ -54,6 +58,8 @@ function clever_bundled_competition_rules(string $code, ?string $season = null):
     return array_replace($rules, $season === null ? [] : ($bundled[$code][$season] ?? []));
 }
 
+// Merges bundled defaults, league overrides, bundled season rules and season overrides in that
+// precedence order.
 function clever_competition_rules(PDO $db, string $code, ?string $season = null): array
 {
     $rules = clever_bundled_competition_rules($code);
@@ -73,6 +79,7 @@ function clever_competition_rules(PDO $db, string $code, ?string $season = null)
     return $rules;
 }
 
+// Rejects unknown codes and nonconsecutive season labels; a blank season selects league-wide defaults.
 function clever_validate_competition_identity(string $code, string $season): void
 {
     if (!isset(clever_competitions()[$code])) throw new InvalidArgumentException('Choose a supported competition.');
@@ -81,6 +88,8 @@ function clever_validate_competition_identity(string $code, string $season): voi
     }
 }
 
+// Normalizes numeric fields and zones, rejecting impossible targets, invalid boundaries and ambiguous
+// default zones.
 function clever_validate_competition_rules(array $input): array
 {
     $rules = [];
@@ -134,6 +143,7 @@ function clever_validate_competition_rules(array $input): array
     return $rules;
 }
 
+// Validates identity and rule data before upserting JSON overrides for one competition/season pair.
 function clever_save_competition_rules(PDO $db, string $code, string $season, array $input): void
 {
     clever_validate_competition_identity($code, $season);
@@ -142,6 +152,8 @@ function clever_save_competition_rules(PDO $db, string $code, string $season, ar
     $stmt->execute([$code, $season, json_encode($rules, JSON_THROW_ON_ERROR)]);
 }
 
+// Removes only the selected override row, allowing bundled rules and broader defaults to take effect
+// again.
 function clever_reset_competition_rules(PDO $db, string $code, string $season): void
 {
     clever_validate_competition_identity($code, $season);

@@ -27,6 +27,7 @@ function football_stats_own_table(array $matches, array $clubs, string $from = '
     return ['rows'=>$rows, 'matches'=>$counted];
 }
 
+// Accepts a real YYYY-MM-DD date and returns an empty string when validation fails.
 function football_stats_own_table_date($value): string
 {
     if (!is_string($value)) return '';

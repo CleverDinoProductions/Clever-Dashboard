@@ -3,6 +3,8 @@
 /** Shared YouTube RSS and API importer; direct execution is CLI-only. */
 require_once dirname(__DIR__) . '/lib/youtube-settings.php';
 
+// Opens the cache with WAL and a busy timeout, creates importer tables/indexes and returns the SQLite
+// connection.
 function youtubeInitDb(string $path): SQLite3
 {
     $db = new SQLite3($path);
@@ -18,6 +20,7 @@ function youtubeInitDb(string $path): SQLite3
     return $db;
 }
 
+// Executes a prepared query with null/integer/text parameter types and returns its SQLite result.
 function youtubeQuery(SQLite3 $db, string $sql, array $params = []): SQLite3Result
 {
     $stmt = $db->prepare($sql);
@@ -27,6 +30,8 @@ function youtubeQuery(SQLite3 $db, string $sql, array $params = []): SQLite3Resu
     return $stmt->execute();
 }
 
+// Returns the first configured location whose keyword appears in the title, or null; this is a title
+// heuristic.
 function youtubeDetectLocation(string $title): ?string
 {
     $locations = [
@@ -46,6 +51,7 @@ function youtubeDetectLocation(string $title): ?string
     return null;
 }
 
+// Rejects IDs that are not the expected 24-character UC-prefixed channel identifier.
 function youtubeValidateChannelId(string $channelId): void
 {
     if (!preg_match('/^UC[A-Za-z0-9_-]{22}$/D', $channelId)) {
@@ -53,6 +59,8 @@ function youtubeValidateChannelId(string $channelId): void
     }
 }
 
+// Downloads one validated channel's Atom feed over HTTPS with connection/request timeouts; transport
+// failures raise errors.
 function youtubeDownloadFeed(string $channelId): string
 {
     youtubeValidateChannelId($channelId);
@@ -119,12 +127,16 @@ function youtubeParseFeed(string $body, string $channelId): array
     }
 }
 
+// Validates the complete Atom response before delegating to the transactional entry importer; returns
+// newly inserted video count.
 function youtubeImportFeed(SQLite3 $db, string $name, string $channelId, string $body): int
 {
     $entries = youtubeParseFeed($body, $channelId);
     return youtubeImportEntries($db, $name, $channelId, $entries);
 }
 
+// Sorts entries chronologically and updates videos, gaps and channel metadata in one transaction,
+// rolling back on failure.
 function youtubeImportEntries(SQLite3 $db, string $name, string $channelId, array $entries): int
 {
     usort($entries, static fn(array $a, array $b): int => $a['timestamp'] <=> $b['timestamp']);
@@ -143,6 +155,7 @@ function youtubeImportEntries(SQLite3 $db, string $name, string $channelId, arra
             ]);
             $new++;
         }
+        // Backfilled uploads can split existing intervals, so rebuild this channel's entire gap sequence.
         if ($new > 0) {
             youtubeQuery($db, 'DELETE FROM upload_gaps WHERE channel_id = :channel', [':channel' => $channelId]);
             $rows = youtubeQuery($db, 'SELECT video_id, published_date FROM videos WHERE channel_id = :channel ORDER BY julianday(published_date), video_id', [':channel' => $channelId]);
@@ -164,6 +177,8 @@ function youtubeImportEntries(SQLite3 $db, string $name, string $channelId, arra
     return $new;
 }
 
+// Calls a YouTube API resource using the server key in a header and returns decoded data or raises a
+// request error.
 function youtubeApiRequest(string $resource, array $params): array
 {
     $key = getenv('YOUTUBE_API_KEY');
@@ -266,6 +281,7 @@ function youtubeRunFetcher(bool $requireApi = false): array
     return ['failed' => $failed, 'messages' => $messages];
 }
 
+// Prints runner messages and returns a CLI exit status of 1 if any channel import failed, otherwise 0.
 function youtubeFetcherMain(): int
 {
     $result = youtubeRunFetcher();

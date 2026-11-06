@@ -21,6 +21,7 @@ $mw2 = isset($_GET['mw2']) ? (int)$_GET['mw2'] : (count($matchweeks) > 0 ? (int)
 $view1 = isset($_GET['view1']) ? $_GET['view1'] : 'snapshot';
 $view2 = isset($_GET['view2']) ? $_GET['view2'] : 'live';
 
+// Loads comparison standings using the active regional competition context.
 function regional_get_comparison_table($db, $competition_code, $season, $view, $mw, $live_table) {
     if ($view === 'live') {
         $metadata = $db->prepare('SELECT season_label FROM live_table_metadata WHERE competition_code=?');

@@ -26,14 +26,17 @@ function getTeam($groupData, $group, $position) {
     return null;
 }
 
+// Resolves the first-place team or placeholder from the selected group.
 function getGroupWinner($groupData, $group) {
     return getTeam($groupData, $group, 1);
 }
 
+// Resolves the second-place team or placeholder from the selected group.
 function getGroupRunnerUp($groupData, $group) {
     return getTeam($groupData, $group, 2);
 }
 
+// Resolves the third-place team or placeholder for the best-third-place qualification calculation.
 function getGroupThird($groupData, $group) {
     return getTeam($groupData, $group, 3);
 }
