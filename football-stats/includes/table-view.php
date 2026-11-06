@@ -45,6 +45,8 @@ if (!function_exists('football_stats_format_kickoff')) {
 require_once __DIR__ . '/table-view-date-helper.php';
 
 if (!function_exists('football_stats_get_competition_rules')) {
+    // Resolves rules through the supplied/global PDO connection, falling back to bundled rules when no
+    // connection is available.
     function football_stats_get_competition_rules($competitionCode, $seasonLabel = null, ?PDO $rulesDb = null)
     {
         $rulesDb = $rulesDb ?? ($GLOBALS['db'] ?? null);
@@ -75,6 +77,7 @@ function football_stats_reweight_standings(array $standings, array $points): arr
 {
     if ($points === ['win' => 3, 'draw' => 1, 'loss' => 0]) return $standings;
     foreach ($standings as &$team) {
+        // Apply only the scoring delta so deductions embedded in the stored points remain intact.
         $team['points'] = (int)$team['points']
             + (int)$team['won'] * ($points['win'] - 3)
             + (int)$team['drawn'] * ($points['draw'] - 1)
@@ -85,6 +88,7 @@ function football_stats_reweight_standings(array $standings, array $points): arr
 }
 
 if (!function_exists('football_stats_get_position_zone')) {
+    // Returns the preferred configured zone covering a position for the selected competition and season.
     function football_stats_get_position_zone($competitionCode, $seasonLabel, $position)
     {
         return clever_position_display_zone(football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'], (int)$position);
@@ -114,6 +118,8 @@ function football_stats_table_zone_palette(): array
     ];
 }
 
+// Returns edge/fill colors for a zone, using its configured hex color when present and transparent
+// colors for no zone.
 function football_stats_table_zone_colors(?array $zone): array
 {
     if ($zone === null) return ['transparent', 'transparent'];
@@ -124,6 +130,8 @@ function football_stats_table_zone_colors(?array $zone): array
     return [$color, 'rgba(' . implode(', ', $rgb) . ', 0.15)'];
 }
 
+// Builds row styling with league-default edge colors and season-specific fill colors so both rule
+// contexts stay visible.
 function football_stats_table_row_attributes(string $competitionCode, string $seasonLabel, int $position): string
 {
     $defaultZone = clever_position_display_zone(football_stats_get_competition_rules($competitionCode)['zones'], $position, 'edge');
@@ -136,6 +144,7 @@ function football_stats_table_row_attributes(string $competitionCode, string $se
         . '; --season-zone-color: ' . $seasonColor . '; --season-zone-fill: ' . $seasonFill . ';"';
 }
 
+// Emits a legend explaining configured position colors; omits it when neither rule set defines zones.
 function football_stats_render_table_zone_legend(string $competitionCode, string $seasonLabel): void
 {
     if (empty(football_stats_get_competition_rules($competitionCode, $seasonLabel)['zones'])
@@ -741,6 +750,7 @@ if (!function_exists('football_stats_add_team_crests')) {
 }
 
 if (!function_exists('football_stats_empty_team_stats')) {
+    // Returns the zeroed short-key accumulator used while rebuilding standings from fixture results.
     function football_stats_empty_team_stats()
     {
         return ['p' => 0, 'w' => 0, 'd' => 0, 'l' => 0, 'gf' => 0, 'ga' => 0, 'pts' => 0];
@@ -811,6 +821,8 @@ if (!function_exists('football_stats_resolve_selected_match')) {
 }
 
 if (!function_exists('football_stats_get_table_view_by_match')) {
+    // Reconstructs the standings at the selected fixture boundary and includes match-selection
+    // navigation metadata.
     function football_stats_get_table_view_by_match(PDO $db, $competitionCode, $liveTableName, $fallbackSeasonLabel)
     {
         $metadataStmt = $db->prepare('SELECT season_label FROM live_table_metadata WHERE competition_code = ?');
@@ -1710,6 +1722,8 @@ if (!function_exists('football_stats_add_filtered_position_movements')) {
     }
 }
 
+// Resolves comparison, style and direction from request overrides, then saved per-mode preferences, then
+// defaults.
 function football_stats_movement_settings(array $tableView = []): array {
     $mode = $tableView['calc_mode'] ?? $_GET['calc_mode'] ?? 'by_matchweek';
     $saved = $GLOBALS['dashboardMovementPreferences'][$mode] ?? [];
@@ -1719,6 +1733,8 @@ function football_stats_movement_settings(array $tableView = []): array {
         'direction'=>($_GET['movement_direction'] ?? $saved['direction'] ?? 'forward') === 'reverse' ? 'reverse' : 'forward',
     ];
 }
+// Calculates movement against the selected baseline and reverses signs/description when reverse
+// direction is requested.
 function football_stats_apply_movement_preference(array $tableView, array $displayedStandings, array $relevantBaseline, $hasActiveFilter = false) {
     $settings = football_stats_movement_settings($tableView);
     $view = football_stats_apply_movement_preference_base($tableView,$displayedStandings,$relevantBaseline,$hasActiveFilter);
@@ -2819,6 +2835,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         var currentTopHalfTeams = hasStandings ? rankedTeams.slice(0, Math.floor(rankedTeams.length / 2)).map(function (team) { return normalizedTeamName(team.team_name); }) : [];
                         var currentBottomHalfTeams = hasStandings ? rankedTeams.slice(Math.floor(rankedTeams.length / 2)).map(function (team) { return normalizedTeamName(team.team_name); }) : [];
                         var bigTwelveTeams = configuredTeamGroups.big_twelve.map(normalizedTeamName);
+                        // Canonicalizes club aliases in the browser so preset membership follows the
+                        // server's name matching.
                         function normalizedTeamName(teamName) {
                             return String(teamName || '')
                                 .trim()
@@ -2836,6 +2854,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 .replace(/^wrexham afc$/, 'wrexham')
                                 .replace(/^halifax town$/, 'fc halifax town');
                         }
+                        // Tests whether a team belongs to the selected named group or its outside-group
+                        // complement.
                         function matchesTeamPreset(preset, teamName) {
                             var name = normalizedTeamName(teamName);
                             var groups = {'big-three': bigThreeTeams, 'big-six': bigSixTeams, 'big-nine': bigNineTeams, 'big-twelve': bigTwelveTeams, 'typical-top-half': typicalTopHalfTeams, 'current-top-half': currentTopHalfTeams, 'current-bottom-half': currentBottomHalfTeams};
@@ -2846,6 +2866,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             return outside ? groups[key].indexOf(name) === -1 : groups[key].indexOf(name) !== -1;
                         }
                         var teamPresets = [['all', 'All teams'], ['none', 'Clear'], ['big-three', 'Big 3'], ['big-six', 'Big 6'], ['big-nine', 'Big 9'], ['big-twelve', 'Big 12'], ['outside-big-three', 'Outside Big 3'], ['outside-big-six', 'Outside Big 6'], ['outside-big-nine', 'Outside Big 9'], ['outside-big-twelve', 'Outside Big 12'], ['typical-top-half', 'Typical top half'], ['outside-typical-top-half', 'Outside typical top half'], ['current-top-half', 'Current top half'], ['current-bottom-half', 'Current bottom half']];
+                        // Adds a local search input that hides nonmatching team choices without altering
+                        // which choices are selected.
                         function addTeamSearch(menu) {
                             var options = menu.querySelector('.custom-team-filter-options');
                             var search = document.createElement('input');
@@ -2869,11 +2891,14 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 if (preset.indexOf('current-') === 0 && !hasStandings) { button.disabled = true; button.title = 'Available after this season has completed matches'; }
                             });
                         }
+                        // Returns values from checked inputs only, preserving the checkbox order.
                         function checkedValues(inputs) {
                             return Array.prototype.filter.call(inputs, function (input) {
                                 return input.checked;
                             }).map(function (input) { return input.value; });
                         }
+                        // Reads the checkbox-backed selection after enhancement, otherwise falls back to
+                        // the original select options.
                         function selectedTeamValues(select) {
                             // Once a select has been upgraded, the visible checkboxes are the
                             // source of truth. Reading select.value only returns one item, and
@@ -2883,6 +2908,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 return option.selected && option.value && option.value !== 'all' && option.value !== '__all__';
                             }).map(function (option) { return option.value; });
                         }
+                        // Replaces the team selector's visible interaction with a searchable multi-
+                        // checkbox menu while preserving form state.
                         function upgradeTeamSelect(select) {
                             var emptyLabel = select.matches('[data-team-rule], [data-bulk-outcome-team]') ? 'Choose teams' : 'All teams';
                             select.multiple = true;
@@ -2923,6 +2950,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 label.appendChild(document.createTextNode(' ' + option.textContent.trim()));
                                 options.appendChild(label);
                             });
+                            // Refreshes the team picker's compact label from its current multi-
+                            // selection.
                             function updateSummary() {
                                 var values = selectedTeamValues(select);
                                 if (!values.length) summary.textContent = emptyLabel;
@@ -2944,6 +2973,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             select.insertAdjacentElement('afterend', menu);
                         }
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-team-checkbox-select]'), upgradeTeamSelect);
+                        // Appends a labeled group of pending custom-rule chips to the summary container.
                         function addPendingGroup(label, items) {
                             var group = document.createElement('span');
                             group.className = 'custom-rules-applied-group';
@@ -2959,6 +2989,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             });
                             pendingDetails.appendChild(group);
                         }
+                        // Rebuilds the unsaved-rule summary from excluded results, changed outcomes and
+                        // entered deductions.
                         function updatePendingRules() {
                             var excluded = boxes.filter(function (box) { return !box.checked; });
                             var altered = outcomeSelects.filter(function (select) { return select.value !== 'actual'; });
@@ -2988,6 +3020,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                             if (outcomes.length) addPendingGroup('Outcomes', outcomes);
                             if (deductions.length) addPendingGroup('Deductions', deductions.map(function (input) { return input.dataset.pointsDeduction + ': -' + Number(input.value) + ' pts'; }));
                         }
+                        // Refreshes selection/outcome counts and the pending-rule summary after a custom
+                        // control changes.
                         function updateSelectionStatus() {
                             var selected = boxes.filter(function (box) { return box.checked; }).length;
                             var altered = outcomeSelects.filter(function (select) { return select.value !== 'actual'; }).length;
@@ -2997,6 +3031,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         Array.prototype.forEach.call(panel.querySelectorAll('[data-result-filter-section]'), function (section) {
                             var filterTeamBoxes = Array.prototype.slice.call(section.querySelectorAll('[data-team-filter-option]'));
                             var filterTeamSummary = section.querySelector('[data-team-filter-summary]');
+                            // Updates the filter-menu label to show all teams, selected names or a
+                            // selection count.
                             function updateTeamFilterSummary() {
                                 var selectedTeams = checkedValues(filterTeamBoxes);
                                 if (!selectedTeams.length || selectedTeams.length === filterTeamBoxes.length) {
@@ -3077,6 +3113,8 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                                 updateSelectionStatus();
                             });
                         });
+                        // Tests a team-result checkbox against venue and result rules, including
+                        // scoreless and shutout predicates.
                         function matchesResultRule(box, rule) {
                             var parts = rule.split('_');
                             if (parts[0] === 'home' || parts[0] === 'away') {
@@ -3143,11 +3181,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         });
                         deductionInputs.forEach(function (input) { input.addEventListener('input', updateSelectionStatus); });
                         scoringInputs.forEach(function (input) { input.addEventListener('input', updateSelectionStatus); });
+                        // Matches a fixture against the currently selected override, falling back to its
+                        // recorded outcome.
                         function hasCurrentFixtureOutcome(select, outcome) {
                             if (outcome === 'all') return true;
                             var current = select.value === 'actual' ? select.dataset.actualOutcome : select.value;
                             return outcome.split(',').indexOf(current) !== -1;
                         }
+                        // Converts the current fixture outcome into win/draw/loss from the chosen team's
+                        // side; unplayed stays distinct.
                         function getCurrentTeamOutcome(select, isHomeTeam) {
                             var fixtureOutcome = select.value === 'actual' ? select.dataset.actualOutcome : select.value;
                             if (fixtureOutcome === 'actual') return 'unplayed';

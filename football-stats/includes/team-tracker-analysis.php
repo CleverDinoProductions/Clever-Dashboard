@@ -32,6 +32,7 @@ function football_stats_tracker_analysis(array $team, array $standings, array $r
             'gap' => $rival ? $points - (int)$rival['points'] : null,
             'games_in_hand' => $rival ? (int)$rival['played'] - $played : null];
     }
+    // Preserve the gap between earned points and displayed points as a separate adjustment (e.g. deductions).
     $earned = (int)$team['won'] * $scoring['win'] + (int)$team['drawn'] * $scoring['draw'] + (int)$team['lost'] * $scoring['loss'];
     return ['played' => $played, 'total' => $total, 'remaining' => $remaining,
         'pace' => $played ? $points / $played : null,
@@ -67,6 +68,7 @@ function football_stats_tracker_safety(array $team, array $standings, array $rul
     $names = array_unique(array_column($standings, 'team_name'));
     if (count($names) !== (int)$rules['team_count']) return null;
     $below = 0;
+    // Compare our worst remaining points with each rival's best; equal totals leave tie-breaks unresolved.
     $minimum = (int)$team['points'] + max(0, (int)$rules['total_games'] - (int)$team['played']) * min($scoring);
     foreach ($standings as $row) {
         if ($row['team_name'] === $team['team_name']) continue;

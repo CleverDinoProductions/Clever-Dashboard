@@ -32,6 +32,7 @@ echo "Method: " . htmlspecialchars($method) . "<br>";
 
 // Step 4: Test helper function
 echo "<h2>3. Testing Helper Function</h2>";
+// Removes IRC color and text-style control codes before matching or displaying bot messages.
 function strip_mirc_codes($text) {
     $text = preg_replace('/\x03[0-9]{1,2}(,[0-9]{1,2})?/', '', $text);
     $text = str_replace([chr(2), chr(15), chr(22), chr(31)], '', $text);
@@ -51,6 +52,7 @@ try {
 
 // Step 6: Test voice detection function
 echo "<h2>5. Testing Voice Detection Function</h2>";
+// Infers invitation windows from recorded voice-mode activity, optionally restricted to a calendar year.
 function detect_windows_by_voice($db, $year = null) {
     try {
         $year_filter = $year ? "AND strftime('%Y', time/1000, 'unixepoch') = :year" : "";
@@ -98,6 +100,7 @@ $windows = detect_windows_by_voice($db, $year);
 
 // Step 7: Test auto detection
 echo "<h2>6. Testing Auto Detection</h2>";
+// Combines windows inferred by the available detection methods and reconciles overlapping candidates.
 function detect_windows_auto($db, $year = null) {
     $all_windows = [];
 

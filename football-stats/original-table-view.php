@@ -289,6 +289,8 @@ if (!function_exists('football_stats_render_combined_table_controls')) {
 }
 
 if (!function_exists('football_stats_render_matches_controls')) {
+    // Emits fixture season/week selectors and optional team filters with competition-specific regular-
+    // season limits.
     function football_stats_render_matches_controls(array $availableSeasons, array $availableMatchweeks, $selectedSeason, $selectedMatchweek, $tab, $league, $subtab)
     {
         $controlId = 'matches-view-' . preg_replace('/[^a-z0-9\-]/i', '-', (string)$subtab);
@@ -590,6 +592,8 @@ if (!function_exists('football_stats_render_home_away_split')) {
 }
 
 if (!function_exists('football_stats_render_table_view_controls')) {
+    // Emits calculation-mode, snapshot, movement and custom-rule controls using the prepared view and
+    // request context.
     function football_stats_render_table_view_controls(array $tableView, $tab, $league, $subtab)
     {
         $leagueMap = [

@@ -9,6 +9,7 @@ function football_stats_matches_list_week(array $query)
     return $week === false ? '' : $week;
 }
 
+// Maps accepted result selectors to labels, including combined W/D/L outcomes and goal-based filters.
 function football_stats_matches_result_filter_options(): array
 {
     return [
@@ -24,6 +25,7 @@ function football_stats_matches_result_filter_options(): array
     ];
 }
 
+// Normalizes request fields into a filter array; malformed selectors fall back to unrestricted choices.
 function football_stats_matches_result_filter_request(array $query): array
 {
     $list = static fn($key) => isset($query[$key]) && is_array($query[$key]) ? array_values(array_filter($query[$key], 'is_string')) : [];
@@ -36,6 +38,8 @@ function football_stats_matches_result_filter_request(array $query): array
     ];
 }
 
+// Includes or excludes fixtures matching week, venue and team-relative outcomes; unplayed games cannot
+// match scored outcomes.
 function football_stats_filter_match_results(array $matches, array $filter): array
 {
     if (!$filter['mode']) return $matches;
@@ -67,6 +71,8 @@ function football_stats_filter_match_results(array $matches, array $filter): arr
     }));
 }
 
+// Emits both inclusion/exclusion panels and their team pickers using request state and the supplied
+// roster context.
 function football_stats_render_matches_result_filters(array $context, $tab, $league, $subtab): void
 {
     $h = static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');
@@ -112,6 +118,8 @@ function football_stats_render_matches_result_filters(array $context, $tab, $lea
         root.querySelectorAll('[data-matches-team-menu]').forEach(function(menu){
             var boxes=Array.from(menu.querySelectorAll('input[type=checkbox]'));
             var summary=menu.querySelector('[data-matches-team-summary]');
+            // Updates the team-menu summary from its checked inputs without changing the selected
+            // filters.
             function update(){var selected=boxes.filter(function(b){return b.checked;});summary.textContent=selected.length?selected.length+' teams selected':'All teams';}
             menu.addEventListener('change',update);
             menu.querySelector('[data-matches-team-search]').addEventListener('input',function(){var q=normalize(this.value);boxes.forEach(function(b){b.closest('label').hidden=normalize(b.value).indexOf(q)===-1;});});

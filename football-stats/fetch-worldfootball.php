@@ -170,6 +170,7 @@ echo "  ✓ Lookup tables ready.\n";
 // 3. HELPER FUNCTION
 // ============================================================
 
+// Requests a football-data API endpoint and returns its decoded response for the importer.
 function get_api_data(string $url, string $key): ?array
 {
     $opts = [

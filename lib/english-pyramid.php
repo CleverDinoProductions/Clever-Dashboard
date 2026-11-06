@@ -24,6 +24,7 @@ function clever_regional_competitions(): array
     ];
 }
 
+// Returns route slugs mapped to internal competition codes while preserving the regional catalog's keys.
 function clever_regional_league_codes(): array
 {
     return array_map(static fn(array $league): string => $league['code'], clever_regional_competitions());

@@ -23,6 +23,7 @@ $monthnames = [
     '09' => 'September', '10' => 'October', '11' => 'November', '12' => 'December'
 ];
 
+// Removes IRC color and text-style control codes before matching or displaying bot messages.
 function strip_mirc_codes($text) {
     $text = preg_replace('/\x03[0-9]{1,2}(,[0-9]{1,2})?/', '', $text);
     $text = str_replace([chr(2), chr(15), chr(22), chr(31)], '', $text);
@@ -61,6 +62,8 @@ function detect_windows_by_voice($db, $year = null) {
     }
 }
 
+// Infers windows from clusters of successful MouseBot welcome actions when direct window markers are
+// absent.
 function detect_windows_by_welcomes($db, $year = null) {
     try {
         $year_filter = $year ? "AND strftime('%Y', time/1000, 'unixepoch') = :year" : "";
@@ -93,6 +96,7 @@ function detect_windows_by_welcomes($db, $year = null) {
     }
 }
 
+// Infers windows from queue-related bot activity in the selected year's log records.
 function detect_windows_by_queue($db, $year = null) {
     try {
         $year_filter = $year ? "AND strftime('%Y', time/1000, 'unixepoch') = :year" : "";
@@ -125,6 +129,7 @@ function detect_windows_by_queue($db, $year = null) {
     }
 }
 
+// Infers windows from interview bot messages rather than requiring explicit open/close events.
 function detect_windows_by_interviews($db, $year = null) {
     try {
         $year_filter = $year ? "AND strftime('%Y', time/1000, 'unixepoch') = :year" : "";
@@ -156,6 +161,7 @@ function detect_windows_by_interviews($db, $year = null) {
     }
 }
 
+// Uses channel-activity patterns as a fallback signal for possible invitation windows.
 function detect_windows_by_activity($db, $year = null) {
     try {
         $year_filter = $year ? "AND strftime('%Y', time/1000, 'unixepoch') = :year" : "";
@@ -186,6 +192,7 @@ function detect_windows_by_activity($db, $year = null) {
     }
 }
 
+// Combines windows inferred by the available detection methods and reconciles overlapping candidates.
 function detect_windows_auto($db, $year = null) {
     $all_windows = [];
 

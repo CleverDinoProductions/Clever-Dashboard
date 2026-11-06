@@ -4,6 +4,8 @@ require_once __DIR__ . '/table-view.php';
 require_once __DIR__ . '/grouped-navigation.php';
 
 if (!function_exists('build_tab_url')) {
+    // Builds a dashboard query string from the requested tab, optional competition/view and extra
+    // parameters.
     function build_tab_url($tab, $league = null, $subtab = null, array $extraParams = [])
     {
         $params = ['tab' => $tab];

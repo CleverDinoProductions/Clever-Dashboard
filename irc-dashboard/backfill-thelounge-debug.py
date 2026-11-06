@@ -159,6 +159,7 @@ def process_log_file(db, log_file, channel_name, network_uuid):
     return count
 
 
+# Checks log/database locations and runs the diagnostic The Lounge backfill with import progress output.
 def main():
     # Check if database exists
     if not os.path.exists(DB_PATH):

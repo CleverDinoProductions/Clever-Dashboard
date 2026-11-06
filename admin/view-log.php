@@ -52,6 +52,8 @@ if (isset($_GET['ajax'])) {
 <script>
     const terminal = document.getElementById('log-terminal');
 
+    // Fetches the log endpoint and replaces the displayed entries so polling can refresh without a full
+    // page reload.
     function updateLog() {
         // Fetch just the log output using our AJAX flag
         fetch('view-log.php?ajax=1')

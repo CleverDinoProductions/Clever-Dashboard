@@ -2,6 +2,7 @@
 /** Normalizes provider data and synchronizes Nations League fixtures and standings. */
 require_once __DIR__ . '/nations-league.php';
 
+// Maps provider country-name variants to the canonical names used in the edition's group draw.
 function football_stats_nations_team(string $name): string
 {
     $name = trim($name);
@@ -14,6 +15,8 @@ function football_stats_nations_team(string $name): string
     ][$name] ?? $name;
 }
 
+// Loads bundled group membership once and returns the selected edition, or an empty map for unknown
+// editions.
 function football_stats_nations_groups(string $edition): array
 {
     static $groups;
@@ -32,6 +35,8 @@ function football_stats_sportsdb_request(string $key, string $endpoint, array $p
     return is_array($data) ? $data : null;
 }
 
+// Accepts only nonnegative integer-like scores; missing or malformed provider values become null rather
+// than zero.
 function football_stats_nations_score($value): ?int
 {
     return is_scalar($value) && preg_match('/^\d+$/', (string)$value) ? (int)$value : null;
@@ -95,6 +100,8 @@ function football_stats_nations_event(array $event, string $edition, array $grou
     ];
 }
 
+// Accumulates results only for finished, scored fixtures between the supplied teams, including away-
+// goal/win tie-break metrics.
 function football_stats_nations_totals(array $teams, array $matches): array
 {
     $stats = [];
@@ -143,6 +150,8 @@ function football_stats_nations_order(array $teams, array $matches, array $total
     return $teams;
 }
 
+// Normalizes one edition's provider events and persists its matches and rebuilt standings; rejects
+// unsupported editions.
 function football_stats_nations_import(PDO $db, string $edition, array $events): array
 {
     $groups = football_stats_nations_groups($edition);
@@ -192,6 +201,8 @@ function football_stats_nations_import(PDO $db, string $edition, array $events):
     return ['matches'=>count($normalized), 'skipped'=>$skipped];
 }
 
+// Fetches and imports selected editions; an injected request callback allows provider responses to be
+// supplied by offline tests.
 function football_stats_sync_nations_league(PDO $db, string $key, array $editions, ?callable $request = null): array
 {
     $request ??= 'football_stats_sportsdb_request';

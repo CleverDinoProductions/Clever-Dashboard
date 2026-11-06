@@ -6,6 +6,7 @@ function football_stats_nations_league_editions(): array
     return ['2026-2027'=>'2026/27', '2024-2025'=>'2024/25', '2022-2023'=>'2022/23', '2020-2021'=>'2020/21', '2018-2019'=>'2018/19'];
 }
 
+// Returns the views available for the selected Nations League edition and league.
 function football_stats_nations_league_tabs(string $edition, string $league): array
 {
     $tabs = [
@@ -20,6 +21,7 @@ function football_stats_nations_league_tabs(string $edition, string $league): ar
     return $tabs;
 }
 
+// Normalizes requested edition, league and subtab values against the supported tournament routes.
 function football_stats_nations_league_route(array $query): array
 {
     $editions = football_stats_nations_league_editions();
@@ -30,6 +32,7 @@ function football_stats_nations_league_route(array $query): array
     return ['tournament'=>$edition, 'league'=>$league, 'subtab'=>$view];
 }
 
+// Emits tournament-specific navigation links for the selected edition and league.
 function football_stats_render_nations_league_navigation(string $edition, string $league, string $view): void
 {
     $h = static fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');

@@ -1,5 +1,6 @@
 <?php
 /** Builds grouped navigation and its catalog of routes for the active football context. */
+// Groups tab keys by feature so related views appear together in the navigation menu.
 function football_stats_navigation_function(string $key): string
 {
     if (str_starts_with($key,'blocks-')) return 'Season Blocks';
@@ -8,6 +9,8 @@ function football_stats_navigation_function(string $key): string
     if (in_array($key,['simulation','whatifs','predictions'],true)) return 'Simulations & Predictions';
     return 'Tables & Results';
 }
+// Assigns a competition route to its league-family and tier label, consulting the regional catalog when
+// needed.
 function football_stats_navigation_league_group(string $key): string
 {
     require_once dirname(__DIR__, 2) . '/lib/english-pyramid.php';
@@ -21,6 +24,8 @@ function football_stats_navigation_league_group(string $key): string
         default=>'Other competitions',
     };
 }
+// Emits grouped links plus a JSON route catalog; carries table/tracker state only to views that support
+// it.
 function football_stats_render_grouped_navigation(array $configs,array $worldTabs,string $season,?string $league,string $activeTab,array $tableParams,array $trackerParams,string $storageScope): void
 {
     $h=static fn($v)=>htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');

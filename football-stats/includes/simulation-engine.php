@@ -2,6 +2,8 @@
 /** Runs stochastic fixture simulations and aggregates possible league outcomes. */
 
 if (!function_exists('sim_poisson_random')) {
+    // Samples a goal count with Knuth's Poisson algorithm; nonpositive rates return zero and rates above
+    // 20 use the rounded mean.
     function sim_poisson_random($lambda) {
         if ($lambda <= 0) return 0;
         if ($lambda > 20) return (int) round($lambda);
@@ -17,6 +19,8 @@ if (!function_exists('sim_poisson_random')) {
 }
 
 if (!function_exists('sim_get_all_matches')) {
+    // Loads the competition/season fixture list, including scored and unplayed matches needed to seed
+    // and continue a simulation.
     function sim_get_all_matches(PDO $db, $comp_code, $season_label) {
         $stmt = $db->prepare(
             'SELECT id, matchweek, match_date, home_team, away_team, home_goals, away_goals
@@ -30,6 +34,8 @@ if (!function_exists('sim_get_all_matches')) {
 }
 
 if (!function_exists('sim_build_standings_and_stats')) {
+    // Treats scored fixtures before the starting matchweek as completed; week zero starts with no
+    // completed results.
     function sim_build_standings_and_stats(array $all_matches, $sim_from_mw) {
         return sim_build_standings_and_stats_impl($all_matches, function ($m) use ($sim_from_mw) {
             // sim_from_mw=0 (Pre-Season) → no matches are pre-completed
@@ -40,6 +46,8 @@ if (!function_exists('sim_build_standings_and_stats')) {
 }
 
 if (!function_exists('sim_build_standings_and_stats_by_date')) {
+    // Seeds results strictly before the selected date so fixtures on that date remain available for
+    // simulation.
     function sim_build_standings_and_stats_by_date(array $all_matches, $sim_from_date) {
         return sim_build_standings_and_stats_impl($all_matches, function ($m) use ($sim_from_date) {
             if (empty($m['match_date'])) return false;
@@ -49,6 +57,8 @@ if (!function_exists('sim_build_standings_and_stats_by_date')) {
 }
 
 if (!function_exists('sim_build_standings_and_stats_impl')) {
+    // Partitions fixtures through the supplied completion predicate and derives starting standings and
+    // league goal averages.
     function sim_build_standings_and_stats_impl(array $all_matches, callable $is_completed) {
         $standings = [];
         $home_goals_total = 0;

@@ -73,6 +73,7 @@ function po_score($m) {
     return [(int)$m['home_goals'], (int)$m['away_goals']];
 }
 
+// Combines the legs of a playoff tie to derive the aggregate result used by the bracket.
 function po_aggregate($pair) {
     $ag = ['team_a' => 0, 'team_b' => 0, 'legs_played' => 0];
     foreach ($pair['active_legs'] as $leg) {

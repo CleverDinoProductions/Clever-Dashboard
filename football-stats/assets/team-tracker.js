@@ -1,6 +1,8 @@
 /* Validates win/draw/loss scenarios and updates tracker calculators; exports the calculation for Node tests. */
 (function () {
     'use strict';
+    // Returns added/total points and unused games for a valid W/D/L scenario, or null for impossible or
+    // noninteger inputs.
     function calculate(points, remaining, wins, draws, losses, scoring) {
         const values = [wins, draws, losses];
         if (!values.every(value => Number.isInteger(value) && value >= 0) || wins + draws + losses > remaining) return null;

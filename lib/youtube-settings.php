@@ -1,11 +1,13 @@
 <?php
 /** Shared channel configuration, fetch settings and validation used by the admin panel and importer. */
 
+// Returns the channel JSON path relative to the repository rather than the process working directory.
 function clever_youtube_channels_path(): string
 {
     return dirname(__DIR__) . '/youtube-dashboard/channels.json';
 }
 
+// Decodes the configured name-to-channel-ID map; unreadable files and malformed JSON raise errors.
 function clever_youtube_channels(): array
 {
     $json = @file_get_contents(clever_youtube_channels_path());
@@ -15,6 +17,8 @@ function clever_youtube_channels(): array
     return $channels;
 }
 
+// Validates unique name | ID lines, then atomically replaces the JSON file through a temporary file in
+// the same directory.
 function clever_save_youtube_channels($text): void
 {
     if (!is_string($text)) throw new RuntimeException('Enter one channel per line.');
@@ -52,6 +56,8 @@ function clever_youtube_fetch_settings(): array
     return clever_validate_youtube_fetch_settings($settings);
 }
 
+// Returns only a valid inclusive UTC date range in YYYY-MM-DD form; reversed or nonexistent dates raise
+// errors.
 function clever_validate_youtube_fetch_settings($settings): array
 {
     foreach (['start_date', 'end_date'] as $key) {
@@ -64,6 +70,8 @@ function clever_validate_youtube_fetch_settings($settings): array
     return ['start_date' => $settings['start_date'], 'end_date' => $settings['end_date']];
 }
 
+// Validates the date range and atomically replaces the private settings JSON, cleaning up temporary
+// files on failure.
 function clever_save_youtube_fetch_settings(array $input): void
 {
     $settings = clever_validate_youtube_fetch_settings($input);

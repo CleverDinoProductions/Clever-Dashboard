@@ -6,8 +6,13 @@ const catalog=JSON.parse(root.querySelector('[data-nav-catalog]').textContent);
 const storageKey='football-navigation-v1:'+root.dataset.storageScope;
 let state={pins:[],groups:{}};
 try{const saved=JSON.parse(localStorage.getItem(storageKey));if(saved&&typeof saved==='object'){state.pins=Array.isArray(saved.pins)?Array.from(new Set(saved.pins.filter(id=>typeof id==='string'))).slice(0,100):[];state.groups=saved.groups&&typeof saved.groups==='object'&&!Array.isArray(saved.groups)?saved.groups:{};}}catch(e){}
+// Persists navigation state in localStorage; a storage failure leaves page-local pins usable and
+// announces the limitation.
 function save(){try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(e){root.querySelector('[data-nav-status]').textContent='Pins work for this page; browser storage is unavailable.';}}
+// Creates the pin toggle carrying the catalog entry ID for delegated event handling.
 function pinButton(id){const button=document.createElement('button');button.type='button';button.dataset.navPin=id;return button;}
+// Rebuilds pinned navigation links from the catalog and synchronizes toggle state with the current pin
+// list.
 function render(){
  const favorites=root.querySelector('[data-nav-favorites]');favorites.replaceChildren();
  state.pins.forEach(id=>{const entry=catalog[id];if(!entry)return;const wrapper=document.createElement('span');wrapper.className='navigation-tab';const link=document.createElement('a');link.href=entry.url;link.className='pill-tab'+(entry.active?' active':'');if(entry.active)link.setAttribute('aria-current','page');link.textContent=entry.context+' · '+entry.label;wrapper.append(link,pinButton(id));favorites.append(wrapper);});

@@ -4,6 +4,7 @@
 require_once __DIR__ . '/table-view.php';
 require_once __DIR__ . '/matches-result-filters.php';
 
+// Provides the labels for named team presets and their complements in fixture-filter controls.
 function football_stats_match_group_labels(): array
 {
     return [
@@ -16,6 +17,8 @@ function football_stats_match_group_labels(): array
     ];
 }
 
+// Canonicalizes common aliases and trailing club suffixes so provider names match configured team
+// groups.
 function football_stats_normalize_group_team(string $name): string
 {
     $name = strtolower(trim($name));
@@ -79,6 +82,7 @@ function football_stats_match_group_context(PDO $db, string $competition, string
     return ['roster'=>$roster, 'weeks'=>$weeks, 'season'=>$season, 'groups' => $groups, 'group' => $group, 'opponent_group' => $opponent, 'side' => $side, 'has_standings' => $hasStandings, 'basis' => $basis, 'matchweek' => $week, 'snapshot_source' => $snapshotSource];
 }
 
+// Uses explicit result filters when active; otherwise applies the requested team-group membership rules.
 function football_stats_filter_matches_by_team_group(array $matches, array $context): array
 {
     $resultFilter = football_stats_matches_result_filter_request($_GET);
@@ -108,6 +112,8 @@ function football_stats_filter_matches_by_team_group(array $matches, array $cont
     }));
 }
 
+// Renders modern result controls when roster context is available, falling back to the legacy preset
+// selector.
 function football_stats_render_match_team_filters(array $context, $tab, $league, $subtab): void
 {
     if (isset($context['roster'])) { football_stats_render_matches_result_filters($context, $tab, $league, $subtab); return; }

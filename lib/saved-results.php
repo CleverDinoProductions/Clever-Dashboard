@@ -2,11 +2,14 @@
 /** Per-account storage and validation for named football result scenarios and their URL state. */
 require_once __DIR__ . '/auth.php';
 
+// Lists the query-state fields allowed in a saved scenario so unrelated request parameters are not
+// persisted.
 function clever_result_keys(): array
 {
     return ['calc_mode', 'snapshot_season', 'excluded_matches', 'excluded_results', 'outcome_overrides', 'custom_points_deductions', 'custom_win_points', 'custom_draw_points', 'custom_loss_points'];
 }
 
+// Keeps only allowed string fields and rejects serialized state exceeding 100 KB.
 function clever_result_state(array $params): array
 {
     $state = [];
@@ -17,6 +20,7 @@ function clever_result_state(array $params): array
     return $state;
 }
 
+// Returns the shared accounts connection after ensuring the per-user scenario table exists.
 function clever_results_db(): PDO
 {
     $db = clever_accounts_db();
@@ -29,6 +33,7 @@ function clever_results_db(): PDO
     return $db;
 }
 
+// Lists only this account's saved scenarios, newest first; state remains JSON in each returned row.
 function clever_saved_results(int $userId): array
 {
     $stmt = clever_results_db()->prepare('SELECT * FROM user_saved_results WHERE user_id = ? ORDER BY id DESC');
@@ -36,6 +41,8 @@ function clever_saved_results(int $userId): array
     return $stmt->fetchAll();
 }
 
+// Validates name and league/season, requires outcome overrides and inserts a custom_matches scenario,
+// returning its ID.
 function clever_save_results(int $userId, string $name, string $season, string $league, array $params): int
 {
     $name = trim($name);
@@ -50,18 +57,22 @@ function clever_save_results(int $userId, string $name, string $season, string $
     return (int)$db->lastInsertId();
 }
 
+// Deletes a scenario only when both its ID and owner match; another account's save is unaffected.
 function clever_delete_results(int $userId, int $id): void
 {
     $stmt = clever_results_db()->prepare('DELETE FROM user_saved_results WHERE id = ? AND user_id = ?');
     $stmt->execute([$id, $userId]);
 }
 
+// Requires matching owner, league and season, then replaces scenario fields while preserving unrelated
+// query parameters.
 function clever_load_results(int $userId, int $id, string $season, string $league, array $params): array
 {
     $stmt = clever_results_db()->prepare('SELECT * FROM user_saved_results WHERE id = ? AND user_id = ? AND season = ? AND league = ?');
     $stmt->execute([$id, $userId, $season, $league]);
     $save = $stmt->fetch();
     if (!$save) throw new InvalidArgumentException('That save is unavailable for this account, league and season.');
+    // Clear the current scenario before merging so absent saved fields cannot inherit stale overrides.
     foreach (clever_result_keys() as $key) unset($params[$key]);
     return array_merge($params, clever_result_state(json_decode($save['state'], true, 512, JSON_THROW_ON_ERROR)));
 }

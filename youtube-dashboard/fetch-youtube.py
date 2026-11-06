@@ -99,6 +99,7 @@ def fetch_channel(channel_name, channel_id, db):
         print(f"   ❌ {e}")
         return 0
 
+# Opens the cache, imports each configured channel and prints the legacy RSS import summary.
 def main():
     print("=" * 70)
     print("🎬 YouTube RSS Dashboard - Fetcher")

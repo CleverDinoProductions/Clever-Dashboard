@@ -15,6 +15,7 @@ LEAGUES = {
 
 SEASON = "2025-2026"
 
+# Downloads one league's season table and upserts team rows in the corresponding local SQLite table.
 def update_league_table(league_id, league_name):
     print(f"Fetching data for {league_name} ({league_id})...")
     
