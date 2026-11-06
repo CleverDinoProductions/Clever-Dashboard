@@ -1,4 +1,5 @@
 <?php
+/** Prints the configured football database schema and sample standings for diagnosis. */
 require_once 'config.php';
 
 echo "<h2>Database Schema Check</h2>";

@@ -1,4 +1,5 @@
 <?php
+/** world-cup: Renders the overall World Cup standings ordered by points and goal statistics. */
 // Fetch overall World Cup standings
 $stmt = $world_cup_db->query("SELECT * FROM wc_standings ORDER BY points DESC, gd DESC, gf DESC LIMIT 48");
 $standings = $stmt->fetchAll(PDO::FETCH_ASSOC);

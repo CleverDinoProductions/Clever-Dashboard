@@ -1,4 +1,5 @@
 <?php
+/** Calculates comparison-table forecasts at full precision, leaving rounding to the presentation layer. */
 
 /** Keep full precision for forecasts; round only the displayed result. */
 function football_stats_table2_metrics(array $team, int $totalGames, array $scoring, array $targets): array

@@ -1,4 +1,5 @@
 <?php
+/** Imports multi-network IRC text logs into SQLite, parsing message and join events. */
 // Text log → SQLite importer (multi-network, with proper JOIN parsing)
 
 $dbpath = 'E:\\thelounge\\logs\\DinoDude.sqlite3';

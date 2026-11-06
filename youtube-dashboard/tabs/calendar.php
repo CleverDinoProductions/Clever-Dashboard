@@ -1,4 +1,5 @@
 <?php
+/** Renders daily upload counts for a validated UTC month. */
 $month = dashboard_input('month');
 if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) || substr($month, 0, 4) < '0002' || substr($month, 0, 4) > '9998') $month = gmdate('Y-m');
 $start = new DateTimeImmutable($month . '-01', new DateTimeZone('UTC'));

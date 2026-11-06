@@ -1,4 +1,5 @@
 <?php
+/** Counts title-derived labels and lists matching cached uploads. */
 require_once __DIR__ . '/../includes/tags.php';
 $locations = [];
 $locationRows = query('SELECT DISTINCT detected_location FROM videos WHERE detected_location IS NOT NULL');

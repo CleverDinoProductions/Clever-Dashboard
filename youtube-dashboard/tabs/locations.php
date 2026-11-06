@@ -1,4 +1,5 @@
 <?php
+/** Groups cached uploads by the location inferred during import. */
 $location_stats = query("
     SELECT 
         detected_location,

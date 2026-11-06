@@ -1,4 +1,5 @@
 <?php
+/** Derives searchable labels from titles and locations; these are not creator-supplied metadata tags. */
 // Derived labels only: RSS does not expose the creator's YouTube metadata tags.
 function dashboard_tags($title, $locations = []) {
     preg_match_all('/(?<![\p{L}\p{N}_])#([\p{L}\p{N}_]+)/u', $title, $matches);

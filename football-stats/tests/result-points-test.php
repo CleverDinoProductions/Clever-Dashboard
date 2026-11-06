@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for result points; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/table-view.php';
 
 function points_assert($expected, $actual, string $message): void {

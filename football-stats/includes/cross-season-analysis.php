@@ -1,4 +1,5 @@
 <?php
+/** Reconstructs standings before fixtures to compare team results across seasons without using future results. */
 require_once __DIR__ . '/matches-team-filters.php';
 
 /** Reconstruct pre-fixture standings in play-date order, never using the target result. */

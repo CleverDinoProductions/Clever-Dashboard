@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Renders the race for automatic promotion places. */
 /**
  * Promotion Race - Top 2 Teams
  */

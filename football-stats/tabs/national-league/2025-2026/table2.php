@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Loads the selected standings and renders extended comparison metrics. */
 require_once dirname(__DIR__, 3) . '/includes/table-view.php';
 
 $tableView = football_stats_get_table_view_combined($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');

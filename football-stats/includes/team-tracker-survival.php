@@ -1,4 +1,5 @@
 <?php
+/** Renders traditional survival benchmarks and danger indicators from prepared tracker data. */
 $legacyPoints = (int)$team['points'];
 $legacyHalfPercent = $legacyPoints / max(1, $halfwayTarget) * 100;
 $legacyBand = $legacyPoints >= $full_season_safety_target ? '95%+' : ($legacyHalfPercent >= 100 ? '95%+' : ($legacyHalfPercent >= 75 ? '85–90%' : ($legacyHalfPercent >= 50 ? '60–70%' : '40% or less')));

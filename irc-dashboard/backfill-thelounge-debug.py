@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Diagnostic The Lounge log backfill script with additional import troubleshooting output.
 import sqlite3
 import json
 import os

@@ -1,3 +1,4 @@
+/* Applies the shared football palette to YouTube dashboard components. */
 /* Football palette applied to every YouTube view, including legacy cards. */
 body { padding: 0; }
 .container { max-width: 1400px; padding: 30px 20px; }

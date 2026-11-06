@@ -1,4 +1,5 @@
 <?php
+/** Opens the configured SQLite cache and exposes query helpers for YouTube views. */
 // Database connection
 require_once __DIR__ . '/../config.php';
 

@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for admin youtube; assertions fail the process when behavior changes. */
 require_once dirname(__DIR__) . '/lib/youtube-settings.php';
 function clever_csrf_token(): string { return 'test-csrf'; }
 $isAccountAdmin = true;

@@ -1,4 +1,5 @@
 <?php
+/** premier-league/2025-2026: Renders an overview of the position-block analysis for the selected standings. */
 /**
  * Blocks Overview - Premier League Blocks of 4 Framework
  * Comprehensive overview showing all 5 blocks with live data

@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for saved results; assertions fail the process when behavior changes. */
 $path = sys_get_temp_dir() . '/clever-results-' . bin2hex(random_bytes(8)) . '.sqlite3';
 putenv('CLEVER_ACCOUNTS_DB=' . $path);
 require_once __DIR__ . '/../lib/saved-results.php';

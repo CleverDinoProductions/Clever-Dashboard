@@ -1,3 +1,4 @@
+/* Standalone regression checks for grouped navigation; assertions fail the process when behavior changes. */
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync(__dirname+'/../assets/grouped-navigation.js','utf8');
 const saved=new Map();

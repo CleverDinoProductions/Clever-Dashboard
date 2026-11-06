@@ -1,3 +1,4 @@
+/* Handles bulk club selection and updates the mini-league selection count. */
 (() => {
     const panel = document.querySelector('.own-table');
     if (!panel) return;

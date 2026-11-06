@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for database config; assertions fail the process when behavior changes. */
 
 declare(strict_types=1);
 

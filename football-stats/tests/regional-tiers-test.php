@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for regional tiers; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/table-view.php';
 require_once __DIR__ . '/../includes/grouped-navigation.php';
 require_once __DIR__ . '/../includes/simulation-config.php';

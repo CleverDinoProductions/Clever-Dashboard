@@ -1,4 +1,5 @@
 <?php
+/** league-one/2025-2026: Supplies competition context to the shared team-tracker implementation. */
 // Competition context; all tracker panels share one implementation.
 $trackerCode = 'L1';
 $trackerTable = 'league_table_L1';

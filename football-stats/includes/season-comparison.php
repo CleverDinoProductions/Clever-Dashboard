@@ -1,4 +1,5 @@
 <?php
+/** Shared side-by-side season comparison; the including tab supplies competition metadata. */
 /**
  * Shared, side-by-side season comparison used by every English league.
  *

@@ -1,4 +1,5 @@
 <?php
+/** Shared standings queries and calculations for snapshots, date filters, custom results and movement. */
 require_once dirname(__DIR__, 2) . '/lib/football-settings.php';
 
 if (!function_exists('football_stats_format_kickoff')) {

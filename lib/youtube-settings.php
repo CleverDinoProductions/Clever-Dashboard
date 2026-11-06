@@ -1,4 +1,5 @@
 <?php
+/** Shared channel configuration, fetch settings and validation used by the admin panel and importer. */
 
 function clever_youtube_channels_path(): string
 {

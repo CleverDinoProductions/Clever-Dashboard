@@ -149,3 +149,24 @@ Python importers contact third-party services and may require credentials and ne
 - Treat database files and imported logs as private operational data.
 - Keep the IRC dashboard connection read-only; review rendered nicknames and message details before exposing log-derived pages.
 - Protect `/admin/`, debug utilities, importers, and setup scripts at the web-server level.
+
+## Reading the source
+
+Source-file header comments explain each entry point, shared helper, view, asset,
+and regression script. Football tabs under a league/season directory provide
+competition context; reusable calculations and rendering live in
+`football-stats/includes/`. PHP include templates depend on variables prepared by
+the router or their including view.
+
+Files that cannot contain code comments are described here:
+
+- `youtube-dashboard/channels.json` maps monitored channel names to YouTube IDs.
+- `football-stats/tabs/nations-league/groups.json` contains edition/group membership data.
+- Bundled `.db` and `.sqlite3` files contain SQLite data, rather than application source.
+- `screenshot/` contains visual reference images; its README describes them.
+- `*:Zone.Identifier` metadata records downloaded-file provenance and is not executable code.
+- Markdown guides explain their own directories and workflows; follow the Documentation links above.
+
+Keep JSON files valid JSON: add explanations to the relevant guide rather than
+inserting unsupported comments into data. Database and image files likewise
+retain their original binary contents.

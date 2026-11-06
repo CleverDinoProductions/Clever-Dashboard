@@ -1,4 +1,5 @@
 <?php
+/** Applies selected clubs and configured team groups to fixture-list queries. */
 /** Team-group filtering for league match lists. */
 require_once __DIR__ . '/table-view.php';
 require_once __DIR__ . '/matches-result-filters.php';

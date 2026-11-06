@@ -1,4 +1,5 @@
 <?php
+/** Prints the YouTube cache schema and database diagnostics using the shared configuration. */
 // Check YouTube Dashboard Database
 require_once 'config.php';
 

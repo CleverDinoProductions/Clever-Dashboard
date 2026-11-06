@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for dashboard; assertions fail the process when behavior changes. */
 // Offline fixture coverage: php youtube-dashboard/tests/dashboard-test.php [channel-id]
 date_default_timezone_set('UTC');
 define('CRITICAL_GAP_DAYS', 14);

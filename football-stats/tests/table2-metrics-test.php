@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for table2 metrics; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/table2-metrics.php';
 
 function assert_table2($expected, $actual, string $message): void

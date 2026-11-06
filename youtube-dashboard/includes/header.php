@@ -1,4 +1,5 @@
 <?php
+/** Opens the youtube-dashboard page shell and renders navigation using the active request context. */
 $navigation = ['timeline' => 'Upload timeline', 'channels' => 'Channels', 'analytics' => 'Analytics', 'gaps' => 'Upload gaps', 'locations' => 'Locations', 'frequency' => 'Frequency', 'trends' => 'Trends', 'tags' => 'Tags', 'calendar' => 'Upload calendar', 'health' => 'Feed health', 'search' => 'Search videos'];
 $lastChecked = getValue("SELECT MIN(last_checked) FROM dashboard_channels");
 $checkedTimestamp = $lastChecked ? strtotime($lastChecked . (preg_match('/(?:Z|[+-]\d{2}:\d{2})$/', $lastChecked) ? '' : ' UTC')) : false;

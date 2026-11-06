@@ -1,4 +1,5 @@
 <?php
+/** nations-league: Shared Nations League view using the selected edition, league and subtab. */
 $h = static fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 $editionLabel = football_stats_nations_league_editions()[$currentTournament];
 $viewLabel = football_stats_nations_league_tabs($currentTournament, $currentLeague)[$currentSubTab]['label'];

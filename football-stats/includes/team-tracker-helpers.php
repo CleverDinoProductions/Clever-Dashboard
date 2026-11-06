@@ -1,4 +1,5 @@
 <?php
+/** Shared team presentation and scenario helpers for the tracker views. */
 
 if (!function_exists('football_stats_get_team_colors')) {
     function football_stats_get_team_colors($teamName) {

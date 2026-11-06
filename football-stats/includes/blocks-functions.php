@@ -1,4 +1,5 @@
 <?php
+/** Shared data queries and calculations supporting the league block-analysis views. */
 /**
  * Blocks of 4 Analysis - Shared Functions
  * Real-time insights and dynamic data processing

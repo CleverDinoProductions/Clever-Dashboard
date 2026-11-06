@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Parses historical ZNC text logs and backfills events into the configured SQLite log database.
 import sqlite3
 import json
 import os

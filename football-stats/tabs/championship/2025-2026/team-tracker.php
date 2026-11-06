@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Supplies competition context to the shared team-tracker implementation. */
 // Competition context; all tracker panels share one implementation.
 $trackerCode = 'ELC';
 $trackerTable = 'league_table_ELC';

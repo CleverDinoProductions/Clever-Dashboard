@@ -1,4 +1,5 @@
 <?php
+/** Runs stochastic fixture simulations and aggregates possible league outcomes. */
 
 if (!function_exists('sim_poisson_random')) {
     function sim_poisson_random($lambda) {

@@ -1,4 +1,5 @@
 <?php
+/** Prints selected raw IRC log lines to diagnose timestamp and message formatting. */
 $network_uuid = 'myanonamouse--4914-9827-2b9e97529b74';
 $log_file = "E:\\thelounge\\logs\\DinoDude\\{$network_uuid}\\#an-q.log";
 

@@ -1,4 +1,5 @@
 <?php
+/** Backfill MW0 (pre-season blank snapshot) for every season that is missing one. Teams are derived from the earliest non-zero matchweek snapshot for that season. */
 // Backfill MW0 (pre-season blank snapshot) for every season that is missing one.
 // Teams are derived from the earliest non-zero matchweek snapshot for that season.
 // Badges are taken from the team's earliest available snapshot row.

@@ -1,4 +1,5 @@
 <?php
+/** Aggregates cached uploads and gap statistics by month. */
 $monthly_trends = query("
     SELECT 
         strftime('%Y-%m', published_date) as month,

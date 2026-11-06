@@ -1,4 +1,5 @@
 <?php
+/** Shared queue-event classification and metrics used by IRC interview and window reports. */
 // ============================================================================
 // SHARED QUEUE ANALYTICS - Exit Classification & Metrics
 // ============================================================================

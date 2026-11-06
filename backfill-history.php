@@ -1,4 +1,5 @@
 <?php
+/** Rebuilds monthly IRC activity summaries from the configured historical log database. */
 $dbpath = 'E:\\thelounge\\logs\\DinoDude.sqlite3';
 $db = new PDO("sqlite:$dbpath");
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

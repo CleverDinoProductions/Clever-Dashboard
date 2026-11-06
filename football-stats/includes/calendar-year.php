@@ -1,4 +1,5 @@
 <?php
+/** Aggregates completed fixtures by actual calendar date using each season's scoring rules. */
 require_once __DIR__ . '/own-table.php';
 
 /** Aggregate actual play dates across seasons, with each season's scoring rules. */

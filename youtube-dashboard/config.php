@@ -1,4 +1,5 @@
 <?php
+/** Shared YouTube database path, display thresholds, timezone and channel configuration. */
 // YouTube Dashboard Configuration
 
 // Database settings

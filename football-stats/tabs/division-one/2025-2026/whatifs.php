@@ -1,4 +1,5 @@
 <?php
+/** division-one/2025-2026: Recalculates standings for hypothetical results and displays their effect on positions. */
 require_once __DIR__ . '/../../../includes/table-view.php';
 
 $tableView = football_stats_get_table_view($db, 'D1', 'league_table_D1', $currentMainTab ?? '2025-2026');

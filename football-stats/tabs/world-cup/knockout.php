@@ -1,4 +1,5 @@
 <?php
+/** world-cup: Builds and renders the World Cup knockout bracket. */
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 date_default_timezone_set('UTC');

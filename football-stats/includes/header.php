@@ -1,4 +1,5 @@
 <?php
+/** Opens the football-stats page shell and renders navigation using the active request context. */
 require_once __DIR__ . '/table-view.php';
 require_once __DIR__ . '/grouped-navigation.php';
 

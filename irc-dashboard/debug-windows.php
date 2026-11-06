@@ -1,4 +1,5 @@
 <?php
+/** Steps through database, request-filter and queue-window queries with diagnostic output. */
 /**
  * DEBUG VERSION - Find the exact error
  */

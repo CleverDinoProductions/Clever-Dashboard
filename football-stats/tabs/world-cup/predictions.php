@@ -1,4 +1,5 @@
 <?php
+/** world-cup: Uses current World Cup group data to display projected tournament outcomes. */
 // Fetch current group data with rankings
 $groups = $world_cup_db->query("
     SELECT group_name, team_name, position, points, gf, ga, gd, played

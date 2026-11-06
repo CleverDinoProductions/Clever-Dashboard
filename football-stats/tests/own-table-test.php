@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for own table; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/own-table.php';
 function own_check($condition, $message) { if (!$condition) throw new RuntimeException($message); }
 function fixture($home, $away, $hg, $ag, $date) { return ['home_team'=>$home,'away_team'=>$away,'home_goals'=>$hg,'away_goals'=>$ag,'match_date'=>$date]; }

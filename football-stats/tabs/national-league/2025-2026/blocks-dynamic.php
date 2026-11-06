@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Renders block analysis with points-per-game projections. */
 /**
  * Dynamic Blocks - Live Predictions & Projections
  * Real-time analysis with PPG-based season projections

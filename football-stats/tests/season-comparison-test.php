@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for season comparison; assertions fail the process when behavior changes. */
 
 function assert_contains($needle, $haystack, $message)
 {

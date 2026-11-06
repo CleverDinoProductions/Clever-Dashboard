@@ -1,4 +1,5 @@
 <?php
+/** division-one/2025-2026: Renders position block 2 and its team analysis for the selected standings. */
 /**
  * Block 2: European Contenders (Positions 5-7)
  * Europa League & Conference League qualification zone

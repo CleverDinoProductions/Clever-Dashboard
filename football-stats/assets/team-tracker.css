@@ -1,3 +1,4 @@
+/* Styles tracker panels, progress indicators, scenario controls and responsive layout. */
 .team-tracker { color:#f4f6fb; }
 .team-tracker .panel { background:#292f3b; border:1px solid #505b70; border-radius:12px; }
 .team-tracker h1,.team-tracker h2,.team-tracker h3 { color:#fff; }

@@ -1,4 +1,5 @@
 <?php
+/** Builds grouped navigation and its catalog of routes for the active football context. */
 function football_stats_navigation_function(string $key): string
 {
     if (str_starts_with($key,'blocks-')) return 'Season Blocks';

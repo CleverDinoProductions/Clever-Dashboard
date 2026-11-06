@@ -1,4 +1,5 @@
 <?php
+/** Authenticated POST endpoint that refreshes the selected Nations League edition and returns JSON status. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once __DIR__ . '/includes/nations-league.php';
 header('Content-Type: application/json');

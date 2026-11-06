@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for matches result filters; assertions fail the process when behavior changes. */
 require_once __DIR__.'/../includes/matches-team-filters.php';
 function check_result_filter($expected,$actual,$message){if($expected!==$actual)throw new RuntimeException($message.' '.var_export($actual,true));}
 $matches=[

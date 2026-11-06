@@ -1,4 +1,4 @@
-<style>
+<?php /* Inline styling for team labels, tooltips and league-table presentation. */ ?><style>
 .team-name { position: relative; cursor: help; display: inline-block; transition: color 0.2s ease; }
 .team-name:hover { color: #FFCD00; }
 .team-official { color: #dcddde; }

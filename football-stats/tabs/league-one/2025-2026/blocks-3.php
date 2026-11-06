@@ -1,4 +1,5 @@
 <?php
+/** league-one/2025-2026: Renders position block 3 and its team analysis for the selected standings. */
 /**
  * Block 3: Mid-Table Security (Positions 7-17)
  * Safe and Stable Mid-Table

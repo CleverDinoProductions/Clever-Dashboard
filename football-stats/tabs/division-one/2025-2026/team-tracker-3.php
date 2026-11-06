@@ -1,4 +1,5 @@
 <?php
+/** division-one/2025-2026: Prepares selected-team standings and renders the classic tracker dashboard. */
 // TEAM CLASSIC TRACKER (Premier League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 

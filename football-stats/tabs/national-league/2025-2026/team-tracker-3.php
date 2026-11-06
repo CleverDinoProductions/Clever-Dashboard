@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Prepares selected-team standings and renders the classic tracker dashboard. */
 // TEAM CLASSIC TRACKER (National League) - Data queries
 require_once dirname(__DIR__, 3) . '/includes/team-tracker-helpers.php';
 $trackerCode = $regionalCode ?? 'NL';

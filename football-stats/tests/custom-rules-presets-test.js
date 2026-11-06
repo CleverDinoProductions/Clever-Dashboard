@@ -1,3 +1,4 @@
+/* Standalone regression checks for custom rules presets; assertions fail the process when behavior changes. */
 const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');

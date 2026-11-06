@@ -1,4 +1,6 @@
-<?php if (!in_array($currentMainTab, ['world-cup', 'nations-league'], true)):
+<?php
+/** Renders scenario save/load controls using the current account, season and league context. */
+if (!in_array($currentMainTab, ['world-cup', 'nations-league'], true)):
 $resultsEscape = static fn($value) => htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 $resultsSaves = $dashboardUser ? array_filter(clever_saved_results((int)$dashboardUser['id']), static fn($save) => $save['season'] === $currentMainTab && $save['league'] === $currentLeague) : [];
 ?>

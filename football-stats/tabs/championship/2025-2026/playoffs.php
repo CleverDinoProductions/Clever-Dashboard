@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Renders the competition playoff bracket and available results. */
 // Championship Playoffs Tab — bracket format, two-legged semi-finals + final
 
 $competitionCode = 'ELC';

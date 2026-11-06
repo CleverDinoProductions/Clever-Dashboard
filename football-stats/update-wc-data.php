@@ -1,4 +1,5 @@
 <?php
+/** Authenticated POST endpoint that starts the World Cup data refresh and returns JSON status. */
 // update-data.php: Triggers the fetch-worldfootball.php script in the background and returns status.
 require_once dirname(__DIR__) . '/lib/auth.php';
 header('Content-Type: application/json');

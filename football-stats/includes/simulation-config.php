@@ -1,4 +1,5 @@
 <?php
+/** Builds simulation inputs from the same competition and season rules used by standings. */
 require_once __DIR__ . '/table-view.php';
 
 /** Use the same Admin league/season rules as the standings tables. */

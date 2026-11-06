@@ -1,4 +1,5 @@
 <?php
+/** league-one/2025-2026: Configures the competition for the shared side-by-side season comparison. */
 $comparisonLeague = [
     'code' => 'L1',
     'name' => 'League One',

@@ -1,4 +1,5 @@
 <?php
+/** league-one/2025-2026: Queries and renders fixtures with the selected competition and result filters. */
 // League One Matches Tab
 
 require_once __DIR__ . '/../../../includes/header.php';

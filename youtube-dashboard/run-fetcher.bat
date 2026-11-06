@@ -1,4 +1,5 @@
 @echo off
+REM Runs the PHP fetcher from this directory and appends output and errors to logs\fetch.log.
 cd /d "%~dp0"
 if not exist logs mkdir logs
 php fetch-youtube.php >> logs\fetch.log 2>&1

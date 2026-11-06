@@ -1,4 +1,5 @@
 <?php
+/** Selects existing football databases and defines competition, season and tab configuration. */
 
 declare(strict_types=1);
 

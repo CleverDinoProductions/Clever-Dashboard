@@ -1,4 +1,5 @@
 <?php
+/** Shared account storage, migrations, permissions, CSRF protection and session/persistent-cookie authentication. */
 
 declare(strict_types=1);
 

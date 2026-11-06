@@ -1,4 +1,5 @@
 <?php
+/** Shared RSS/API importer with injectable fetch callbacks for offline tests; direct execution is CLI-only. */
 /** Shared YouTube RSS and API importer; direct execution is CLI-only. */
 require_once dirname(__DIR__) . '/lib/youtube-settings.php';
 

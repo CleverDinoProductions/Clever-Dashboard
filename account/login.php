@@ -1,4 +1,5 @@
 <?php
+/** Sign-in form with CSRF validation, persistent login and a validated return destination. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 clever_start_session();
 if (clever_current_user()) {

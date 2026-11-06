@@ -1,4 +1,5 @@
 <?php
+/** Signed-in account page: saves dashboard preferences and manages saved result scenarios. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 require_once dirname(__DIR__) . '/lib/saved-results.php';
 require_once dirname(__DIR__) . '/lib/english-pyramid.php';

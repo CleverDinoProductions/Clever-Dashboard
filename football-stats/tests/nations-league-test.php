@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for nations league; assertions fail the process when behavior changes. */
 require_once __DIR__.'/../includes/nations-league.php';
 function nl_check(bool $condition, string $message): void { if (!$condition) throw new RuntimeException($message); }
 function build_tab_url($tab, $league = null, $subtab = null, array $params = []): string {

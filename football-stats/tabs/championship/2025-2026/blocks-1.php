@@ -1,4 +1,5 @@
 <?php
+/** championship/2025-2026: Renders position block 1 and its team analysis for the selected standings. */
 /**
  * Block 1: Title Contenders (Positions 1-4)
  * Champions League qualification zone

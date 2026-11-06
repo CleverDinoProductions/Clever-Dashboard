@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for regional provider; assertions fail the process when behavior changes. */
 require_once dirname(__DIR__, 2) . '/lib/english-pyramid.php';
 
 function provider_check(array $league, ?string $expected): void

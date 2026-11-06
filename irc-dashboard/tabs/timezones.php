@@ -1,4 +1,5 @@
 <?php
+/** Compares activity across timezones during invitation windows. */
 // TIMEZONES TAB - Global Activity Patterns During Invite Windows
 
 $window_date = $_GET['window'] ?? null;

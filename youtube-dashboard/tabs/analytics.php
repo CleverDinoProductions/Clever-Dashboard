@@ -1,4 +1,5 @@
 <?php
+/** Summarizes cached upload counts, channel activity and gaps. */
 $total_videos = getValue("SELECT COUNT(*) FROM dashboard_videos");
 $total_channels = getValue("SELECT COUNT(*) FROM dashboard_channels");
 $avg_gap = getValue("SELECT AVG(gap_days) FROM dashboard_upload_gaps");

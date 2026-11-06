@@ -1,4 +1,4 @@
-<style>
+<?php /* Shared inline styles for scrollable standings tables, headers and explanatory guides. */ ?><style>
 .standings-hint, .standings-guide { color: #c5cbd5; font-size: .875rem; line-height: 1.6; }
 .standings-scroll { max-height: 72vh; overflow: auto; border: 1px solid #525b6b; border-radius: 10px; isolation: isolate; }
 .standings-scroll:focus-visible, .standings-guide summary:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }

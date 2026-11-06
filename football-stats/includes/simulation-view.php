@@ -1,4 +1,5 @@
 <?php
+/** Shared simulation UI and results rendering; the including tab supplies league configuration. */
 /**
  * Shared rendering for the league simulation tab.
  *

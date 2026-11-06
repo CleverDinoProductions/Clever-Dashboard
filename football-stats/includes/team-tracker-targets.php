@@ -1,4 +1,4 @@
-<section id="tt-targets" class="panel">
+<?php /* Renders the traditional points-target ladder; fixed benchmarks do not guarantee league outcomes. */ ?><section id="tt-targets" class="panel">
     <h2>Milestone progress — original target ladder</h2>
     <p>The original targets and separate 30-point halfway and full-season goals are shown below. “Guaranteed”, “Mathematical”, “Top Half”, “European” and “Title” are traditional benchmark names; reaching a fixed points total does not establish those outcomes.</p>
     <div class="tt-cards">

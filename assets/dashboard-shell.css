@@ -1,3 +1,4 @@
+/* Shared page shell, navigation and color variables for the hub and YouTube dashboard. */
 /* Shared Football-style shell for the dashboard hub and YouTube. */
 :root { color-scheme: dark; --accent: #5865f2; --gold: #ffd700; --ink: #dcddde; --muted: #b9bbbe; --line: #40444b; --panel: #2c2f33; }
 * { box-sizing: border-box; }

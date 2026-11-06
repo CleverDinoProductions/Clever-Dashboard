@@ -1,4 +1,5 @@
 <?php
+/** One-time administrator creation; unavailable once the accounts database has a user. */
 require_once dirname(__DIR__) . '/lib/auth.php';
 $db = clever_accounts_db();
 if ((int)$db->query('SELECT COUNT(*) FROM users')->fetchColumn() > 0) {

@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for competition rules; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/table-view.php';
 
 function rules_assert($expected, $actual, $message) {

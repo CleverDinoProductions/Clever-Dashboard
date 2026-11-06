@@ -1,4 +1,5 @@
 <?php
+/** Reports overdue imports independently of the published-date filter. */
 $rows = query('SELECT c.*, MAX(v.published_date) AS latest FROM dashboard_channels c LEFT JOIN videos v ON c.channel_id = v.channel_id GROUP BY c.channel_id ORDER BY julianday(c.last_checked) ASC');
 ?>
 <div class="content-area"><h2>Feed health</h2><p class="tab-description">Find channels with overdue checks or no cached uploads. Check status uses the last successful import, independently of the published-date filter. This does not diagnose YouTube availability.</p>

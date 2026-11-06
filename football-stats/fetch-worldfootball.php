@@ -1,4 +1,5 @@
 <?php
+/** Imports football provider data, including World Cup groups, standings and knockout lookup tables. */
 /**
  * fetch-worldfootball.php
  * UPDATED: Full 2026 World Cup logic including wc_standings, Best 3rd Place,

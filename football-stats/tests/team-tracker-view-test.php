@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for team tracker view; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/../includes/table-view.php';
 set_error_handler(function ($severity, $message) { if (error_reporting() & $severity) throw new RuntimeException($message); });
 $db = new PDO('sqlite::memory:');

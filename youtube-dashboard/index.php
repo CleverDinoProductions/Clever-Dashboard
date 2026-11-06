@@ -1,4 +1,5 @@
 <?php
+/** YouTube dashboard router: loads cached data, applies request filters and includes the selected tab. */
 date_default_timezone_set('UTC');
 
 // YouTube Dashboard Router

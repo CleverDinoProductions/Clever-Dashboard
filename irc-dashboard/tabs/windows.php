@@ -1,4 +1,5 @@
 <?php
+/** Renders invitation-window history and detailed queue activity. */
 /**
  * QUEUE HISTORY TAB - Complete with Window Detail View
  */

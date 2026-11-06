@@ -1,4 +1,5 @@
 <?php
+/** Shared persistence and defaults for football metadata, dashboard settings and team groups. */
 
 declare(strict_types=1);
 require_once __DIR__ . '/competition-settings.php';

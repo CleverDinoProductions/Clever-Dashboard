@@ -1,4 +1,5 @@
 <?php
+/** league-two/2025-2026: Recalculates standings for hypothetical results and displays their effect on positions. */
 require_once __DIR__ . '/../../../includes/table-view.php';
 
 $tableView = football_stats_get_table_view($db, 'L2', 'league_table_L2', $currentMainTab ?? '2025-2026');

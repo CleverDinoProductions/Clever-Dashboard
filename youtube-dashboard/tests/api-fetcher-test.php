@@ -1,4 +1,5 @@
 <?php
+/** Standalone regression checks for api fetcher; assertions fail the process when behavior changes. */
 require_once __DIR__ . '/fetcher-test.php';
 require_once dirname(__DIR__, 2) . '/lib/youtube-settings.php';
 

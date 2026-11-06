@@ -1,4 +1,5 @@
 <?php
+/** national-league/2025-2026: Recalculates standings for hypothetical results and displays their effect on positions. */
 require_once __DIR__ . '/../../../includes/table-view.php';
 
 $tableView = football_stats_get_table_view($db, 'NL', 'league_table_NL', $currentMainTab ?? '2025-2026');

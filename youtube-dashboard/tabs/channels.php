@@ -1,4 +1,5 @@
 <?php
+/** Summarizes each channel with cached counts, latest uploads and gap statistics. */
 $channels = query("
     SELECT 
         c.channel_name,

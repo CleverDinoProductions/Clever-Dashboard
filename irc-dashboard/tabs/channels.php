@@ -1,4 +1,5 @@
 <?php
+/** Reports activity for the selected IRC channel and time range. */
 // IMPROVED CHANNEL STATS TAB - Logic & View with Mode Badges
 
 // Get selected channel and time range

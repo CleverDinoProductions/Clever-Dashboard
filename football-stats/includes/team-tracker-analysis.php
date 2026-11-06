@@ -1,4 +1,5 @@
 <?php
+/** Derives team targets and comparisons from the selected standings and competition scoring rules. */
 require_once dirname(__DIR__, 2) . '/lib/competition-settings.php';
 
 /** Derive every comparison from the same selected standings, including deductions. */
