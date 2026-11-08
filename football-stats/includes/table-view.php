@@ -1227,7 +1227,7 @@ if (!function_exists('football_stats_get_custom_through_matchweek')) {
     function football_stats_get_custom_through_matchweek($competitionCode, $seasonLabel, ?PDO $db = null): ?int
     {
         $value = $_GET['custom_through_matchweek'] ?? '';
-        if (!is_scalar($value) || !preg_match('/^[1-9][0-9]*$/', (string)$value)) return null;
+        if (!is_scalar($value) || !preg_match('/^(0|[1-9][0-9]*)$/', (string)$value)) return null;
         return min((int)$value, football_stats_get_final_matchweek($competitionCode, $seasonLabel, $db));
     }
 }
@@ -2216,6 +2216,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             $availableMatches = $mStmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        $customSeasonMatches = $availableMatches;
         $customMatchweeks = array_values(array_unique(array_map('intval', array_column($availableMatches, 'matchweek'))));
         sort($customMatchweeks, SORT_NUMERIC);
         $customThroughMatchweek = football_stats_get_custom_through_matchweek($competitionCode, $activeSeason);
@@ -2371,7 +2372,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <?php $customPointsDeductions = football_stats_get_custom_points_deductions();
                     $customPointsAdvantages = football_stats_get_custom_points_advantages(); ?>
                     <span><?php echo count($availableResultKeys) - $excludedCount; ?> of <?php echo count($availableResultKeys); ?> completed team results included</span>
-                    <span><?php echo $customThroughMatchweek === null ? 'All matchweeks' : 'Through Matchweek ' . $customThroughMatchweek; ?></span>
+                    <span><?php echo $customThroughMatchweek === null ? 'All matchweeks' : ($customThroughMatchweek === 0 ? 'Pre-season' : 'Through Matchweek ' . $customThroughMatchweek); ?></span>
                     <span><?php echo $alteredOutcomeCount; ?> match outcome<?php echo $alteredOutcomeCount === 1 ? '' : 's'; ?> altered</span>
                     <span><?php echo count($customPointsAdvantages); ?> points advantage<?php echo count($customPointsAdvantages) === 1 ? '' : 's'; ?></span>
                     <span><?php echo count($customPointsDeductions); ?> points deduction<?php echo count($customPointsDeductions) === 1 ? '' : 's'; ?></span>
@@ -2471,11 +2472,12 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         <label class="table-view-label" for="<?php echo $controlId; ?>-custom-matchweek">Select Matchweek</label>
                         <select id="<?php echo $controlId; ?>-custom-matchweek" class="table-view-select" aria-describedby="<?php echo $controlId; ?>-custom-matchweek-help" onchange="window.location.href=this.value;">
                             <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['custom_through_matchweek' => null, 'pre_season' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $customThroughMatchweek === null ? 'selected' : ''; ?>>All matchweeks</option>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['custom_through_matchweek' => 0, 'pre_season' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $customThroughMatchweek === 0 ? 'selected' : ''; ?>>Pre-season</option>
                             <?php foreach ($customMatchweeks as $customMatchweek): ?>
                                 <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['custom_through_matchweek' => $customMatchweek, 'pre_season' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $customThroughMatchweek === $customMatchweek ? 'selected' : ''; ?>>Through Matchweek <?php echo $customMatchweek; ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <span id="<?php echo $controlId; ?>-custom-matchweek-help" class="custom-match-help">Build custom rules using fixtures up to and including this matchweek.</span>
+                        <span id="<?php echo $controlId; ?>-custom-matchweek-help" class="custom-match-help">Build custom rules using fixtures up to and including this matchweek. Pre-season starts with no played matches.</span>
                     </div>
                     <?php
                     $excludedLookup = array_fill_keys(football_stats_get_excluded_result_keys(), true);
@@ -2495,7 +2497,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     $allMatchweeks = array_keys($allMatchweeks);
                     sort($allMatchweeks, SORT_NUMERIC);
                     $customRuleTeams = [];
-                    foreach ($availableMatches as $availableMatch) {
+                    foreach ($customSeasonMatches as $availableMatch) {
                         $customRuleTeams[$availableMatch['home_team']] = true;
                         $customRuleTeams[$availableMatch['away_team']] = true;
                     }
