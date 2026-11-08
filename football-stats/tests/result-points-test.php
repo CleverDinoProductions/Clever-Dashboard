@@ -95,6 +95,23 @@ $GLOBALS['db'] = $db;
 ob_start(); football_stats_render_table_view_controls($view,'2026-2027','premier-league','table'); $html = ob_get_clean();
 points_assert(true, str_contains($html, 'data-result-points="loss" data-default-points="1"'), 'Custom inputs show competition defaults');
 points_assert(true, str_contains($html, 'Win 0 / Draw 0 / Loss 5'), 'Applied rules explain scoring');
+// Advantages combine with deductions and affect rank without changing results.
+$_GET['custom_points_advantages'] = json_encode(['A' => 10]);
+$_GET['custom_points_deductions'] = json_encode(['A' => 2]);
+$bonusView = football_stats_get_table_view_combined($db,'PL','league_table_PL','2026-2027');
+points_assert(8, points_by_team($bonusView['standings'])['A'], 'Bonus and deduction both apply after result scoring');
+points_assert('A', $bonusView['standings'][0]['team_name'], 'Bonus recalculates league position');
+$originalA = array_values(array_filter($view['standings'], static fn($row) => $row['team_name'] === 'A'))[0];
+foreach (['played', 'won', 'drawn', 'lost', 'gf', 'ga', 'gd'] as $stat) {
+    points_assert($originalA[$stat], $bonusView['standings'][0][$stat], 'Advantages preserve ' . $stat);
+}
+ob_start(); football_stats_render_table_view_controls($bonusView,'2026-2027','premier-league','table'); $bonusHtml = ob_get_clean();
+points_assert(true, str_contains($bonusHtml, 'A: +10 pts'), 'Applied summary shows advantage');
+points_assert(true, str_contains($bonusHtml, 'A: &minus;2 pts'), 'Applied summary retains deduction alongside advantage');
+$_GET['custom_points_advantages'] = json_encode(['A' => -5, 'B' => 200, 'C' => 'bad', '' => 5]);
+points_assert(['B' => 100], football_stats_get_custom_points_advantages(), 'Advantages are bounded and validated');
+$_GET['custom_points_advantages'] = 'invalid';
+points_assert([], football_stats_get_custom_points_advantages(), 'Invalid advantage JSON is ignored');
 $zero = $rules;
 $zero['win_points'] = $zero['draw_points'] = $zero['loss_points'] = 0;
 $zero['safety_target_halfway'] = $zero['comparison_target_one'] = $zero['comparison_target_two'] = 0;
