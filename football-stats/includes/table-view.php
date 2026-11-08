@@ -497,6 +497,13 @@ if (!function_exists('football_stats_get_table_view')) {
         $snapshotSeasonsStmt = $db->prepare('SELECT DISTINCT season_label FROM league_table_snapshots WHERE competition_code = ? ORDER BY season_label DESC');
         $snapshotSeasonsStmt->execute([$competitionCode]);
         $availableSeasons = $snapshotSeasonsStmt->fetchAll(PDO::FETCH_COLUMN);
+        if (($_GET['calc_mode'] ?? '') === 'custom_matches') {
+            // Custom tables can be rebuilt from fixtures even without an archive.
+            $matchSeasonsStmt = $db->prepare('SELECT DISTINCT season_label FROM matches WHERE competition_code = ?');
+            $matchSeasonsStmt->execute([$competitionCode]);
+            $availableSeasons = array_values(array_unique(array_merge($availableSeasons, $matchSeasonsStmt->fetchAll(PDO::FETCH_COLUMN), [$liveSeasonLabel])));
+            rsort($availableSeasons, SORT_STRING);
+        }
 
         if (!empty($availableSeasons) && !in_array($requestedSeasonLabel, $availableSeasons, true)) {
             $requestedSeasonLabel = $liveSeasonLabel;
@@ -1437,9 +1444,21 @@ if (!function_exists('football_stats_get_table_view_combined')) {
             $tableView = football_stats_get_table_view_pre_season($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
         } elseif ($calcMode === 'custom_matches') {
             $tableView = football_stats_get_table_view($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
-            $seasonLabel = (string)($tableView['active_season_label'] ?? $fallbackSeasonLabel);
+            // The base loader may return live rows when no snapshot was requested.
+            // Custom calculations must use the requested season, not those live rows.
+            $seasonLabel = (string)($tableView['requested_season_label'] ?? $fallbackSeasonLabel);
+            $tableView['active_season_label'] = $seasonLabel;
             $throughMatchweek = football_stats_get_custom_through_matchweek($competitionCode, $seasonLabel, $db);
             $tableView['custom_through_matchweek'] = $throughMatchweek;
+            $tableView['active_matchweek'] = $throughMatchweek;
+            if ($throughMatchweek !== null || $seasonLabel !== $tableView['live_season_label']) {
+                $snapshotTimeStmt = $db->prepare('SELECT MAX(archived_at) AS archived_ts, MAX(source_updated_at) AS source_ts FROM league_table_snapshots WHERE competition_code = ? AND season_label = ? AND matchweek = ?');
+                $snapshotTimeStmt->execute([$competitionCode, $seasonLabel, $throughMatchweek]);
+                $snapshotTime = $snapshotTimeStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+                $tableView['last_update'] = ['ts' => $snapshotTime['archived_ts'] ?? $snapshotTime['source_ts'] ?? null];
+                $tableView['updated_label'] = 'Source snapshot captured';
+            }
+
             $excludedIds = football_stats_get_excluded_result_keys();
             $outcomeOverrides = football_stats_get_outcome_overrides();
             $resultPoints = football_stats_get_result_points($competitionCode, $seasonLabel, $db, true);
