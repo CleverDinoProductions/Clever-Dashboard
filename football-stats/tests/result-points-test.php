@@ -112,6 +112,22 @@ $_GET['custom_points_advantages'] = json_encode(['A' => -5, 'B' => 200, 'C' => '
 points_assert(['B' => 100], football_stats_get_custom_points_advantages(), 'Advantages are bounded and validated');
 $_GET['custom_points_advantages'] = 'invalid';
 points_assert([], football_stats_get_custom_points_advantages(), 'Invalid advantage JSON is ignored');
+// A custom matchweek is an inclusive cutoff, independent of snapshot availability.
+$_GET = ['calc_mode' => 'custom_matches', 'custom_through_matchweek' => '1', 'outcome_overrides' => '4-h'];
+$weekView = football_stats_get_table_view_combined($db,'PL','league_table_PL','2026-2027');
+points_assert(1, $weekView['custom_through_matchweek'], 'Custom matchweek is retained');
+points_assert(['A' => 5, 'B' => 1, 'C' => 0], points_by_team($weekView['standings']), 'Only results through selected week count; later simulations are ignored');
+points_assert(points_by_team($weekView['standings']), points_by_team($weekView['custom_all_overridden_standings']), 'Custom movement baseline respects cutoff');
+points_assert(['A' => 3, 'C' => 0, 'B' => 0], points_by_team($weekView['custom_rules_actual_standings']), 'Actual comparison respects cutoff');
+ob_start(); football_stats_render_table_view_controls($weekView,'2026-2027','premier-league','table'); $weekHtml = ob_get_clean();
+points_assert(true, strpos($weekHtml, '-season"') < strpos($weekHtml, '-custom-matchweek"'), 'Matchweek selector follows season');
+points_assert(true, str_contains($weekHtml, 'Through Matchweek 1'), 'Matchweek scope is explained');
+points_assert(true, str_contains($weekHtml, 'Through Matchweek 4'), 'Later weeks remain selectable');
+points_assert(false, str_contains($weekHtml, 'data-outcome-match="4"'), 'Later fixtures are hidden from rule controls');
+$_GET['custom_through_matchweek'] = 'invalid';
+points_assert(null, football_stats_get_custom_through_matchweek('PL', '2026-2027', $db), 'Invalid cutoff means all weeks');
+$_GET['custom_through_matchweek'] = '999';
+points_assert(football_stats_get_final_matchweek('PL', '2026-2027', $db), football_stats_get_custom_through_matchweek('PL', '2026-2027', $db), 'Cutoff is bounded to regular season');
 $zero = $rules;
 $zero['win_points'] = $zero['draw_points'] = $zero['loss_points'] = 0;
 $zero['safety_target_halfway'] = $zero['comparison_target_one'] = $zero['comparison_target_two'] = 0;
