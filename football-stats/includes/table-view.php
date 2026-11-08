@@ -331,6 +331,7 @@ if (!function_exists('football_stats_build_table_view_url')) {
             'outcome_overrides',
             'custom_points_deductions',
             'custom_points_advantages',
+            'custom_through_matchweek',
             'custom_win_points', 'custom_draw_points', 'custom_loss_points',
         ];
         
@@ -1221,6 +1222,16 @@ if (!function_exists('football_stats_get_outcome_overrides')) {
     }
 }
 
+/** Optional inclusive matchweek cutoff for custom calculations. */
+if (!function_exists('football_stats_get_custom_through_matchweek')) {
+    function football_stats_get_custom_through_matchweek($competitionCode, $seasonLabel, ?PDO $db = null): ?int
+    {
+        $value = $_GET['custom_through_matchweek'] ?? '';
+        if (!is_scalar($value) || !preg_match('/^[1-9][0-9]*$/', (string)$value)) return null;
+        return min((int)$value, football_stats_get_final_matchweek($competitionCode, $seasonLabel, $db));
+    }
+}
+
 /** Return user-entered what-if points deductions as [team name => points]. */
 if (!function_exists('football_stats_get_custom_points_deductions')) {
     function football_stats_get_custom_points_deductions()
@@ -1427,6 +1438,8 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         } elseif ($calcMode === 'custom_matches') {
             $tableView = football_stats_get_table_view($db, $competitionCode, $liveTableName, $fallbackSeasonLabel);
             $seasonLabel = (string)($tableView['active_season_label'] ?? $fallbackSeasonLabel);
+            $throughMatchweek = football_stats_get_custom_through_matchweek($competitionCode, $seasonLabel, $db);
+            $tableView['custom_through_matchweek'] = $throughMatchweek;
             $excludedIds = football_stats_get_excluded_result_keys();
             $outcomeOverrides = football_stats_get_outcome_overrides();
             $resultPoints = football_stats_get_result_points($competitionCode, $seasonLabel, $db, true);
@@ -1439,7 +1452,8 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $liveTableName,
                 $excludedIds,
                 $outcomeOverrides,
-                $resultPoints
+                $resultPoints,
+                $throughMatchweek
             );
             if ($customPointsDeductions) {
                 $deductions = [];
@@ -1464,7 +1478,8 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $liveTableName,
                 $excludedIds,
                 [],
-                $resultPoints
+                $resultPoints,
+                $throughMatchweek
             );
             $tableView['custom_all_overridden_standings'] = football_stats_compute_custom_match_standings(
                 $db,
@@ -1473,7 +1488,8 @@ if (!function_exists('football_stats_get_table_view_combined')) {
                 $liveTableName,
                 [],
                 $outcomeOverrides,
-                $resultPoints
+                $resultPoints,
+                $throughMatchweek
             );
             $tableView['is_snapshot_view'] = true;
             $tableView['excluded_match_ids'] = $excludedIds;
@@ -1509,7 +1525,7 @@ if (!function_exists('football_stats_get_table_view_combined')) {
         );
         if ($calcMode === 'custom_matches') {
             $tableView['custom_rules_actual_standings'] = football_stats_apply_points_deductions(
-                football_stats_compute_custom_match_standings($db, $competitionCode, $seasonLabel, $liveTableName, [], [], ['win' => 3, 'draw' => 1, 'loss' => 0]),
+                football_stats_compute_custom_match_standings($db, $competitionCode, $seasonLabel, $liveTableName, [], [], ['win' => 3, 'draw' => 1, 'loss' => 0], $tableView['custom_through_matchweek'] ?? null),
                 football_stats_get_points_deductions($db, $competitionCode, $seasonLabel)
             );
         }
@@ -2200,6 +2216,15 @@ if (!function_exists('football_stats_render_table_view_controls')) {
             $availableMatches = $mStmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        $customMatchweeks = array_values(array_unique(array_map('intval', array_column($availableMatches, 'matchweek'))));
+        sort($customMatchweeks, SORT_NUMERIC);
+        $customThroughMatchweek = football_stats_get_custom_through_matchweek($competitionCode, $activeSeason);
+        if ($calcMode === 'custom_matches' && $customThroughMatchweek !== null) {
+            $availableMatches = array_values(array_filter($availableMatches, static function ($match) use ($customThroughMatchweek) {
+                return (int)$match['matchweek'] <= $customThroughMatchweek;
+            }));
+        }
+
         $dateSliderItems = [];
         foreach (array_reverse($availableDates) as $date) {
             $dateSliderItems[] = [
@@ -2342,10 +2367,11 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     }
                     $excludedCount = count(array_intersect($availableResultKeys, football_stats_get_excluded_result_keys()));
                     ?>
-                    <?php $alteredOutcomeCount = count(football_stats_get_outcome_overrides()); ?>
+                    <?php $alteredOutcomeCount = count(array_intersect_key(football_stats_get_outcome_overrides(), array_fill_keys(array_column($availableMatches, 'id'), true))); ?>
                     <?php $customPointsDeductions = football_stats_get_custom_points_deductions();
                     $customPointsAdvantages = football_stats_get_custom_points_advantages(); ?>
                     <span><?php echo count($availableResultKeys) - $excludedCount; ?> of <?php echo count($availableResultKeys); ?> completed team results included</span>
+                    <span><?php echo $customThroughMatchweek === null ? 'All matchweeks' : 'Through Matchweek ' . $customThroughMatchweek; ?></span>
                     <span><?php echo $alteredOutcomeCount; ?> match outcome<?php echo $alteredOutcomeCount === 1 ? '' : 's'; ?> altered</span>
                     <span><?php echo count($customPointsAdvantages); ?> points advantage<?php echo count($customPointsAdvantages) === 1 ? '' : 's'; ?></span>
                     <span><?php echo count($customPointsDeductions); ?> points deduction<?php echo count($customPointsDeductions) === 1 ? '' : 's'; ?></span>
@@ -2422,7 +2448,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                         <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'by_match', 'pre_season' => null])); ?>" <?php echo ($calcMode === 'by_match') ? 'selected="selected"' : ''; ?>>
                             By Specific Match (After)
                         </option>
-                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null, 'custom_points_deductions' => null, 'custom_points_advantages' => null, 'custom_win_points' => null, 'custom_draw_points' => null, 'custom_loss_points' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['calc_mode' => 'custom_matches', 'pre_season' => null, 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null, 'custom_points_deductions' => null, 'custom_points_advantages' => null, 'custom_win_points' => null, 'custom_draw_points' => null, 'custom_loss_points' => null])); ?>" <?php echo ($calcMode === 'custom_matches') ? 'selected="selected"' : ''; ?>>
                             By Custom Rules
                         </option>
                     </select>
@@ -2433,7 +2459,7 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                     <label class="table-view-label" for="<?php echo $controlId; ?>-season">Select Season</label>
                     <select id="<?php echo $controlId; ?>-season" class="table-view-select" onchange="window.location.href=this.value;">
                         <?php foreach ($tableView['available_seasons'] as $season): ?>
-                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season, 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null, 'custom_points_deductions' => null, 'custom_points_advantages' => null, 'custom_win_points' => null, 'custom_draw_points' => null, 'custom_loss_points' => null])); ?>" <?php echo ((string)$season === $activeSeason) ? 'selected="selected"' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['snapshot_season' => $season, 'custom_through_matchweek' => null, 'excluded_matches' => null, 'excluded_results' => null, 'outcome_overrides' => null, 'custom_points_deductions' => null, 'custom_points_advantages' => null, 'custom_win_points' => null, 'custom_draw_points' => null, 'custom_loss_points' => null])); ?>" <?php echo ((string)$season === $activeSeason) ? 'selected="selected"' : ''; ?>>
                                 Season <?php echo htmlspecialchars($season); ?>
                             </option>
                         <?php endforeach; ?>
@@ -2441,6 +2467,16 @@ if (!function_exists('football_stats_render_table_view_controls')) {
                 </div>
 
                 <?php if ($calcMode === 'custom_matches'): ?>
+                    <div class="table-view-group">
+                        <label class="table-view-label" for="<?php echo $controlId; ?>-custom-matchweek">Select Matchweek</label>
+                        <select id="<?php echo $controlId; ?>-custom-matchweek" class="table-view-select" aria-describedby="<?php echo $controlId; ?>-custom-matchweek-help" onchange="window.location.href=this.value;">
+                            <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['custom_through_matchweek' => null, 'pre_season' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $customThroughMatchweek === null ? 'selected' : ''; ?>>All matchweeks</option>
+                            <?php foreach ($customMatchweeks as $customMatchweek): ?>
+                                <option value="<?php echo htmlspecialchars(football_stats_build_table_view_url($tab, $league, $subtab, ['custom_through_matchweek' => $customMatchweek, 'pre_season' => null]), ENT_QUOTES, 'UTF-8'); ?>" <?php echo $customThroughMatchweek === $customMatchweek ? 'selected' : ''; ?>>Through Matchweek <?php echo $customMatchweek; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span id="<?php echo $controlId; ?>-custom-matchweek-help" class="custom-match-help">Build custom rules using fixtures up to and including this matchweek.</span>
+                    </div>
                     <?php
                     $excludedLookup = array_fill_keys(football_stats_get_excluded_result_keys(), true);
                     $outcomeOverrides = football_stats_get_outcome_overrides();
