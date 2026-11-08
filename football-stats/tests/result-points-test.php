@@ -124,6 +124,17 @@ points_assert(true, strpos($weekHtml, '-season"') < strpos($weekHtml, '-custom-m
 points_assert(true, str_contains($weekHtml, 'Through Matchweek 1'), 'Matchweek scope is explained');
 points_assert(true, str_contains($weekHtml, 'Through Matchweek 4'), 'Later weeks remain selectable');
 points_assert(false, str_contains($weekHtml, 'data-outcome-match="4"'), 'Later fixtures are hidden from rule controls');
+$_GET = ['calc_mode' => 'custom_matches', 'custom_through_matchweek' => '0', 'outcome_overrides' => '4-h'];
+$preSeasonView = football_stats_get_table_view_combined($db,'PL','league_table_PL','2026-2027');
+points_assert(0, $preSeasonView['custom_through_matchweek'], 'Pre-season uses week zero');
+points_assert(['A' => 0, 'B' => 0, 'C' => 0], points_by_team($preSeasonView['standings']), 'Pre-season excludes all played and simulated fixtures');
+foreach ($preSeasonView['standings'] as $team) {
+    points_assert(0, (int)$team['played'], 'Pre-season has no played matches');
+}
+ob_start(); football_stats_render_table_view_controls($preSeasonView,'2026-2027','premier-league','table'); $preSeasonHtml = ob_get_clean();
+points_assert(true, str_contains($preSeasonHtml, 'selected>Pre-season</option>'), 'Pre-season is selected in the matchweek control');
+points_assert(true, str_contains($preSeasonHtml, 'data-points-advantage="A"'), 'Pre-season retains team adjustment controls');
+points_assert(false, str_contains($preSeasonHtml, 'data-outcome-match="'), 'Pre-season hides fixture outcome controls');
 $_GET['custom_through_matchweek'] = 'invalid';
 points_assert(null, football_stats_get_custom_through_matchweek('PL', '2026-2027', $db), 'Invalid cutoff means all weeks');
 $_GET['custom_through_matchweek'] = '999';
