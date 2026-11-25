@@ -38,3 +38,13 @@
 .tt-target-number { display:block; font-size:30px; margin:12px 0; }
 
 .tt-halfway-bar { height:20px; background:#454d5c; border-radius:8px; overflow:hidden; position:relative; }
+.tt-cards h3 .tt-pct {
+    display: inline-block;
+    margin-left: .35em;
+    padding: .05em .4em;
+    border-radius: 4px;
+    font-size: .8em;
+    font-weight: 600;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+}
