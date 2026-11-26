@@ -17,7 +17,7 @@ $renderLegacyScenarios = static function ($games, $rows, $target) use ($team, $a
         }, [[$gamesToHalfway,0,0], [(int)ceil($gamesToHalfway/2),(int)floor($gamesToHalfway/2),0], [0,$gamesToHalfway,0], [0,0,$gamesToHalfway]]);
     ?><p><?= $gamesToHalfway ?> games to halfway · <?= $halfwayTarget ?>-point target. <?= $gamesToHalfway > 6 ? 'Representative full runs are shown.' : 'All W/D/L combinations are shown.' ?></p><?php $renderLegacyScenarios($gamesToHalfway, $halfwayRows, $halfwayTarget); endif; ?>
 </section>
-<?php for ($horizon = 6; $horizon >= 1; $horizon--): ?>
+<?php for ($horizon = $analysis['total']; $horizon >= 1; $horizon--): ?>
 <section class="panel"><h2>What If Scenarios — Next <?= $horizon ?> <?= $horizon === 1 ? 'Game' : 'Games' ?></h2>
 <?php if ($horizon > $analysis['remaining']): ?><p>Unavailable: only <?= $analysis['remaining'] ?> games remain in this season.</p><?php else: ?><details<?= $horizon === 1 ? ' open' : '' ?>><summary>Explore all <?= count(football_stats_tracker_scenarios($horizon, $trackerScoring)) ?> result combinations</summary><?php $renderLegacyScenarios($horizon, football_stats_tracker_scenarios($horizon, $trackerScoring), $full_season_safety_target); ?></details><?php endif; ?></section>
 <?php endfor; ?>
